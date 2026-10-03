@@ -3,9 +3,12 @@
  * Bez export / import / zapisu rozmowy.
  */
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import dynamic from "next/dynamic";
 
 import { sendChatMessage } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+
+const ChatMarkdown = dynamic(() => import("@/components/ChatMarkdown"), { ssr: false });
 
 export type ChatRole = "user" | "assistant" | "error";
 
@@ -19,10 +22,23 @@ export type ChatMessage = {
 const CARETAKER = "Twój społeczny opiekun";
 
 const SUGGESTIONS = [
-  "Szukam pomocy w mojej dzielnicy",
-  "Nie wiem, od czego zacząć",
-  "Potrzebuję wsparcia",
+  "Moja mama ma początki demencji i mieszka sama",
+  "Szukam zajęć aktywizujących dla seniorów",
+  "Jak zadbać o bezpieczeństwo starszej osoby w domu?",
 ];
+
+const WELCOME_ID = "welcome";
+
+function welcomeMessage(): ChatMessage {
+  return {
+    id: WELCOME_ID,
+    role: "assistant",
+    content:
+      "Miło Cię widzieć. Jestem Twoim społecznym opiekunem — opisz swoją sytuację, " +
+      "a wskażę projekty, które mogą pomóc. Możesz też zacząć od podpowiedzi poniżej.",
+    timestamp: new Date(),
+  };
+}
 
 function TypingIndicator() {
   return (
@@ -69,68 +85,47 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
   );
 }
 
-function renderPlain(content: string, onAccent = false) {
-  const parts = content.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, index) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return (
-        <strong
-          key={index}
-          className={onAccent ? "font-semibold text-white" : "font-semibold text-[var(--text)]"}
-        >
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-    return <span key={index}>{part}</span>;
-  });
-}
-
 type AssistantChatProps = {
   userName?: string | null;
 };
 
 export function AssistantChat({ userName }: AssistantChatProps) {
   const displayName = userName?.trim() || "mieszkańcu";
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        `Miło Cię widzieć. Jestem Twoim społecznym opiekunem — razem pomyślimy nad rozwiązaniem. ` +
-        `Napisz, co Cię zajmuje, albo wybierz podpowiedź poniżej.`,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage()]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
-  const onlyWelcome = messages.length === 1 && messages[0]?.id === "welcome";
+  const lastMessageRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const onlyWelcome = messages.length === 1 && messages[0]?.id === WELCOME_ID;
+  const lastMessage = messages[messages.length - 1];
+
+  // Długa odpowiedź opiekuna: pokaż jej początek, a nie koniec.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const reply = lastMessageRef.current;
+    if (!busy && reply && lastMessage?.role === "assistant" && lastMessage.id !== WELCOME_ID) {
+      reply.scrollIntoView({ block: "start", behavior: "smooth" });
+    } else {
+      list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+    }
+  }, [messages, busy, lastMessage]);
 
   useEffect(() => {
-    const el = listRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, busy]);
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [input]);
 
-  async function submitMessage(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || busy) return;
-
+  async function ask(text: string) {
     const token = getToken();
     if (!token) return;
 
-    const userMsg: ChatMessage = {
-      id: `u-${Date.now()}`,
-      role: "user",
-      content: trimmed,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
     setBusy(true);
-
     try {
-      const reply = await sendChatMessage(token, trimmed);
+      const reply = await sendChatMessage(token, text);
       setMessages((prev) => [
         ...prev,
         {
@@ -152,18 +147,50 @@ export function AssistantChat({ userName }: AssistantChatProps) {
       ]);
     } finally {
       setBusy(false);
+      inputRef.current?.focus({ preventScroll: true });
     }
+  }
+
+  function submitMessage(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || busy) return;
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `u-${Date.now()}`,
+        role: "user",
+        content: trimmed,
+        timestamp: new Date(),
+      },
+    ]);
+    setInput("");
+    void ask(trimmed);
+  }
+
+  function retry() {
+    if (busy) return;
+    const lastQuestion = [...messages].reverse().find((m) => m.role === "user");
+    if (!lastQuestion) return;
+    setMessages((prev) => prev.filter((m) => m.role !== "error"));
+    void ask(lastQuestion.content);
+  }
+
+  function resetConversation() {
+    setMessages([welcomeMessage()]);
+    setInput("");
+    inputRef.current?.focus();
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void submitMessage(input);
+    submitMessage(input);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      void submitMessage(input);
+      submitMessage(input);
     }
   }
 
@@ -172,7 +199,7 @@ export function AssistantChat({ userName }: AssistantChatProps) {
       <header className="chat-shell-header px-6 pb-5 pt-6 sm:px-8 sm:pt-7">
         <div className="flex items-start gap-4">
           <CaretakerMark />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="font-display text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
               {CARETAKER}
             </p>
@@ -183,49 +210,76 @@ export function AssistantChat({ userName }: AssistantChatProps) {
               Opowiedz, co Cię zajmuje — razem pomyślimy nad rozwiązaniem.
             </p>
           </div>
+          {!onlyWelcome && (
+            <button
+              type="button"
+              onClick={resetConversation}
+              disabled={busy}
+              className="btn-ghost shrink-0 text-sm"
+            >
+              Nowa rozmowa
+            </button>
+          )}
         </div>
       </header>
 
       <div
         ref={listRef}
-        className="chat-thread max-h-[420px] min-h-[260px] space-y-5 overflow-y-auto px-4 py-5 sm:px-6"
+        aria-live="polite"
+        className="chat-thread relative h-[min(64vh,640px)] min-h-[320px] space-y-5 overflow-y-auto px-4 py-5 sm:px-6"
       >
         {messages.map((message, index) => {
           const prev = messages[index - 1];
-          const isCaretaker = message.role !== "user";
-          const showMark = isCaretaker && (!prev || prev.role === "user");
+          const isUser = message.role === "user";
+          const showMark = !isUser && (!prev || prev.role === "user");
+          const isLast = index === messages.length - 1;
           return (
-            <div key={message.id} data-role={message.role} className="animate-soft-in">
-              <div
-                className={`flex items-end gap-2.5 ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                {isCaretaker &&
+            <div
+              key={message.id}
+              ref={isLast ? lastMessageRef : undefined}
+              data-role={message.role}
+              className="animate-soft-in scroll-mt-4"
+            >
+              <div className={`flex items-end gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}>
+                {!isUser &&
                   (showMark ? (
                     <CaretakerMark size="sm" />
                   ) : (
                     <div className="w-9 shrink-0" aria-hidden />
                   ))}
                 <div
-                  className={`max-w-[min(100%,28rem)] ${
-                    message.role === "user" ? "items-end" : "items-start"
-                  } flex flex-col`}
+                  className={`flex min-w-0 flex-col ${
+                    isUser ? "max-w-[min(85%,28rem)] items-end" : "max-w-[40rem] flex-1 items-start"
+                  }`}
                 >
+                  <p className="sr-only">{isUser ? "Ty" : CARETAKER}</p>
                   <div
-                    className={`px-4 py-3 text-[0.9375rem] leading-relaxed whitespace-pre-wrap ${
-                      message.role === "user"
-                        ? "chat-bubble-user"
+                    className={`max-w-full px-4 py-3 text-[0.9375rem] leading-relaxed ${
+                      isUser
+                        ? "chat-bubble-user whitespace-pre-wrap break-words"
                         : message.role === "error"
                           ? "chat-bubble-error"
                           : "chat-bubble-caretaker"
                     }`}
                   >
-                    {renderPlain(message.content, message.role === "user")}
+                    {message.role === "assistant" ? (
+                      <ChatMarkdown content={message.content} />
+                    ) : (
+                      message.content
+                    )}
+                    {message.role === "error" && isLast && (
+                      <button
+                        type="button"
+                        onClick={retry}
+                        className="mt-2 block text-sm font-semibold underline underline-offset-2"
+                      >
+                        Spróbuj ponownie
+                      </button>
+                    )}
                   </div>
                   <p
                     className={`mt-1.5 px-1 text-[11px] text-[var(--muted)] ${
-                      message.role === "user" ? "self-end" : "self-start"
+                      isUser ? "self-end" : "self-start"
                     }`}
                   >
                     {message.timestamp.toLocaleTimeString("pl-PL", {
@@ -242,8 +296,11 @@ export function AssistantChat({ userName }: AssistantChatProps) {
         {busy && (
           <div className="flex items-end gap-2.5">
             <CaretakerMark size="sm" />
-            <div className="chat-bubble-caretaker px-4 py-3">
+            <div className="chat-bubble-caretaker flex items-center gap-3 px-4 py-3">
               <TypingIndicator />
+              <span className="text-sm text-[var(--muted)]">
+                Przeglądam projekty — to może potrwać kilkanaście sekund…
+              </span>
             </div>
           </div>
         )}
@@ -255,7 +312,7 @@ export function AssistantChat({ userName }: AssistantChatProps) {
             <button
               key={suggestion}
               type="button"
-              onClick={() => void submitMessage(suggestion)}
+              onClick={() => submitMessage(suggestion)}
               className="chat-chip"
             >
               {suggestion}
@@ -269,11 +326,11 @@ export function AssistantChat({ userName }: AssistantChatProps) {
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">Twoja wiadomość</span>
             <textarea
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
-              rows={2}
-              disabled={busy}
+              rows={1}
               placeholder="Napisz, czego potrzebujesz…"
               className="chat-input"
             />

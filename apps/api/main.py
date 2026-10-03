@@ -1,11 +1,14 @@
 from fastapi import FastAPI
 
 from .dependencies.db import create_db_and_tables
-from .routes import auth, users
+from .routes import auth, categories, chat, projects, users
 
 app = FastAPI()
 
 app.include_router(auth.router)
+app.include_router(categories.router)
+app.include_router(chat.router)
+app.include_router(projects.router)
 app.include_router(users.router)
 
 

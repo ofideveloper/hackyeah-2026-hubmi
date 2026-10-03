@@ -46,6 +46,7 @@ src/
   styles/       # globals
 ```
 
+- Pakiety ESM-only (np. `react-markdown`) importuj w osobnym komponencie ładowanym przez `next/dynamic` z `ssr: false` — bezpośredni import w stronie daje 500 na SSR (wzór: `components/ChatMarkdown.tsx`)
 - [UZUPEŁNIJ — konwencja nazw plików / folderów]
 - [UZUPEŁNIJ — kiedy wydzielać komponent vs zostawić w page]
 

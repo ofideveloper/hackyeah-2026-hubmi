@@ -182,6 +182,103 @@ body {
   color: var(--danger);
 }
 
+/* Odpowiedź opiekuna renderowana z markdownu */
+.chat-md > :first-child {
+  margin-top: 0;
+}
+
+.chat-md > :last-child {
+  margin-bottom: 0;
+}
+
+.chat-md p {
+  margin: 0.6rem 0;
+}
+
+.chat-md h1,
+.chat-md h2,
+.chat-md h3,
+.chat-md h4 {
+  margin: 1.1rem 0 0.4rem;
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.chat-md ul,
+.chat-md ol {
+  margin: 0.4rem 0;
+  padding-left: 1.25rem;
+}
+
+.chat-md ul {
+  list-style: disc;
+}
+
+.chat-md ol {
+  list-style: decimal;
+}
+
+.chat-md ul ul {
+  list-style: none;
+  padding-left: 0;
+  color: var(--muted);
+}
+
+.chat-md li {
+  margin: 0.3rem 0;
+}
+
+.chat-md li::marker {
+  color: var(--accent);
+}
+
+.chat-md li > p {
+  margin: 0;
+}
+
+.chat-md strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chat-md a {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chat-md hr {
+  margin: 0.9rem 0;
+  border-color: var(--border);
+}
+
+.chat-md code {
+  border-radius: 0.3rem;
+  background: var(--bg);
+  padding: 0.1rem 0.3rem;
+  font-size: 0.85em;
+}
+
+.chat-md table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.6rem 0;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.chat-md th,
+.chat-md td {
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
 .chat-chip {
   border-radius: 999px;
   border: 1px solid rgba(13, 143, 130, 0.28);
@@ -204,6 +301,7 @@ body {
 }
 
 .chat-input {
+  display: block;
   width: 100%;
   min-height: 3.25rem;
   resize: none;

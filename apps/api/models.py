@@ -41,16 +41,30 @@ class UserPublic(UserBase):
     role: RoleEnum
 
 
-class CategoriesOfProjects(SQLModel, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    name: str
+class CategoriesOfProjectsBase(SQLModel):
+    name: str = Field(min_length=1)
 
 
-class ActualProject(SQLModel, table=True):
+class CategoriesOfProjects(CategoriesOfProjectsBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+
+
+class CategoriesOfProjectsCreate(CategoriesOfProjectsBase):
+    pass
+
+
+class ActualProjectBase(SQLModel):
     category_id: uuid.UUID = Field(foreign_key="categoriesofprojects.id")
-    name: str
+    name: str = Field(min_length=1)
     description: str = Field(sa_type=Text)
+
+
+class ActualProject(ActualProjectBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+
+
+class ActualProjectCreate(ActualProjectBase):
+    pass
 
 
 class ProposalOfNewProject(SQLModel, table=True):

@@ -10,7 +10,9 @@ export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,10 +23,13 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      const phone = phoneNumber.trim();
       await registerUser({
         email,
         password,
-        full_name: fullName || undefined,
+        name: name.trim(),
+        surname: surname.trim(),
+        phone_number: phone || null,
       });
       setSuccess(true);
       setTimeout(() => {
@@ -58,13 +63,37 @@ export default function RegisterPage() {
             </p>
 
             <div className="mt-7 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-[var(--muted)]">Imię</span>
+                  <input
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="field"
+                    autoComplete="given-name"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-[var(--muted)]">Nazwisko</span>
+                  <input
+                    required
+                    value={surname}
+                    onChange={(e) => setSurname(e.target.value)}
+                    className="field"
+                    autoComplete="family-name"
+                  />
+                </label>
+              </div>
               <label className="block text-sm">
-                <span className="mb-1.5 block text-[var(--muted)]">Imię i nazwisko</span>
+                <span className="mb-1.5 block text-[var(--muted)]">Telefon</span>
                 <input
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
                   className="field"
-                  autoComplete="name"
+                  autoComplete="tel"
+                  placeholder="np. +48 500 000 000"
                 />
               </label>
               <label className="block text-sm">

@@ -1,13 +1,12 @@
 import os
-from collections.abc import Generator
 from pathlib import Path
+from typing import Annotated
 
+from fastapi import Depends
 from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlmodel import Session, SQLModel
 
-from app.config import get_settings
-
-settings = get_settings()
+from ..config import get_settings
 
 
 def resolve_database_url(url: str) -> str:
@@ -17,7 +16,7 @@ def resolve_database_url(url: str) -> str:
     return url
 
 
-database_url = resolve_database_url(settings.database_url)
+database_url = resolve_database_url(get_settings().database_url)
 connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
 
 if database_url.startswith("sqlite"):
@@ -25,16 +24,15 @@ if database_url.startswith("sqlite"):
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
 engine = create_engine(database_url, connect_args=connect_args)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-class Base(DeclarativeBase):
-    pass
+def create_db_and_tables():
+    SQLModel.metadata.create_all(engine)
 
 
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def get_session():
+    with Session(engine) as session:
+        yield session
+
+
+SessionDep = Annotated[Session, Depends(get_session)]

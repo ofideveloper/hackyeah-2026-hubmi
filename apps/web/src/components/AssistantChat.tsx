@@ -37,6 +37,13 @@ const SUGGESTIONS = [
   "Potrzebuję wsparcia",
 ];
 
+/** Deterministic HH:MM — avoids Node vs browser `toLocaleTimeString` mismatches. */
+function formatClock(date: Date): string {
+  const h = date.getHours().toString().padStart(2, "0");
+  const m = date.getMinutes().toString().padStart(2, "0");
+  return `${h}:${m}`;
+}
+
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-1.5 py-0.5" aria-label={`${CARETAKER} pisze`}>
@@ -107,6 +114,8 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Project | null>(null);
   const [locatingId, setLocatingId] = useState<string | null>(null);
+  /** Gate locale/clock UI until after hydration (SSR `new Date()` ≠ client). */
+  const [clockReady, setClockReady] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const onlyWelcome = messages.length === 1 && messages[0]?.id === "welcome";
 
@@ -117,6 +126,10 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
     setPreview(null);
     setLocatingId(null);
   }
+
+  useEffect(() => {
+    setClockReady(true);
+  }, []);
 
   useEffect(() => {
     const el = listRef.current;
@@ -353,11 +366,9 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
                     className={`mt-1.5 px-1 text-[11px] text-[var(--muted)] ${
                       message.role === "user" ? "self-end" : "self-start"
                     }`}
+                    suppressHydrationWarning
                   >
-                    {message.timestamp.toLocaleTimeString("pl-PL", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {clockReady ? formatClock(message.timestamp) : "\u00a0"}
                   </p>
                 </div>
               </div>

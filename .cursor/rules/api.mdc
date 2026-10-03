@@ -9,27 +9,26 @@ alwaysApply: false
 ## Struktura
 
 - Wejście: `app/main.py`
-- Routery: `app/routers/` (prefixy `/auth`, `/admin`, `/chat`, `/llm`, …)
-- LLM: tylko przez `app/llm/client.py` (`fake` | `gemini` + `LLM_API_KEY`)
-- Zalecenia odpowiedzi AI: `app/llm/prompts/caretaker_system.md` (Markdown pod UI)
-- Modele / schematy: `models.py`, `schemas.py`
-
-- Auth JWT: `app/auth.py`
+- Routery: `app/routes/` (prefixy `/auth`, `/categories`, `/projects`, `/chat`, `/users`)
+- Modele i schematy (SQLModel): `app/models.py`
+- Zależności: `app/dependencies/` — `SessionDep` (`db.py`), `CurrentUserDep` (`auth.py`)
+- Importy wewnątrz pakietu względne (`from ..models import …`)
+- **Legacy:** `app/llm/`, `app/routes/llm.py`, `app/schemas.py` — nie rozwijaj
 
 ## Ścieżki
 
-FastAPI eksponuje `/auth/*`, `/admin/*`, `/health` — **bez** prefiksu `/api`.
+FastAPI eksponuje `/auth/*`, `/categories/*`, `/projects/`, `/chat/`, `/health` — **bez** prefiksu `/api`.
 Prefiks `/api` dodaje wyłącznie Next BFF po stronie web.
 
 ## Bezpieczeństwo endpointów
 
-- User: `Depends(get_current_user)`
-- Admin: `Depends(get_current_admin)`
+- User: `CurrentUserDep`
+- JWT podpisany `SECRET_KEY` (`app/dependencies/auth.py`)
 - Nie loguj haseł ani tokenów
 
 ## Dane
 
-- SQLite lokalnie; na Vercel bez trwałego dysku (`/tmp`) — produkcja: `DATABASE_URL`
-- Seed admina z env przy starcie
+- `DATABASE_URL` z `app/config.py`; SQLite lokalnie (`data/hubmi.db`), na Vercel `/tmp` (nietrwałe)
+- Czat: `GEMINI_API_KEY`
 
 Szczegóły i nowe endpointy: `docs/team/api.md`.

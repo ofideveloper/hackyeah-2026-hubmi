@@ -88,7 +88,9 @@ export default function AppHomePage() {
         </header>
 
         <section className="mt-8">
-          <AssistantChat userName={user.full_name} />
+          <AssistantChat
+            userName={user.full_name || `${user.name} ${user.surname}`.trim()}
+          />
         </section>
 
         <section className="mt-12">

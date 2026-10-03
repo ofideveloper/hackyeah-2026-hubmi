@@ -1,6 +1,6 @@
 # API — reguły zespołu
 
-Stack: FastAPI w `apps/api` (`app/main.py`, `app/routers/`, `app/models.py`, …).
+Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `dependencies/`).
 
 ## Publiczne vs internal
 
@@ -13,58 +13,51 @@ Stack: FastAPI w `apps/api` (`app/main.py`, `app/routers/`, `app/models.py`, …
 
 | Metoda | Ścieżka | Opis |
 |--------|---------|------|
-| POST | `/auth/register` | Rejestracja (`role=user`) |
-| POST | `/auth/login` | JWT |
-| GET | `/auth/me` | Profil |
-| GET | `/admin/stats` | Admin (users + units + projects + reports) |
-| GET | `/admin/users` | Admin |
-| POST | `/admin/units` | Admin — utwórz jednostkę |
-| DELETE | `/admin/units/{id}` | Admin — usuń jednostkę (+ zgłoszenia + projekty) |
-| POST | `/admin/projects` | Admin — utwórz projekt i przydziel do jednostki |
-| GET | `/admin/project-proposals` | Admin — propozycje z czatu (intake AI) |
-| POST | `/admin/project-proposals/{id}/accept` | Admin — utwórz projekt z propozycji (+ `unit_id`) |
-| POST | `/admin/project-proposals/{id}/reject` | Admin — odrzuć propozycję |
-| PATCH | `/admin/projects/{id}` | Admin — zmiana jednostki / nazwy / opisu |
-| DELETE | `/admin/projects/{id}` | Admin — usuń projekt |
-| GET | `/units` | Lista jednostek (zalogowany) |
-| GET | `/projects` | Lista projektów (`?unit_id=` opcjonalnie) |
-| GET | `/reports` | Moje sprawy + status (user) |
-| POST | `/reports` | Tworzenie sprawy (API / AI — nie UI mieszkańca) |
-| GET | `/admin/reports` | Wszystkie sprawy |
-| PATCH | `/admin/reports/{id}` | Zmiana statusu (`nowe` \| `w_toku` \| `zakonczone`) |
-| POST | `/chat` | JWT opcjonalny. Body: `{ message, history[] }` → `{ reply, suggested_projects[], … }`. Gość: sugestie OK; `project_proposals` tylko gdy zalogowany |
-| POST | `/llm/chat` | Bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
-| GET | `/llm/health` | Provider aktualnego klienta (`fake` / `gemini`) |
-| GET | `/health` | Healthcheck |
+| POST | `/auth/register` | Rejestracja (`role=user`); duplikat emaila → 409 |
+| POST | `/auth/login` | Form `username` + `password` → `{ access_token, token_type }`; błąd → 400 |
+| GET | `/auth/me` | Profil (`UserPublic`) |
+| GET | `/categories` | Lista kategorii projektów (zalogowany — cały router `/categories`) |
+| GET | `/categories/{id}` | Kategoria |
+| POST | `/categories` | Utwórz kategorię (nazwa unikalna → 409) |
+| PATCH | `/categories/{id}` | Zmień nazwę |
+| DELETE | `/categories/{id}` | Usuń (409, gdy używana przez projekt / propozycję) |
+| POST | `/projects/` | Utwórz projekt (`category_id`, `name`, `description`) — zalogowany |
+| POST | `/chat/` | Body: `{ message }` → `{ reply }` (Gemini; bez `GEMINI_API_KEY` → 503) |
+| POST | `/llm/chat` | **Legacy** — bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
+| GET | `/llm/health` | **Legacy** — provider klienta (`fake` / `openai` / `gemini`) |
+| GET | `/health` | Healthcheck (`{ status: "healthy" }`) |
 
-**LLM:** `app/llm/client.py` — `LLM_PROVIDER=fake|openai|gemini`. `/chat` ładuje `caretaker_system.md` + historię. Markery: `[[hubmi-project:ID]]` → karty; `[[hubmi-new-project]]…` → propozycje; `[[hubmi-need-location:area|gps]]` → `location_request`. Env: `LLM_API_KEY` + `LLM_MODEL` (np. `gpt-4o-mini`).
+Router `/users` jest zarejestrowany, ale nie ma jeszcze endpointów.
 
-Modele: `OrganizationalUnit`, `Project`, `Report`, kontrakt `LLMChatRequest/Response`.
+**LLM:** `/chat/` woła Gemini bezpośrednio (`app/routes/chat.py`, env `GEMINI_API_KEY`). Pakiet `app/llm/` (klient `fake|openai|gemini`, prompt opiekuna) i router `app/routes/llm.py` to **legacy** — działają (`LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`), ale nie rozwijamy ich.
+
+Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProject`, `ProposalOfNewProject`, `Benefice`, `ProjectBenefices`, `ChatHistory`.
 
 ## Auth i role
 
-- JWT (Bearer), sekret: `SECRET_KEY`
-- Role: `admin` | `user`
-- Seed admina z env: `ADMIN_EMAIL`, `ADMIN_PASSWORD`
+- JWT (Bearer, `sub` = email, `exp`), sekret: `SECRET_KEY`, ważność: `ACCESS_TOKEN_EXPIRE_MINUTES`; hasła: scrypt
+- Role: `admin` | `user` | `specialist`
+- Brak seeda admina; `/categories` i `/projects` wymagają zalogowania (dowolna rola)
 
 [UZUPEŁNIJ — reguły haseł, expiry, refresh?]
 
 ## Dane
 
-- Dev: SQLite `apps/api/data/hubmi.db`
+- `DATABASE_URL` (domyślnie SQLite `apps/api/data/hubmi.db`) — `app/dependencies/db.py`
 - Vercel: SQLite trafia do `/tmp` (nietrwałe) — produkcja: ustaw `DATABASE_URL` (np. Postgres)
-- `create_all` nie zmienia istniejących kolumn — drobne poprawki SQLite w `app/migrate.py` (np. `projects.title` → `name`)
+- Tabele tworzy `SQLModel.metadata.create_all` przy starcie; brak migracji
 
 [UZUPEŁNIJ — model domenowy / migracje]
 
 ## Konwencje kodu
 
-- Router per domena w `app/routers/`
-- Schematy Pydantic w `schemas.py`, modele SQLAlchemy w `models.py`
+- Router per domena w `app/routes/`
+- Modele tabel i schematy wejścia/wyjścia (SQLModel) razem w `app/models.py`
+- Zależności FastAPI w `app/dependencies/` (`SessionDep`, `CurrentUserDep`)
 - [UZUPEŁNIJ — walidacja, paginacja, format błędów]
 
 ## Checklist PR (api)
 
-- [ ] Endpoint chroniony właściwą zależnością (`get_current_user` / `get_current_admin`)
+- [ ] Endpoint chroniony właściwą zależnością (`CurrentUserDep`)
 - [ ] Brak sekretów w kodzie
 - [ ] Zmiana schematu udokumentowana w `docs/team` lub README

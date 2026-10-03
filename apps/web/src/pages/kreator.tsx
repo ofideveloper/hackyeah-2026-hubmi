@@ -200,6 +200,9 @@ export default function IdeaCreatorPage() {
             <Link href="/wiedza" className="btn-ghost">
               Zasobnik wiedzy
             </Link>
+            <Link href="/tester" className="btn-ghost">
+              Tester innowacji
+            </Link>
             {user ? (
               <Link href="/app" className="btn-primary">
                 Moja przestrzeń

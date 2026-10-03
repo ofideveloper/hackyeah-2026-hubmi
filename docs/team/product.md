@@ -70,6 +70,8 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | Projekt | Inicjatywa jednostki — under the hood / sugerowana przez AI |
 | Propozycja projektu | Draft z czatu (AI zbiera dane); admin + jednostka zatwierdzają |
 | Sprawa | Zapis potrzeby; status widoczny dla mieszkańca |
+| Tester | Osoba, która zgłosiła chęć udziału w testach rozwiązania; przyjmuje ją admin |
+| Opinia | Ocena 1–5 + informacja zwrotna + propozycja usprawnień do rozwiązania (innowacja / zatwierdzona fiszka); dodaje ją tylko przyjęty tester |
 | BFF | Next.js `/api/*` proxy do internal FastAPI |
 
 ## Decyzje produktowe (log)
@@ -89,3 +91,4 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | 2026-10 | Reguły cybersec w docs + `.cursor/rules` | Egzekwowalne dla AI i zespołu |
 | 2026-10 | Czat: katalog PROJECT\| + offer/zapis zgłoszenia | Persony HackYeah bez formularza mieszkańca |
 | 2026-10 | Tryby czatu: clarify / report / catalog / intake | Zgłoszenie ≠ katalog — twarde bramki API |
+| 2026-10 | Tester innowacji: opinie publiczne, zgłoszenia do testów zatwierdza admin | Pętla zwrotna dla innowacji i fiszek bez osobnych kampanii testów |

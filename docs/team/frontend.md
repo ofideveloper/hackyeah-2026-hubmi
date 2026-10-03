@@ -25,6 +25,8 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 | `/kreator` | Kreator pomysłów: publiczna lista fiszek; po zalogowaniu fiszka + canva + asystent AI; generator wniosków tylko przy trwającym naborze |
 | `/admin/ideas` | Fiszki z Kreatora pomysłów — podgląd (autor, canva), zatwierdź / odrzuć / usuń |
 | `/admin/grants` | Nabory grantowe — terminy, pola wniosku, podgląd złożonych wniosków |
+| `/tester` | Tester innowacji: publiczna lista rozwiązań z ocenami i opiniami; po zalogowaniu zgłoszenie do testów, a po jego przyjęciu opinia (ocena, feedback, usprawnienia) i „Moje testy i opinie” |
+| `/admin/testing` | Zgłoszenia testerów (przyjmij / odrzuć) i moderacja opinii |
 | `/admin/login` | Redirect → `/login` |
 | `/api/*` | BFF → FastAPI (nie UI) |
 

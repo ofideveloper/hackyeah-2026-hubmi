@@ -29,7 +29,10 @@ from ..models import (
     IdeaStage,
     ProposalOfNewProject,
     RoleEnum,
+    SolutionReview,
     StatusEnum,
+    TesterSignup,
+    TestTargetKind,
     User,
 )
 from .chat import ask_llm
@@ -228,6 +231,14 @@ async def delete_idea(idea_id: uuid.UUID, user: CurrentUserDep, session: Session
     ).all():
         application.idea_id = None
         session.add(application)
+    # zgłoszenia testerów i opinie wskazują fiszkę bez klucza obcego — sprzątamy ręcznie
+    for model in (TesterSignup, SolutionReview):
+        for row in session.exec(
+            select(model).where(
+                model.target_kind == TestTargetKind.IDEA, model.target_id == idea.id
+            )
+        ).all():
+            session.delete(row)
     session.delete(idea)
     session.commit()
     logger.info("Usunięto fiszkę %s (przez %s)", idea_id, user.id)

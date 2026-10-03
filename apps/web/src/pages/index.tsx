@@ -61,6 +61,12 @@ export default function HomePage() {
               Kreator pomysłów
             </Link>
             <Link
+              href="/tester"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
+            >
+              Tester innowacji
+            </Link>
+            <Link
               href="/login"
               className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
             >

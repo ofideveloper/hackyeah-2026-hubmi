@@ -79,6 +79,9 @@ export default function AppHomePage() {
             <Link href="/kreator" className="btn-ghost">
               Kreator pomysłów
             </Link>
+            <Link href="/tester" className="btn-ghost">
+              Tester innowacji
+            </Link>
             <Link href="/wiedza" className="btn-ghost">
               Zasobnik wiedzy
             </Link>

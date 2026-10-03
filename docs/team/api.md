@@ -35,6 +35,14 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 | GET / PUT | `/grant-calls/{id}/application` | Wniosek zalogowanego w naborze: szkic lub `submit: true`; po złożeniu / po terminie → 409 |
 | GET / POST / PATCH / DELETE | `/admin/grant-calls[/{id}]` | Nabory (admin): terminy + lista pytań; DELETE → 409, gdy są złożone wnioski |
 | GET | `/admin/grant-calls/{id}/applications` | Złożone wnioski naboru (admin; szkice są prywatne) |
+| GET | `/testing/solutions` | Publiczna lista rozwiązań do oceny i testów: innowacje (`ActualProject`) + zatwierdzone fiszki; ze średnią oceną, liczbą opinii i testerów |
+| GET | `/testing/solutions/{kind}/{id}/reviews` | Publiczne opinie o rozwiązaniu (`kind`: `innowacja` \| `pomysl`; autor jako „Imię N.”) |
+| GET | `/testing/mine` | Zgłoszenia do testów i opinie zalogowanego |
+| POST | `/testing/solutions/{kind}/{id}/signups` | Zgłoszenie chęci udziału w testach `{ motivation? }` — można zgłosić się wielokrotnie |
+| DELETE | `/testing/signups/{id}` | Wycofanie własnego zgłoszenia |
+| PUT / DELETE | `/testing/solutions/{kind}/{id}/review` | Opinia zalogowanego `{ rating 1–5, feedback?, improvement? }` — jedna na osobę i rozwiązanie (upsert); PUT tylko dla testera (przyjęte zgłoszenie do tego rozwiązania), inaczej 403 |
+| GET / PATCH | `/admin/testing/signups[/{id}]` | Zgłoszenia testerów (admin): pełne dane testera; `{ status: pending\|approved\|rejected }` |
+| GET / DELETE | `/admin/testing/reviews[/{id}]` | Opinie (admin): pełny autor; usunięcie = moderacja |
 | POST | `/llm/chat` | **Legacy** — bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
 | GET | `/llm/health` | **Legacy** — provider klienta (`fake` / `openai` / `gemini`) |
 | GET | `/health` | Healthcheck (`{ status: "healthy" }`) |
@@ -43,9 +51,11 @@ Router `/users` jest zarejestrowany, ale nie ma jeszcze endpointów.
 
 **LLM:** `/chat/` woła Gemini bezpośrednio (`app/routes/chat.py`, env `GEMINI_API_KEY`). Pakiet `app/llm/` (klient `fake|openai|gemini`, prompt opiekuna) i router `app/routes/llm.py` to **legacy** — działają (`LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`), ale nie rozwijamy ich.
 
-Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProject`, `ProposalOfNewProject`, `Benefice`, `ProjectBenefices`, `ChatHistory`, `GrantCall`, `GrantApplication`.
+Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProject`, `ProposalOfNewProject`, `Benefice`, `ProjectBenefices`, `ChatHistory`, `GrantCall`, `GrantApplication`, `TesterSignup`, `SolutionReview`.
 
 **Kreator pomysłów** (`app/routes/ideas.py`): fiszka to wiersz `ProposalOfNewProject` (`name` = tytuł, `description` = krótki opis) z dopisanymi kolumnami `essence`, `audience`, `stage`, `canvas` (dokładane przy starcie w `_add_missing_columns`); schematy wejścia/wyjścia są lokalne w routerze. Asystent używa `ask_llm` z `routes/chat.py` (te same `LLM_*`). Wizualizacja to SVG z modelu tekstowego — API przepuszcza tylko pojedynczy `<svg>` bez skryptów / linków / obrazów, FE renderuje go wyłącznie w `<img>` (data URI). Pola canvy: `IDEA_CANVAS_KEYS` w `models.py` (etykiety w `apps/web/src/lib/ideas.ts`).
+
+**Tester innowacji** (`app/routes/testing.py`): cel zgłoszenia / opinii to para `target_kind` + `target_id` (innowacja z biblioteki albo fiszka o statusie `approved`) — bez klucza obcego, więc usunięcie fiszki sprząta jej zgłoszenia i opinie w `delete_idea`. Niezatwierdzona fiszka → 404.
 
 ## Auth i role
 

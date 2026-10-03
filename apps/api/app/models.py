@@ -467,3 +467,50 @@ class GrantApplicationPublic(SQLModel):
     submitted_at: str | None = None
     author_name: str | None = None  # tylko w widoku admina
     author_email: str | None = None
+
+
+class TestTargetKind(str, enum.Enum):
+    INNOVATION = "innowacja"  # ActualProject — Biblioteka Innowacji
+    IDEA = "pomysl"  # ProposalOfNewProject — zatwierdzona fiszka z Kreatora
+
+
+TESTER_MOTIVATION_MAX = 1000
+REVIEW_TEXT_MAX = 2000
+
+
+class TesterSignup(SQLModel, table=True):
+    """Zgłoszenie chęci udziału w testach rozwiązania — decyzję podejmuje admin.
+
+    Jedna osoba może zgłosić się do tego samego rozwiązania wiele razy (kolejne tury testów).
+    """
+
+    __tablename__: str = "tester_signups"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    target_kind: TestTargetKind = Field(index=True)
+    # id innowacji albo fiszki — zależnie od `target_kind`, dlatego bez klucza obcego
+    target_id: uuid.UUID = Field(index=True)
+    motivation: str = Field(default="", sa_type=Text)
+    status: StatusEnum = Field(default=StatusEnum.PENDING, index=True)
+    created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+
+
+class SolutionReview(SQLModel, table=True):
+    """Opinia o rozwiązaniu: ocena, informacja zwrotna i propozycja usprawnień.
+
+    Jedna na osobę i rozwiązanie — ponowne wysłanie ją aktualizuje.
+    """
+
+    __tablename__: str = "solution_reviews"
+    __table_args__ = (UniqueConstraint("author_id", "target_kind", "target_id"),)
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    author_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    target_kind: TestTargetKind = Field(index=True)
+    target_id: uuid.UUID = Field(index=True)
+    rating: int = Field(ge=1, le=5)
+    feedback: str = Field(default="", sa_type=Text)
+    improvement: str = Field(default="", sa_type=Text)
+    created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now().isoformat())

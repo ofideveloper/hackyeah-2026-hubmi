@@ -856,3 +856,145 @@ export async function fetchGrantApplications(
     }),
   );
 }
+
+// --- Tester innowacji (`apps/api/app/routes/testing.py`) ---
+
+/** `innowacja` = Biblioteka Innowacji, `pomysl` = zatwierdzona fiszka z Kreatora. */
+export type TestTargetKind = "innowacja" | "pomysl";
+
+export type TestSolution = {
+  kind: TestTargetKind;
+  id: string;
+  name: string;
+  summary: string;
+  category_name: string | null;
+  rating_avg: number | null;
+  reviews_count: number;
+  testers_count: number;
+};
+
+export type SolutionReviewInput = {
+  rating: number;
+  feedback: string;
+  improvement: string;
+};
+
+export type SolutionReview = SolutionReviewInput & {
+  id: string;
+  target_kind: TestTargetKind;
+  target_id: string;
+  target_name: string | null;
+  author_name: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminSolutionReview = SolutionReview & {
+  author_full_name: string | null;
+  author_email: string | null;
+};
+
+export type TesterSignup = {
+  id: string;
+  target_kind: TestTargetKind;
+  target_id: string;
+  target_name: string | null;
+  motivation: string;
+  status: IdeaStatus;
+  created_at: string;
+};
+
+export type AdminTesterSignup = TesterSignup & {
+  tester_full_name: string | null;
+  tester_email: string | null;
+};
+
+export type MyTesting = { signups: TesterSignup[]; reviews: SolutionReview[] };
+
+type TestTarget = Pick<TestSolution, "kind" | "id">;
+
+function solutionUrl(target: TestTarget): string {
+  return `${API_BASE}/testing/solutions/${target.kind}/${target.id}`;
+}
+
+async function deleteOrThrow(token: string, url: string): Promise<void> {
+  const res = await fetch(url, { method: "DELETE", headers: authHeaders(token) });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+}
+
+export async function fetchTestSolutions(): Promise<TestSolution[]> {
+  return jsonOrThrow(await fetch(`${API_BASE}/testing/solutions`, { cache: "no-store" }));
+}
+
+export async function fetchSolutionReviews(target: TestTarget): Promise<SolutionReview[]> {
+  return jsonOrThrow(await fetch(`${solutionUrl(target)}/reviews`, { cache: "no-store" }));
+}
+
+export async function fetchMyTesting(token: string): Promise<MyTesting> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/testing/mine`, { headers: authHeaders(token), cache: "no-store" }),
+  );
+}
+
+export async function createTesterSignup(
+  token: string,
+  target: TestTarget,
+  motivation: string,
+): Promise<TesterSignup> {
+  return jsonOrThrow(
+    await fetch(`${solutionUrl(target)}/signups`, jsonRequest(token, "POST", { motivation })),
+  );
+}
+
+export async function withdrawTesterSignup(token: string, signupId: string): Promise<void> {
+  return deleteOrThrow(token, `${API_BASE}/testing/signups/${signupId}`);
+}
+
+export async function saveSolutionReview(
+  token: string,
+  target: TestTarget,
+  payload: SolutionReviewInput,
+): Promise<SolutionReview> {
+  return jsonOrThrow(await fetch(`${solutionUrl(target)}/review`, jsonRequest(token, "PUT", payload)));
+}
+
+export async function deleteSolutionReview(token: string, target: TestTarget): Promise<void> {
+  return deleteOrThrow(token, `${solutionUrl(target)}/review`);
+}
+
+export async function fetchAdminTesterSignups(token: string): Promise<AdminTesterSignup[]> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/admin/testing/signups`, {
+      headers: authHeaders(token),
+      cache: "no-store",
+    }),
+  );
+}
+
+export async function setTesterSignupStatus(
+  token: string,
+  signupId: string,
+  status: IdeaStatus,
+): Promise<AdminTesterSignup> {
+  return jsonOrThrow(
+    await fetch(
+      `${API_BASE}/admin/testing/signups/${signupId}`,
+      jsonRequest(token, "PATCH", { status }),
+    ),
+  );
+}
+
+export async function fetchAdminSolutionReviews(token: string): Promise<AdminSolutionReview[]> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/admin/testing/reviews`, {
+      headers: authHeaders(token),
+      cache: "no-store",
+    }),
+  );
+}
+
+export async function deleteAdminSolutionReview(token: string, reviewId: string): Promise<void> {
+  return deleteOrThrow(token, `${API_BASE}/admin/testing/reviews/${reviewId}`);
+}

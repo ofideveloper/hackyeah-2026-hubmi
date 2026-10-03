@@ -1207,3 +1207,37 @@ body {
   outline: 2px solid var(--accent-light);
   outline-offset: 2px;
 }
+
+/* —— Tester innowacji —— */
+.rating-star {
+  color: #a16207;
+}
+
+.rating-option {
+  display: inline-flex;
+  cursor: pointer;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  padding: 0.45rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.rating-option:hover {
+  border-color: var(--accent);
+}
+
+.rating-option:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.rating-option:has(input:focus-visible) {
+  outline: 2px solid var(--accent-hover);
+  outline-offset: 2px;
+}

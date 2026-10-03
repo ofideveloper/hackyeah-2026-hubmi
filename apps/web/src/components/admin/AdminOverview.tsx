@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/admin/proposals", label: "Propozycje", hint: "Z czatu → do jednostki" },
   { href: "/admin/reports", label: "Sprawy", hint: "Statusy dla mieszkańców" },
   { href: "/admin/knowledge", label: "Zasobnik wiedzy", hint: "Raporty, materiały, biblioteka" },
+  { href: "/admin/testing", label: "Zgłoszenia testerów", hint: "Przyjmij / odrzuć testerów, opinie" },
   { href: "/admin/trends", label: "Trendy potrzeb", hint: "Potrzeby według obszarów" },
   { href: "/admin/users", label: "Użytkownicy", hint: "Konta w systemie" },
 ] as const;

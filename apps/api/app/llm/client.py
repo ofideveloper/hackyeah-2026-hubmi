@@ -47,6 +47,51 @@ _STOPWORDS = {
     "projekt",
     "projekty",
     "o",
+    # Częste spójniki / zaimki / boilerplate czatu — nie mogą „trzymać” scoringu
+    "dla",
+    "oraz",
+    "albo",
+    "ale",
+    "tez",
+    "juz",
+    "tylko",
+    "bardzo",
+    "mojej",
+    "moje",
+    "swojej",
+    "swoje",
+    "swoim",
+    "tej",
+    "tym",
+    "ktore",
+    "ktora",
+    "ktory",
+    "gminy",
+    "gmina",
+    "okolicy",
+    "okolica",
+    "problem",
+    "problemy",
+    "zgloszenie",
+    "zglosic",
+    "szukam",
+    "gotowe",
+    "gotowego",
+    "rozwiazanie",
+    "rozwiazania",
+    "rozwiazan",
+    "katalog",
+    "innowacja",
+    "innowacji",
+    "potrzebuje",
+    "wsparcia",
+    "wsparcie",
+    "dziecka",
+    "dzieci",
+    "osoby",
+    "osob",
+    "krakowie",
+    "krakow",
 }
 
 _GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
@@ -433,7 +478,15 @@ def _normalize(text: str) -> str:
 
 
 def _tokens(text: str) -> set[str]:
-    return {w for w in _normalize(text).split() if len(w) >= 3 and w not in _STOPWORDS}
+    return {w for w in _normalize(text).split() if len(w) >= 4 and w not in _STOPWORDS}
+
+
+def _stem_hit(user_tokens: set[str], word: str) -> bool:
+    """Czy token usera dzieli sensowny rdzeń ze słowem projektu (min. 5 znaków)."""
+    if len(word) < 5 or word in _STOPWORDS:
+        return False
+    stem = word[:5]
+    return any(len(ut) >= 5 and (ut.startswith(stem) or stem.startswith(ut[:5])) for ut in user_tokens)
 
 
 def _score_project(user_text: str, project: dict[str, str]) -> int:
@@ -446,6 +499,9 @@ def _score_project(user_text: str, project: dict[str, str]) -> int:
         return 0
 
     score = 0
+    user_tokens = _tokens(user_text)
+    if not user_tokens and name_norm not in user_norm:
+        return 0
 
     if name_norm and name_norm in user_norm:
         score += 120
@@ -456,35 +512,24 @@ def _score_project(user_text: str, project: dict[str, str]) -> int:
     for word in name_norm.split():
         if len(word) < 4 or word in _STOPWORDS:
             continue
-        stem = word[: max(4, len(word) - 1)]
-        if stem in user_norm or word in user_norm:
+        if word in user_norm or word in user_tokens:
             score += 70
-        elif any(
-            len(ut) >= 4 and (ut.startswith(stem[:4]) or stem.startswith(ut[:4]))
-            for ut in user_norm.split()
-        ):
+        elif _stem_hit(user_tokens, word):
             score += 55
 
-    user_tokens = _tokens(user_text)
     desc_tokens = _tokens(desc_norm)
     unit_tokens = _tokens(unit_norm)
-    score += 12 * len(user_tokens & desc_tokens)
-    score += 8 * len(user_tokens & unit_tokens)
+    exact_desc = user_tokens & desc_tokens
+    exact_unit = user_tokens & unit_tokens
+    score += 16 * len(exact_desc)
+    score += 8 * len(exact_unit)
 
-    # Silne słowa z opisu (autyzm, spektrum, …) — nie tylko dokładny token
+    # Silne słowa z opisu — tylko dłuższe rdzenie (unika „rozwiązania”↔„rozwijanie”)
     for pt in desc_tokens:
-        if len(pt) < 5:
+        if len(pt) < 6:
             continue
-        if pt in user_norm or any(
-            len(ut) >= 4 and (ut.startswith(pt[:5]) or pt.startswith(ut[:5]))
-            for ut in user_tokens
-        ):
-            score += 18
-
-    for ut in user_tokens:
-        for pt in _tokens(f"{name_norm} {desc_norm}"):
-            if len(ut) >= 4 and len(pt) >= 4 and (ut.startswith(pt[:4]) or pt.startswith(ut[:4])):
-                score += 6
+        if pt in user_norm or _stem_hit(user_tokens, pt):
+            score += 20
 
     return score
 

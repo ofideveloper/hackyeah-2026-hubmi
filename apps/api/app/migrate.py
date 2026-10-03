@@ -26,3 +26,16 @@ def ensure_sqlite_schema(engine: Engine) -> None:
             # Starsza wersja miała `title` zamiast `name`
             if "title" in cols and "name" not in cols:
                 conn.execute(text("ALTER TABLE projects RENAME COLUMN title TO name"))
+
+        if "reports" in tables:
+            cols = {
+                row[1]
+                for row in conn.execute(text("PRAGMA table_info(reports)")).fetchall()
+            }
+            if "status" not in cols:
+                conn.execute(
+                    text(
+                        "ALTER TABLE reports ADD COLUMN status VARCHAR(32) "
+                        "NOT NULL DEFAULT 'nowe'"
+                    )
+                )

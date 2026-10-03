@@ -177,8 +177,7 @@ def _fake_complete(user_text: str, system_text: str) -> str:
     if not projects:
         return (
             f"Rozumiem: „{user_text[:200]}”. "
-            "Nie mam jeszcze projektów w bazie. Poproś admina o dodanie projektu do jednostki "
-            "albo złóż zgłoszenie w formularzu poniżej."
+            "Na razie nie mam podpowiedzi z bazy — opisz sprawę dokładniej, a pomyślimy razem nad kolejnym krokiem."
         )
 
     ranked = sorted(
@@ -190,40 +189,39 @@ def _fake_complete(user_text: str, system_text: str) -> str:
 
     if matches:
         lines = [
-            f"Znalazłem trafienie dla: „{user_text[:220]}”.",
+            f"Dzięki — wygląda na to, że chodzi o: „{user_text[:220]}”.",
             "",
-            "Informacja zwrotna:",
+            "Oto co mogę Ci zaproponować:",
         ]
-        for project, score in matches:
+        for project, _score in matches:
             lines.extend(
                 [
                     "",
                     f"**{project['name']}**",
-                    f"• Jednostka: {project['unit']}",
-                    f"• Opis: {project['description']}",
-                    f"• Trafność: {score}",
+                    f"Opiekun / jednostka: {project['unit']}",
+                    f"{project['description']}",
                 ]
             )
         lines.extend(
             [
                 "",
-                "Kolejny krok: jeśli to ta sprawa — złóż zgłoszenie do tej jednostki poniżej "
-                "albo doprecyzuj, czego dokładnie potrzebujesz.",
+                "Jeśli to brzmi sensownie — napisz, czy chcesz iść w tę stronę. "
+                "Jeśli nie, opisz sprawę inaczej, a pomyślimy dalej.",
             ]
         )
         return "\n".join(lines)
 
     lines = [
-        f"Nie znalazłem projektu po słowie kluczowym „{user_text[:120]}”.",
+        f"Jeszcze nie mam pewnego kierunku dla „{user_text[:120]}”.",
         "",
-        "Dostępne projekty (wpisz fragment nazwy, np. pierwsze słowo):",
+        "Możemy rozważyć m.in.:",
     ]
     for project in projects[:8]:
         lines.append(f"• **{project['name']}** — {project['unit']}")
     lines.extend(
         [
             "",
-            "Możesz też opisać potrzebę własnymi słowami albo od razu utworzyć zgłoszenie.",
+            "Albo po prostu opisz sytuację własnymi słowami — razem pomyślimy nad rozwiązaniem.",
         ]
     )
     return "\n".join(lines)

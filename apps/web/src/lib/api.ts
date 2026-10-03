@@ -37,6 +37,7 @@ export type Project = {
 };
 
 export type ReportKind = "problem" | "wydarzenie" | "informacja";
+export type ReportStatus = "nowe" | "w_toku" | "zakonczone";
 
 export type Report = {
   id: number;
@@ -44,6 +45,7 @@ export type Report = {
   unit_id: number;
   unit_name: string | null;
   kind: ReportKind | string;
+  status: ReportStatus | string;
   title: string;
   description: string;
   created_at: string;
@@ -279,22 +281,31 @@ export async function fetchMyReports(token: string): Promise<Report[]> {
   return res.json() as Promise<Report[]>;
 }
 
-export async function createReport(
+export async function fetchAdminReports(token: string): Promise<Report[]> {
+  const res = await fetch(`${API_BASE}/admin/reports`, {
+    headers: authHeaders(token),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  return res.json() as Promise<Report[]>;
+}
+
+export async function updateReportStatus(
   token: string,
-  payload: {
-    unit_id: number;
-    kind: ReportKind;
-    title: string;
-    description: string;
-  },
+  reportId: number,
+  status: ReportStatus,
 ): Promise<Report> {
-  const res = await fetch(`${API_BASE}/reports`, {
-    method: "POST",
+  const res = await fetch(`${API_BASE}/admin/reports/${reportId}`, {
+    method: "PATCH",
     headers: {
       ...authHeaders(token),
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ status }),
   });
 
   if (!res.ok) {

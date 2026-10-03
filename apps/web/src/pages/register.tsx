@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 
+import { SiteHeader } from "@/components/SiteHeader";
 import { registerUser } from "@/lib/api";
 
 export default function RegisterPage() {
@@ -41,78 +42,82 @@ export default function RegisterPage() {
       <Head>
         <title>Załóż konto · HubMI</title>
       </Head>
-      <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-6 py-12">
-        <form onSubmit={onSubmit} className="surface animate-fade-up w-full max-w-md p-8">
-          <p className="font-display text-sm font-semibold tracking-wide text-[var(--accent)]">
-            HubMI
-          </p>
-          <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight">
-            Załóż konto
-          </h1>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Dołącz do jednostki i zaczynaj zgłaszać pomysły oraz sprawy.
-          </p>
-
-          <div className="mt-7 space-y-4">
-            <label className="block text-sm">
-              <span className="mb-1.5 block text-[var(--muted)]">Imię i nazwisko</span>
-              <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="field"
-                autoComplete="name"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="mb-1.5 block text-[var(--muted)]">Email</span>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="field"
-                autoComplete="email"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="mb-1.5 block text-[var(--muted)]">Hasło</span>
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="field"
-                autoComplete="new-password"
-              />
-            </label>
-          </div>
-
-          {error && (
-            <p className="mt-4 text-sm text-[var(--danger)]" role="alert">
-              {error}
-            </p>
-          )}
-          {success && (
-            <p className="mt-4 text-sm text-[var(--accent)]">Konto utworzone. Przekierowanie…</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || success}
-            className="btn-primary mt-6 w-full"
-          >
-            {loading ? "Zapisywanie…" : "Załóż konto"}
-          </button>
-
-          <p className="mt-5 text-center text-sm text-[var(--muted)]">
-            Masz już konto?{" "}
-            <Link href="/login" className="text-[var(--accent)] hover:underline">
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader
+          actions={
+            <Link href="/login" className="btn-ghost">
               Zaloguj się
             </Link>
-          </p>
-        </form>
-      </main>
+          }
+        />
+        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center px-6 py-12">
+          <form onSubmit={onSubmit} className="surface animate-fade-up w-full max-w-md p-8">
+            <h1 className="font-display text-2xl font-semibold tracking-tight">Załóż konto</h1>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Dołącz i zacznij rozmowę ze społecznym opiekunem.
+            </p>
+
+            <div className="mt-7 space-y-4">
+              <label className="block text-sm">
+                <span className="mb-1.5 block text-[var(--muted)]">Imię i nazwisko</span>
+                <input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="field"
+                  autoComplete="name"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1.5 block text-[var(--muted)]">Email</span>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="field"
+                  autoComplete="email"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1.5 block text-[var(--muted)]">Hasło</span>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="field"
+                  autoComplete="new-password"
+                />
+              </label>
+            </div>
+
+            {error && (
+              <p className="mt-4 text-sm text-[var(--danger)]" role="alert">
+                {error}
+              </p>
+            )}
+            {success && (
+              <p className="mt-4 text-sm text-[var(--accent)]">Konto utworzone. Przekierowanie…</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || success}
+              className="btn-primary mt-6 w-full"
+            >
+              {loading ? "Zapisywanie…" : "Załóż konto"}
+            </button>
+
+            <p className="mt-5 text-center text-sm text-[var(--muted)]">
+              Masz już konto?{" "}
+              <Link href="/login" className="text-[var(--accent)] hover:underline">
+                Zaloguj się
+              </Link>
+            </p>
+          </form>
+        </main>
+      </div>
     </>
   );
 }

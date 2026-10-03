@@ -25,8 +25,10 @@ Stack: FastAPI w `apps/api` (`app/main.py`, `app/routers/`, `app/models.py`, …
 | DELETE | `/admin/projects/{id}` | Admin — usuń projekt |
 | GET | `/units` | Lista jednostek (zalogowany) |
 | GET | `/projects` | Lista projektów (`?unit_id=` opcjonalnie) |
-| GET | `/reports` | Moje zgłoszenia |
-| POST | `/reports` | Nowe zgłoszenie (`unit_id`, `kind`, `title`, `description`) |
+| GET | `/reports` | Moje sprawy + status (user) |
+| POST | `/reports` | Tworzenie sprawy (API / AI — nie UI mieszkańca) |
+| GET | `/admin/reports` | Wszystkie sprawy |
+| PATCH | `/admin/reports/{id}` | Zmiana statusu (`nowe` \| `w_toku` \| `zakonczone`) |
 | POST | `/chat` | Asystent UI → buduje kontekst projektów → woła bypass LLM |
 | POST | `/llm/chat` | Bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
 | GET | `/llm/health` | Provider aktualnego klienta (`fake` / `http`) |

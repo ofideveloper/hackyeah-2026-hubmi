@@ -3,17 +3,15 @@
 ## Nazwa i one-liner
 
 - **Nazwa:** HubMI
-- **One-liner:** PWA łącząca mieszkańców ze zgłoszeniami potrzeb a jednostki organizacyjne z ich terenem i kompetencjami — z AI po środku (kolejny krok).
+- **One-liner:** PWA, w której mieszkaniec rozmawia ze społecznym opiekunem, a jednostki i projekty działają „pod spodem”.
 
 ## Opis (HackYeah)
 
 Aplikacja webowa (PWA) z dwoma perspektywami:
 
-1. **Admin** — tworzy **jednostki organizacyjne** (teren + kompetencje) oraz ich **projekty** (nazwa + opis).
-2. **Mieszkaniec (user)** — tworzy **zgłoszenia** do jednostek; przegląda projekty.
-3. **Asystent na `/app`** — uproszczony czat (UI z aivoxpop, bez export/save); dopasowuje potrzeby do projektów. Pełny komponent AI można podmienić później.
-
-Obecny MVP: jednostki + projekty + zgłoszenia + czat (bez zapisu rozmowy).
+1. **Admin** — jednostki (teren + kompetencje), projekty, statusy spraw mieszkańców.
+2. **Mieszkaniec** — czat ze **społecznym opiekunem** + podgląd **statusów spraw** (bez formularzy, bez listy projektów).
+3. **AI** — prowadzi rozmowę; może sugerować projekty / otwierać sprawy (under the hood). UI nie zmusza usera do tych akcji.
 
 ## Copy na UI
 
@@ -25,8 +23,10 @@ Obecny MVP: jednostki + projekty + zgłoszenia + czat (bez zapisu rozmowy).
 | Login | Tytuł | Zaloguj się |
 | Login | Support | Wróć do zgłoszeń i pomysłów w swojej jednostce. |
 | Register | Tytuł | Załóż konto |
-| App `/app` | Intro | Wybierz jednostkę wg terenu i kompetencji, potem zgłoś potrzebę. |
-| Admin `/admin` | Intro | Jednostki, kompetencje i zakres terytorialny |
+| App `/app` | Czat | Witaj, {username} · Twój społeczny opiekun |
+| App `/app` | Czat support | Opowiedz, co Cię zajmuje — razem pomyślimy nad rozwiązaniem. |
+| App `/app` | Sprawy | Statusy aktualizuje zespół — Ty tylko śledzisz postęp. |
+| Admin `/admin` | Intro | Jednostki, projekty, statusy spraw |
 
 Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stacku (monorepo, API, JWT).
 
@@ -34,9 +34,9 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 
 | Persona | Cel | Notatki |
 |---------|-----|---------|
-| Mieszkaniec (`user`) | Tworzy zgłoszenia do jednostek wg odpowiedzialności | `/login` → `/app` |
-| Admin | Tworzy jednostki i projekty | `/admin` (link z `/app` jeśli role=admin) |
-| AI / czat | Dopasowanie do projektów na `/app` | UI: `AssistantChat`; bez export/save; logika matching do podmiany |
+| Mieszkaniec (`user`) | Rozmowa + podgląd statusów spraw | `/login` → `/app` (bez CRUD zgłoszeń/projektów) |
+| Admin | Jednostki, projekty, zmiana statusów | `/admin` |
+| AI / czat | Prowadzi rozmowę; może sugerować projekty / tworzyć sprawy | `AssistantChat` + bypass `/llm` |
 
 ## Zakres HackYeah (in / out)
 
@@ -44,37 +44,33 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 
 - PWA (web)
 - Auth / authz (`admin` / `user`)
-- Jednostki: nazwa, teren, kompetencje (CRUD admin)
-- Projekty jednostki: nazwa + opis (CRUD admin; lista dla usera)
-- Zgłoszenia mieszkańca: wybór jednostki + rodzaj + opis
-- Auth JWT + seed admina
-- Panel admina (stats, jednostki, projekty, użytkownicy)
+- Jednostki + projekty (admin)
+- Czat mieszkańca (bez export/save)
+- Sprawy: status `nowe` / `w_toku` / `zakonczone` (admin zmienia; user czyta)
+- API tworzenia spraw (pod AI/system), nie UI mieszkańca
 
 **Out of scope (na teraz)**
 
 - Publiczne wystawianie FastAPI na Vercel
-- Export / import / zapis rozmowy w czacie
-- Pełny LLM — obecnie matching słów kluczowych; gotowy komponent AI do podmiany
-- Mapa GIS / precyzyjne granice terytorium
+- Export / import / zapis rozmowy
+- Pełny LLM — fake bypass; prawdziwy agent do podmiany
+- Mapa GIS
 
 ## Słownik domenowy
 
 | Termin | Znaczenie |
 |--------|-----------|
-| Jednostka | Org unit z terenem i kompetencjami |
-| Teren odpowiedzialności | Obszar, za który odpowiada jednostka (tekst) |
-| Kompetencje | Zakres spraw, które jednostka obsługuje |
-| Zgłoszenie | Problem, wydarzenie lub informacja skierowana do jednostki |
-| Projekt | Inicjatywa jednostki (nazwa + opis) pod przyszłe dopasowanie osób |
+| Społeczny opiekun | Persona czatu dla mieszkańca |
+| Jednostka | Org unit z terenem i kompetencjami (admin) |
+| Projekt | Inicjatywa jednostki — under the hood / sugerowana przez AI |
+| Sprawa | Zapis potrzeby; status widoczny dla mieszkańca |
 | BFF | Next.js `/api/*` proxy do internal FastAPI |
-| Binding `API_URL` | Wewnętrzny URL serwisu `api` na Vercel |
 
 ## Decyzje produktowe (log)
 
 | Data | Decyzja | Dlaczego |
 |------|---------|----------|
-| 2026-10 | API internal na Vercel | Bezpieczeństwo — brak publicznego backendu |
-| 2026-10 | Landing = copy produktowe, nie techniczne | Aplikacja hackathonowa prezentowana użytkownikowi końcowemu |
-| 2026-10 | Login = mieszkaniec (`/login` → `/app`), nie panel admina | HubMI łączy mieszkańca z jednostkami; admin osobno |
-| 2026-10 | MVP: jednostki + zgłoszenia bez AI | Najpierw flow odpowiedzialności; AI w kolejnym kroku |
-| 2026-10 | Projekty bez czatu | Dane projektów najpierw; czat AI jako osobny komponent |
+| 2026-10 | API internal na Vercel | Bezpieczeństwo |
+| 2026-10 | Login = mieszkaniec, nie panel admina | Produkt dla mieszkańca |
+| 2026-10 | User bez formularza zgłoszeń i listy projektów | Fajna platforma rozmowy; AI/admin under the hood |
+| 2026-10 | Admin zmienia statusy spraw | User tylko je widzi |

@@ -108,10 +108,17 @@ class LLMChatResponse(BaseModel):
 
 
 class ReportCreate(BaseModel):
+    """Tworzenie sprawy — na razie API (AI / system); nie UI mieszkańca."""
+
     unit_id: int
     kind: str = Field(pattern="^(problem|wydarzenie|informacja)$")
     title: str = Field(min_length=2, max_length=255)
     description: str = Field(min_length=2, max_length=5000)
+    author_id: int | None = None
+
+
+class ReportStatusUpdate(BaseModel):
+    status: str = Field(pattern="^(nowe|w_toku|zakonczone)$")
 
 
 class ReportPublic(BaseModel):
@@ -122,6 +129,7 @@ class ReportPublic(BaseModel):
     unit_id: int
     unit_name: str | None = None
     kind: str
+    status: str = "nowe"
     title: str
     description: str
     created_at: datetime

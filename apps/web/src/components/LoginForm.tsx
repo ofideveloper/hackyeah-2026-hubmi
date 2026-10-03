@@ -30,12 +30,9 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="surface animate-fade-up w-full max-w-md p-8">
-      <p className="font-display text-sm font-semibold tracking-wide text-[var(--accent)]">
-        HubMI
-      </p>
-      <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight">Zaloguj się</h1>
+      <h1 className="font-display text-2xl font-semibold tracking-tight">Zaloguj się</h1>
       <p className="mt-2 text-sm text-[var(--muted)]">
-        Wróć do zgłoszeń i pomysłów w swojej jednostce.
+        Wróć do rozmowy ze społecznym opiekunem.
       </p>
 
       <div className="mt-7 space-y-4">

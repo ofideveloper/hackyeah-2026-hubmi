@@ -18,6 +18,12 @@ class ReportKind(str, Enum):
     INFO = "informacja"
 
 
+class ReportStatus(str, Enum):
+    NEW = "nowe"
+    IN_PROGRESS = "w_toku"
+    DONE = "zakonczone"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -75,7 +81,7 @@ class Project(Base):
 
 
 class Report(Base):
-    """Zgłoszenie mieszkańca skierowane do jednostki wg odpowiedzialności."""
+    """Sprawa mieszkańca — tworzy AI; status zmienia admin."""
 
     __tablename__ = "reports"
 
@@ -83,6 +89,11 @@ class Report(Base):
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     unit_id: Mapped[int] = mapped_column(ForeignKey("organizational_units.id"), index=True)
     kind: Mapped[str] = mapped_column(String(32), index=True)
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default=ReportStatus.NEW.value,
+        index=True,
+    )
     title: Mapped[str] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(

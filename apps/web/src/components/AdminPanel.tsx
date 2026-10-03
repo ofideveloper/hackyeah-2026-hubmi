@@ -7,18 +7,28 @@ import {
   createUnit,
   deleteProject,
   deleteUnit,
+  fetchAdminReports,
   fetchAdminStats,
   fetchAdminUsers,
   fetchMe,
   fetchProjects,
   fetchUnits,
   updateProject,
+  updateReportStatus,
   type AdminStats,
   type OrganizationalUnit,
   type Project,
+  type Report,
+  type ReportStatus,
   type User,
 } from "@/lib/api";
 import { clearToken, getToken } from "@/lib/auth";
+
+const REPORT_STATUSES: { value: ReportStatus; label: string }[] = [
+  { value: "nowe", label: "Przyjęte" },
+  { value: "w_toku", label: "W trakcie" },
+  { value: "zakonczone", label: "Zakończone" },
+];
 
 export function AdminPanel() {
   const router = useRouter();
@@ -27,6 +37,8 @@ export function AdminPanel() {
   const [users, setUsers] = useState<User[]>([]);
   const [units, setUnits] = useState<OrganizationalUnit[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [reportError, setReportError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -55,8 +67,9 @@ export function AdminPanel() {
       fetchAdminUsers(token),
       fetchUnits(token),
       fetchProjects(token),
+      fetchAdminReports(token),
     ])
-      .then(([me, nextStats, nextUsers, nextUnits, nextProjects]) => {
+      .then(([me, nextStats, nextUsers, nextUnits, nextProjects, nextReports]) => {
         if (me.role !== "admin") {
           throw new Error("Brak uprawnień administratora");
         }
@@ -65,6 +78,7 @@ export function AdminPanel() {
         setUsers(nextUsers);
         setUnits(nextUnits);
         setProjects(nextProjects);
+        setReports(nextReports);
         if (nextUnits[0]) setProjectUnitId(String(nextUnits[0].id));
       })
       .catch((err: unknown) => {
@@ -183,6 +197,19 @@ export function AdminPanel() {
       setProjectError(null);
     } catch (err) {
       setProjectError(err instanceof Error ? err.message : "Nie udało się przydzielić projektu");
+    }
+  }
+
+  async function onChangeReportStatus(reportId: number, status: ReportStatus) {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const updated = await updateReportStatus(token, reportId, status);
+      setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));
+      setReportError(null);
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : "Nie udało się zmienić statusu");
     }
   }
 
@@ -397,6 +424,54 @@ export function AdminPanel() {
                 >
                   Usuń
                 </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="text-base font-semibold">Sprawy mieszkańców</h2>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Sprawy otwiera AI / system — Ty ustawiasz status widoczny dla mieszkańca.
+        </p>
+        {reportError && (
+          <p className="mt-3 text-sm text-[var(--danger)]" role="alert">
+            {reportError}
+          </p>
+        )}
+        <ul className="mt-4 space-y-3">
+          {reports.length === 0 && (
+            <li className="text-sm text-[var(--muted)]">Brak spraw w systemie.</li>
+          )}
+          {reports.map((report) => (
+            <li key={report.id} className="surface p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{report.title}</p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    {report.unit_name ?? `Jednostka #${report.unit_id}`} · user #{report.author_id}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+                    {report.description}
+                  </p>
+                </div>
+                <label className="block min-w-[10rem] text-sm">
+                  <span className="mb-1.5 block text-[var(--muted)]">Status</span>
+                  <select
+                    value={report.status ?? "nowe"}
+                    onChange={(e) =>
+                      void onChangeReportStatus(report.id, e.target.value as ReportStatus)
+                    }
+                    className="field"
+                  >
+                    {REPORT_STATUSES.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
             </li>
           ))}

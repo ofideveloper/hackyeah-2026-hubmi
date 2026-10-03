@@ -11,13 +11,13 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 | `/` | Landing (produkt / social) |
 | `/login` | Logowanie użytkownika → `/app` |
 | `/register` | Rejestracja → `/login` |
-| `/app` | Dom mieszkańca: formularz zgłoszenia + lista |
-| `/admin` | Panel admina: jednostki (teren/kompetencje) + użytkownicy |
+| `/app` | Dom mieszkańca: czat + statusy spraw (bez formularzy) |
+| `/admin` | Jednostki, projekty, statusy spraw, użytkownicy |
 | `/admin/login` | Redirect → `/login` |
 | `/api/*` | BFF → FastAPI (nie UI) |
 
-Flow: admin dodaje jednostkę i projekty → mieszkaniec na `/app` widzi asystenta + zgłoszenia.
-Czat: `AssistantChat` (UI inspirowane aivoxpop, bez export/import/save). Backend `/chat` = prosty matching słów kluczowych do projektów — do podmiany na gotowy komponent AI.
+Flow usera: rozmowa ze społecznym opiekunem + podgląd statusów.
+Projekty / tworzenie spraw: under the hood (AI / API), nie UI mieszkańca.
 
 ## Architektura wywołań API
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 import uuid
 
@@ -15,11 +16,16 @@ from ..config import get_settings
 from ..dependencies.auth import OptionalUserDep
 from ..dependencies.db import SessionDep
 from ..llm.client import _score_project
+from ..llm.modes import VALID_MODES, detect_chat_mode, mode_instructions
 from ..llm.prompts import load_prompt
 from ..llm.suggestions import (
     extract_location_request,
     extract_new_project_draft,
+    extract_new_report_draft,
     extract_project_ids,
+    extract_report_offer,
+    is_report_confirm,
+    synthesize_report_draft,
 )
 from ..models import (
     ChatHistory,
@@ -27,6 +33,10 @@ from ..models import (
     ProjectProposal,
     ProjectProposalPublic,
     ProjectProposalStatus,
+    Report,
+    ReportKind,
+    ReportPublic,
+    ReportStatus,
     UnitProject,
     UnitProjectPublic,
     User,
@@ -94,13 +104,18 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     chat_id: uuid.UUID | None = None
     history: list[ChatHistoryMessage] = Field(default_factory=list, max_length=40)
+    # Hint z chipa UI: report | catalog | intake | clarify
+    mode: str | None = Field(default=None, max_length=32)
 
 
 class ChatReply(BaseModel):
     reply: str
     chat_id: uuid.UUID
+    mode: str = "clarify"
     suggested_projects: list[UnitProjectPublic] = Field(default_factory=list)
     project_proposal: ProjectProposalPublic | None = None
+    created_report: ReportPublic | None = None
+    report_offer: bool = False
     location_request: str | None = Field(default=None, pattern="^(area|gps)$")
 
 
@@ -119,6 +134,31 @@ def _project_public(
         name=project.name,
         description=project.description,
         created_at=project.created_at,
+    )
+
+
+def _report_public(
+    session: Session,
+    report: Report,
+    units_by_id: dict[uuid.UUID, OrganizationalUnit],
+) -> ReportPublic:
+    unit = units_by_id.get(report.unit_id) if report.unit_id else None
+    author = session.get(User, report.author_id)
+    author_name = None
+    if author is not None:
+        author_name = f"{author.name} {author.surname}".strip() or None
+    return ReportPublic(
+        id=report.id,
+        author_id=report.author_id,
+        author_email=author.email if author else None,
+        author_name=author_name,
+        unit_id=report.unit_id,
+        unit_name=unit.name if unit else None,
+        kind=report.kind,
+        status=report.status,
+        title=report.title,
+        description=report.description,
+        created_at=report.created_at,
     )
 
 
@@ -206,7 +246,8 @@ def _build_system_context(
     units_by_id: dict[uuid.UUID, OrganizationalUnit],
     user: User | None,
     user_message: str,
-    history_blob: str = "",
+    history_blob: str,
+    mode: str,
 ) -> str:
     if user is None:
         who = "gość (niezalogowany — rozmowa z landingu)"
@@ -216,14 +257,17 @@ def _build_system_context(
     match_text = f"{history_blob}\n{user_message}".strip()
     current_ok = _message_has_substance(user_message)
     history_ok = _message_has_substance(history_blob)
-    allow_projects = current_ok or history_ok
+    # Katalog projektów tylko w trybie catalog (+ substancja)
+    allow_projects = mode == "catalog" and (current_ok or history_ok)
 
     lines = [
         load_prompt("caretaker_system"),
         "",
         "---",
-        f"Rozmawiasz z mieszkańcem: {who}.",
-        "Poniżej historia rozmowy (jeśli jest) — używaj jej do osobistego dopasowania.",
+        f"Rozmawiasz z: {who}.",
+        mode_instructions(mode),  # type: ignore[arg-type]
+        "",
+        "Historia rozmowy (jeśli jest) — używaj do kontynuacji, nie pytaj drugi raz o te same fakty.",
         "",
         "Dane systemowe MaloHUB (źródło faktów):",
         "",
@@ -240,22 +284,23 @@ def _build_system_context(
             )
 
     lines.extend(["", "Projekty:"])
-    project_dicts: list[dict[str, str]] = []
 
-    if not allow_projects:
-        lines.append(
-            "(lista projektów ukryta — najpierw ustal konkretny temat rozmowy; "
-            "nie wymyślaj żadnego projektu)"
-        )
-        lines.extend(
-            [
-                "",
-                "UWAGA: brak konkretnego tematu (np. samo „pomóż”). "
-                "Tylko ciepło dopytaj, o co chodzi. Zero nazw projektów, zero markerów.",
-            ]
-        )
+    if mode in {"report", "intake", "clarify"} or not allow_projects:
+        if mode == "report":
+            lines.append(
+                "(katalog PROJECT| ukryty — tryb zgłoszenia; zero sugestii projektów)"
+            )
+        elif mode == "intake":
+            lines.append(
+                "(katalog PROJECT| ukryty — zbierasz nową inicjatywę, nie istniejące projekty)"
+            )
+        else:
+            lines.append(
+                "(lista projektów ukryta — najpierw ustal tryb / temat; zero markerów PROJECT|)"
+            )
         return "\n".join(lines)
 
+    project_dicts: list[dict[str, str]] = []
     if not projects:
         lines.append("(brak projektów)")
     else:
@@ -303,6 +348,27 @@ def _build_system_context(
                 )
 
     return "\n".join(lines)
+
+
+def _strip_leaked_project_names(reply: str, projects: list[UnitProject]) -> str:
+    """W trybie report/intake usuń dopięte zdania o projektach z katalogu."""
+    if "najbardziej pasuje" not in reply.casefold() and "Poniżej krótka karta" not in reply:
+        # Usuń same nazwy tylko gdy widać typowy dopisek ensure
+        return reply
+    cleaned = reply
+    for project in projects:
+        if project.name and project.name in cleaned:
+            # Odetnij od frazy ensure w dół
+            for marker in (
+                "\n\nZ tego, co mówisz, najbardziej pasuje",
+                "\nZ tego, co mówisz, najbardziej pasuje",
+            ):
+                idx = cleaned.find(marker)
+                if idx != -1:
+                    cleaned = cleaned[:idx].rstrip()
+                    break
+            break
+    return cleaned
 
 
 def _history_messages(payload: ChatRequest) -> list[dict[str, str]]:
@@ -407,6 +473,93 @@ def _persist_proposal(
     return _proposal_public(session, proposal, units_by_id)
 
 
+def _resolve_report_unit(
+    units: list[OrganizationalUnit],
+    units_by_id: dict[uuid.UUID, OrganizationalUnit],
+    preferred: uuid.UUID | None,
+    match_text: str,
+) -> uuid.UUID | None:
+    """Przypisz jednostkę TYLKO przy wyraźnym dopasowaniu kompetencji — bez fallbacku na pierwszą."""
+    if preferred and preferred in units_by_id:
+        unit = units_by_id[preferred]
+        # preferred z LLM też weryfikujemy względem kompetencji, jeśli mamy treść
+        if _unit_competency_score(unit, match_text) >= 2 or not match_text.strip():
+            return preferred
+        # preferred nie pasuje do treści (np. drogi vs ROPS) → brak automatycznego przydziału
+        return None
+    if not units or not match_text.strip():
+        return None
+
+    scored = sorted(
+        ((unit, _unit_competency_score(unit, match_text)) for unit in units),
+        key=lambda item: item[1],
+        reverse=True,
+    )
+    best, score = scored[0]
+    # Próg: co najmniej 2 trafienia tokenów kompetencji/terenu w opisie sprawy
+    if score >= 2:
+        return best.id
+    return None
+
+
+def _unit_competency_score(unit: OrganizationalUnit, match_text: str) -> int:
+    """Ile tokenów z kompetencji/terenu jednostki pasuje do treści zgłoszenia."""
+    norm = match_text.casefold()
+    user_tokens = {
+        t
+        for t in re.findall(r"[a-ząćęłńóśźż0-9]+", norm, flags=re.IGNORECASE)
+        if len(t) >= 4
+    }
+    blob = f"{unit.competencies} {unit.territory}".casefold()
+    # Nazwa jednostki (np. ROPS) NIE wystarczy — inaczej wszystko ląduje w ROPS
+    tokens = [
+        t
+        for t in re.findall(r"[a-ząćęłńóśźż0-9]+", blob, flags=re.IGNORECASE)
+        if len(t) >= 4
+    ]
+    seen: set[str] = set()
+    score = 0
+    for t in tokens:
+        if t in seen:
+            continue
+        seen.add(t)
+        if t in norm:
+            score += 2
+            continue
+        # fleksja: jezdnia ↔ jezdni, dziury ↔ dziura
+        stem = t[: max(4, len(t) - 1)]
+        if any(ut.startswith(stem[:4]) or stem.startswith(ut[:4]) for ut in user_tokens):
+            score += 1
+    return score
+
+
+def _persist_report(
+    session: Session,
+    user: User,
+    units_by_id: dict[uuid.UUID, OrganizationalUnit],
+    unit_id: uuid.UUID | None,
+    title: str,
+    description: str,
+    kind: str,
+) -> ReportPublic:
+    try:
+        report_kind = ReportKind(kind)
+    except ValueError:
+        report_kind = ReportKind.PROBLEM
+    report = Report(
+        author_id=user.id,
+        unit_id=unit_id,
+        kind=report_kind.value if hasattr(report_kind, "value") else report_kind,
+        status=ReportStatus.NEW.value,
+        title=title,
+        description=description,
+    )
+    session.add(report)
+    session.commit()
+    session.refresh(report)
+    return _report_public(session, report, units_by_id)
+
+
 def _persist_chat(
     session: Session,
     chat: ChatHistory | None,
@@ -465,9 +618,14 @@ async def _chat_handler(
 
     history_blob = "\n".join(m["content"] for m in history if m["role"] == "user")
     user_message = payload.message.strip()
+    preferred = payload.mode if payload.mode in VALID_MODES else None
+    # Potwierdzenie CTA zawsze trzyma / włącza tryb report
+    if is_report_confirm(user_message):
+        preferred = "report"
+    mode = detect_chat_mode(user_message, history_blob, preferred)
 
     system = _build_system_context(
-        units, projects, units_by_id, user, user_message, history_blob
+        units, projects, units_by_id, user, user_message, history_blob, mode
     )
     messages = (
         [{"role": "system", "content": system}]
@@ -477,7 +635,7 @@ async def _chat_handler(
 
     try:
         raw_reply = await ask_llm(messages)
-        print(f"Chat response time: {time.time() - start:.2f} seconds")
+        print(f"Chat response time: {time.time() - start:.2f} seconds (mode={mode})")
     except LLMError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -485,39 +643,103 @@ async def _chat_handler(
         ) from exc
 
     reply, draft = extract_new_project_draft(raw_reply)
+    reply, report_draft = extract_new_report_draft(reply)
+    reply, report_offer = extract_report_offer(reply)
     reply, location_request = extract_location_request(reply)
     reply, ids = extract_project_ids(reply)
 
     match_text = f"{history_blob}\n{user_message}".strip()
     allow_match = _message_has_substance(user_message) or _message_has_substance(history_blob)
-    strong = (
-        _strong_project_matches(projects, units_by_id, match_text) if allow_match else []
-    )
 
-    if not allow_match:
+    # Twarde bramki wg trybu — model / scoring nie mogą „przeskoczyć”
+    if mode != "catalog":
         ids = []
+        reply = _strip_leaked_project_names(reply, projects)
+    if mode != "intake":
         draft = None
+    if mode != "report":
+        report_draft = None
+        report_offer = False
+
+    if mode == "clarify":
         location_request = None
         if any(p.name and p.name.casefold() in reply.casefold() for p in projects):
             reply = (
                 "Jasne — jestem tu, żeby pomóc.\n\n"
-                "Napisz proszę krótko, **czego konkretnie potrzebujesz** "
-                "i **gdzie** to się dzieje. Potem dobierzemy sensowny kierunek."
+                "Wybierz proszę ścieżkę: **zgłosić problem**, **szukać gotowego rozwiązania**, "
+                "albo **opisać nowy pomysł** — wtedy poprowadzę Cię dalej."
             )
-    elif not location_request and draft is None:
-        reply, ids = _ensure_project_suggestion(reply, ids, strong, units_by_id)
+
+    if mode == "catalog" and allow_match:
+        strong = _strong_project_matches(projects, units_by_id, match_text)
+        if not location_request:
+            reply, ids = _ensure_project_suggestion(reply, ids, strong, units_by_id)
 
     proposal_public: ProjectProposalPublic | None = None
+    created_report: ReportPublic | None = None
+
+    # Lokalizacja ma pierwszeństwo — nie mieszaj z kartami / zapisami
     if location_request:
         ids = []
         draft = None
-    elif draft is not None:
-        ids = []
+        report_draft = None
+        report_offer = False
+    elif mode == "report":
+        # LLM często „obiecuje” zapis bez markera — po CTA / przy bloku składamy sprawę sami
+        if report_draft is None and (
+            is_report_confirm(user_message)
+            or "zgłoszenie zostało" in reply.casefold()
+            or "zapisałem zgłoszenie" in reply.casefold()
+            or "zapisalam zgloszenie" in reply.casefold()
+            or "zapisałam zgłoszenie" in reply.casefold()
+        ):
+            report_draft = synthesize_report_draft(history_blob, user_message)
+
+        if report_draft is not None:
+            report_offer = False
+            # Treść sprawy (tytuł+opis+historia) — nie przypisuj ROPS „bo jest jedyna”
+            unit_match_text = (
+                f"{report_draft.title}\n{report_draft.description}\n{match_text}"
+            )
+            unit_id = _resolve_report_unit(
+                units, units_by_id, report_draft.unit_id, unit_match_text
+            )
+            if user is None:
+                reply = (
+                    f"{reply.rstrip()}\n\n"
+                    "Żeby zapisać **zgłoszenie** i śledzić status, **załóż konto** "
+                    "albo zaloguj się — wtedy przekażę sprawę dalej."
+                )
+                report_offer = True
+            else:
+                created_report = _persist_report(
+                    session,
+                    user,
+                    units_by_id,
+                    unit_id,
+                    report_draft.title,
+                    report_draft.description,
+                    report_draft.kind,
+                )
+                if "zgłoszenie zapisane" not in reply.casefold():
+                    if created_report.unit_name:
+                        unit_bit = f" Jednostka: {created_report.unit_name}."
+                    else:
+                        unit_bit = (
+                            " Jednostka nieprzydzielona automatycznie "
+                            "(brak dopasowania kompetencji) — zespół przypisze ją w panelu."
+                        )
+                    reply = (
+                        f"{reply.rstrip()}\n\n"
+                        f"**Zgłoszenie zapisane:** {created_report.title}.{unit_bit} "
+                        "Status: przyjęte — zobaczysz je na liście spraw."
+                    )
+    elif mode == "intake" and draft is not None:
         if user is None:
             reply = (
                 f"{reply.rstrip()}\n\n"
-                "Żeby przekazać tę sprawę dalej do jednostki, **załóż konto** "
-                "albo zaloguj się — wtedy zapiszę propozycję dla zespołu MaloHUB."
+                "Żeby przekazać inicjatywę do zespołu, **załóż konto** "
+                "albo zaloguj się — wtedy zapiszę propozycję projektu."
             )
         else:
             proposal_public = _persist_proposal(
@@ -529,7 +751,9 @@ async def _chat_handler(
                 draft.suggested_unit_id,
             )
 
-    suggested = _resolve_suggested(projects, units_by_id, ids)
+    suggested = (
+        _resolve_suggested(projects, units_by_id, ids) if mode == "catalog" else []
+    )
 
     # Historia w DB: bez surowych markerów (już wyczyszczone w reply)
     prior_for_db: list[dict[str, str]] = []
@@ -550,8 +774,11 @@ async def _chat_handler(
     return ChatReply(
         reply=reply,
         chat_id=chat.id,
+        mode=mode,
         suggested_projects=suggested,
         project_proposal=proposal_public,
+        created_report=created_report,
+        report_offer=report_offer,
         location_request=location_request,
     )
 

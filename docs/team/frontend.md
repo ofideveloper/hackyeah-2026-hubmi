@@ -26,7 +26,11 @@ Projekty / tworzenie spraw: under the hood (AI / API), nie UI mieszkańca.
 
 **Czat / Markdown:** `AssistantChat` → `ChatMarkdown` (`react-markdown` + GFM). AI ma odpowiadać wg `apps/api/app/llm/prompts/caretaker_system.md` (bold, listy, `###`, linki — bez tabel/kodu). Landing: `<AssistantChat guestMode />` w `#opiekun` (bez JWT). App: z `userName`.
 
-**Sugestie / propozycje / lokalizacja:** `POST /chat` zwraca `suggested_projects[]` (z `UnitProject` + markerów / scoringu), `project_proposal`, `location_request` (`area`|`gps`) → karty w `AssistantChat`. JWT opcjonalny (gość). Admin: `/admin/proposals`.
+**Czat — tryby:** `clarify` | `report` | `catalog` | `intake` (chip ustawia `mode` w `POST /chat`).  
+- `catalog` → karty PROJECT\|  
+- `report` → zbieranie + `report_offer` / `created_report` (bez sugestii projektów)  
+- `intake` → `project_proposal`  
+JWT opcjonalny. Admin: `/admin/proposals`, `/admin/reports`.
 
 ## Architektura wywołań API
 

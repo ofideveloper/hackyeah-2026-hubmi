@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 
 import {
   fetchAdminReports,
+  fetchUnits,
   updateReportStatus,
+  updateReportUnit,
+  type OrganizationalUnit,
   type Report,
   type ReportStatus,
 } from "@/lib/api";
@@ -14,16 +17,32 @@ const REPORT_STATUSES: { value: ReportStatus; label: string }[] = [
   { value: "zakonczone", label: "Zakończone" },
 ];
 
+const KIND_LABEL: Record<string, string> = {
+  problem: "Problem",
+  wydarzenie: "Wydarzenie",
+  informacja: "Informacja",
+};
+
+function authorLabel(report: Report): string {
+  if (report.author_name?.trim()) return report.author_name.trim();
+  if (report.author_email?.trim()) return report.author_email.trim();
+  return "Nieznany autor";
+}
+
 export function AdminReportsView() {
   const [reports, setReports] = useState<Report[]>([]);
+  const [units, setUnits] = useState<OrganizationalUnit[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = getToken();
     if (!token) return;
-    fetchAdminReports(token)
-      .then(setReports)
+    Promise.all([fetchAdminReports(token), fetchUnits(token)])
+      .then(([nextReports, nextUnits]) => {
+        setReports(nextReports);
+        setUnits(nextUnits);
+      })
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Nie udało się pobrać spraw"),
       )
@@ -39,6 +58,18 @@ export function AdminReportsView() {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się zmienić statusu");
+    }
+  }
+
+  async function onChangeUnit(reportId: string, unitId: string) {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const updated = await updateReportUnit(token, reportId, unitId || null);
+      setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nie udało się zmienić jednostki");
     }
   }
 
@@ -63,28 +94,53 @@ export function AdminReportsView() {
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{report.title}</p>
                 <p className="mt-1 text-sm text-[var(--muted)]">
-                  {report.unit_name ?? `Jednostka #${report.unit_id}`} · user #{report.author_id}
+                  {KIND_LABEL[report.kind] ?? report.kind}
+                  {" · "}
+                  {authorLabel(report)}
+                  {report.author_email && report.author_name
+                    ? ` · ${report.author_email}`
+                    : ""}
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+                <p className="mt-2 text-sm leading-relaxed text-[var(--text)]">
                   {report.description}
                 </p>
+                <p className="mt-2 text-xs text-[var(--muted)]">
+                  {new Date(report.created_at).toLocaleString("pl-PL")}
+                </p>
               </div>
-              <label className="block min-w-[10rem] text-sm">
-                <span className="mb-1.5 block text-[var(--muted)]">Status</span>
-                <select
-                  value={report.status ?? "nowe"}
-                  onChange={(e) =>
-                    void onChangeStatus(report.id, e.target.value as ReportStatus)
-                  }
-                  className="field"
-                >
-                  {REPORT_STATUSES.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="flex min-w-[12rem] flex-col gap-3">
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-[var(--muted)]">Jednostka</span>
+                  <select
+                    value={report.unit_id ?? ""}
+                    onChange={(e) => void onChangeUnit(report.id, e.target.value)}
+                    className="field"
+                  >
+                    <option value="">Nieprzydzielona</option>
+                    {units.map((unit) => (
+                      <option key={unit.id} value={unit.id}>
+                        {unit.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-[var(--muted)]">Status</span>
+                  <select
+                    value={report.status ?? "nowe"}
+                    onChange={(e) =>
+                      void onChangeStatus(report.id, e.target.value as ReportStatus)
+                    }
+                    className="field"
+                  >
+                    {REPORT_STATUSES.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             </div>
           </li>
         ))}

@@ -68,10 +68,18 @@ def _proposal_public(session: SessionDep, proposal: ProjectProposal) -> ProjectP
 
 
 def _report_public(session: SessionDep, report: Report) -> ReportPublic:
-    unit = session.get(OrganizationalUnit, report.unit_id)
+    unit = (
+        session.get(OrganizationalUnit, report.unit_id) if report.unit_id is not None else None
+    )
+    author = session.get(User, report.author_id)
+    author_name = None
+    if author is not None:
+        author_name = f"{author.name} {author.surname}".strip() or None
     return ReportPublic(
         id=report.id,
         author_id=report.author_id,
+        author_email=author.email if author else None,
+        author_name=author_name,
         unit_id=report.unit_id,
         unit_name=unit.name if unit else None,
         kind=report.kind,
@@ -178,7 +186,8 @@ async def delete_unit(unit_id: uuid.UUID, _: CurrentAdminDep, session: SessionDe
     if unit is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nie znaleziono jednostki")
     for report in session.exec(select(Report).where(Report.unit_id == unit_id)).all():
-        session.delete(report)
+        report.unit_id = None
+        session.add(report)
     for project in session.exec(select(UnitProject).where(UnitProject.unit_id == unit_id)).all():
         session.delete(project)
     for proposal in session.exec(
@@ -263,7 +272,7 @@ async def list_all_reports(_: CurrentAdminDep, session: SessionDep) -> list[Repo
 
 
 @router.patch("/reports/{report_id}", response_model=ReportPublic)
-async def update_report_status(
+async def update_report(
     report_id: uuid.UUID,
     payload: ReportStatusUpdate,
     _: CurrentAdminDep,
@@ -272,7 +281,19 @@ async def update_report_status(
     report = session.get(Report, report_id)
     if report is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nie znaleziono sprawy")
-    report.status = payload.status
+    if payload.status is not None:
+        report.status = payload.status
+    if "unit_id" in payload.model_fields_set:
+        if payload.unit_id is not None:
+            unit = session.get(OrganizationalUnit, payload.unit_id)
+            if unit is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Wybrana jednostka nie istnieje",
+                )
+            report.unit_id = unit.id
+        else:
+            report.unit_id = None
     session.add(report)
     session.commit()
     session.refresh(report)

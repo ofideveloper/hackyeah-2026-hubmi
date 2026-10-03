@@ -389,6 +389,28 @@ body {
   color: var(--muted);
 }
 
+.report-offer-card {
+  margin-top: 0.65rem;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(54, 97, 168, 0.28);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.85rem 0.95rem;
+}
+
+.report-offer-text {
+  margin: 0;
+  flex: 1 1 12rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
 .location-request-card {
   margin-top: 0.65rem;
   width: 100%;
@@ -542,6 +564,20 @@ body {
   margin-top: 1.15rem;
   display: flex;
   justify-content: flex-end;
+}
+
+.chat-mode-pill {
+  display: inline-flex;
+  margin-top: 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(54, 97, 168, 0.28);
+  background: rgba(148, 192, 229, 0.22);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-hover);
 }
 
 .chat-chip {

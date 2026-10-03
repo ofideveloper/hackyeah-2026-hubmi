@@ -35,9 +35,11 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 
 | Persona | Cel | Notatki |
 |---------|-----|---------|
-| Mieszkaniec (`user`) | Rozmowa + podgląd statusów spraw | `/login` → `/app` (bez CRUD zgłoszeń/projektów) |
-| Admin | Jednostki, projekty, zmiana statusów | `/admin` |
-| AI / czat | Osobisty opiekun: istniejące projekty lub intake nowego projektu dla admina | prompt + `project_proposals` → `/admin/proposals` |
+| Mieszkaniec / NGO (`user`) | Zgłasza problem / pomysł oddolnie; czat + status spraw | `/app`; zgłoszenie z czatu (`Report`) |
+| JST | Katalog gotowych rozwiązań + lokalne wyzwania | czat → karty `UnitProject`; opcjonalnie zgłoszenie |
+| ROPS / Admin | Panel: wiedza, jednostki, projekty, monitoring spraw | `/admin` |
+| Ekspert branżowy | Feedback / doradztwo w rozmowie | ta sama ścieżka czatu; bez osobnego UI (MVP) |
+| AI / czat | Dopasowanie PROJECT\| **lub** offer/zapis zgłoszenia **lub** intake nowego projektu | markery w odpowiedzi LLM |
 
 ## Zakres HackYeah (in / out)
 
@@ -85,3 +87,5 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | 2026-10 | Paleta szaro–czarna + `#27227d` / `#3661a8` / `#94c0e5` | Brand zamiast teal |
 | 2026-10 | WCAG 2.1 AA jako wymóg produktu | HackYeah / brak barier |
 | 2026-10 | Reguły cybersec w docs + `.cursor/rules` | Egzekwowalne dla AI i zespołu |
+| 2026-10 | Czat: katalog PROJECT\| + offer/zapis zgłoszenia | Persony HackYeah bez formularza mieszkańca |
+| 2026-10 | Tryby czatu: clarify / report / catalog / intake | Zgłoszenie ≠ katalog — twarde bramki API |

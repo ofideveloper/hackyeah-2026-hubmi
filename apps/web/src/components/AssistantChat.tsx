@@ -2,6 +2,7 @@
  * Czat mieszkańca — ciepły UX + karty projektów z modalem.
  * Bez export / import / zapisu rozmowy.
  */
+import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import { ChatMarkdown } from "@/components/ChatMarkdown";
@@ -10,9 +11,11 @@ import { ProjectPreviewModal } from "@/components/ProjectPreviewModal";
 import { ProjectSuggestionCards } from "@/components/ProjectSuggestionCards";
 import {
   sendChatMessage,
+  type ChatMode,
   type LocationRequestKind,
   type Project,
   type ProjectProposal,
+  type Report,
 } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
@@ -25,17 +28,29 @@ export type ChatMessage = {
   timestamp: Date;
   suggestedProjects?: Project[];
   projectProposal?: ProjectProposal | null;
+  createdReport?: Report | null;
+  reportOffer?: boolean;
   locationRequest?: LocationRequestKind | null;
   locationResolved?: boolean;
 };
 
 const CARETAKER = "Twój społeczny opiekun";
 
-const SUGGESTIONS = [
-  "Szukam pomocy w mojej dzielnicy",
-  "Nie wiem, od czego zacząć",
-  "Potrzebuję wsparcia",
+const MODE_CHIPS: { mode: ChatMode; label: string }[] = [
+  { mode: "catalog", label: "Szukam gotowego rozwiązania dla mojej gminy" },
+  { mode: "report", label: "Chcę zgłosić problem w okolicy" },
+  { mode: "intake", label: "Mam pomysł oddolny — od czego zacząć?" },
 ];
+
+const MODE_LABEL: Record<ChatMode, string> = {
+  clarify: "Wybierz ścieżkę",
+  report: "Zgłoszenie sprawy",
+  catalog: "Katalog rozwiązań",
+  intake: "Nowa inicjatywa",
+};
+
+const REPORT_CONFIRM_MESSAGE =
+  "Tak, zapisz to proszę jako zgłoszenie w MaloHUB — chcę śledzić status.";
 
 /** Deterministic HH:MM — avoids Node vs browser `toLocaleTimeString` mismatches. */
 function formatClock(date: Date): string {
@@ -92,6 +107,8 @@ type AssistantChatProps = {
   userName?: string | null;
   /** Czat na landingu — działa bez logowania */
   guestMode?: boolean;
+  /** Po zapisaniu sprawy z czatu — odśwież listę na `/app` */
+  onReportCreated?: (report: Report) => void;
 };
 
 function welcomeMessage(guestMode: boolean): ChatMessage {
@@ -99,21 +116,26 @@ function welcomeMessage(guestMode: boolean): ChatMessage {
     id: "welcome",
     role: "assistant",
     content: guestMode
-      ? `Miło Cię widzieć. Opowiedz krótko, co Cię zajmuje — albo wybierz podpowiedź poniżej. ` +
-        `Razem pomyślimy nad rozwiązaniem.`
-      : `Miło Cię widzieć. Jestem Twoim społecznym opiekunem — razem pomyślimy nad rozwiązaniem. ` +
-        `Napisz, co Cię zajmuje, albo wybierz podpowiedź poniżej.`,
+      ? `Miło Cię widzieć. Wybierz ścieżkę poniżej — albo napisz własnymi słowami: ` +
+        `zgłoszenie problemu, katalog gotowych rozwiązań, albo nowy pomysł.`
+      : `Miło Cię widzieć. Jestem Twoim społecznym opiekunem. ` +
+        `Wybierz ścieżkę: **zgłoszenie**, **katalog rozwiązań** albo **nowa inicjatywa** — albo opisz sprawę własnymi słowami.`,
     timestamp: new Date(),
   };
 }
 
-export function AssistantChat({ userName, guestMode = false }: AssistantChatProps) {
+export function AssistantChat({
+  userName,
+  guestMode = false,
+  onReportCreated,
+}: AssistantChatProps) {
   const displayName = userName?.trim() || "mieszkańcu";
   const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage(guestMode)]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Project | null>(null);
   const [locatingId, setLocatingId] = useState<string | null>(null);
+  const [mode, setMode] = useState<ChatMode>("clarify");
   /** Gate locale/clock UI until after hydration (SSR `new Date()` ≠ client). */
   const [clockReady, setClockReady] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -125,6 +147,7 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
     setInput("");
     setPreview(null);
     setLocatingId(null);
+    setMode("clarify");
   }
 
   useEffect(() => {
@@ -136,12 +159,15 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, busy, locatingId]);
 
-  async function submitMessage(text: string) {
+  async function submitMessage(text: string, modeHint?: ChatMode | null) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
 
     const token = getToken();
     if (!guestMode && !token) return;
+
+    const nextModeHint = modeHint ?? (mode !== "clarify" ? mode : null);
+    if (modeHint) setMode(modeHint);
 
     const history = messages
       .filter(
@@ -167,8 +193,16 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
     setBusy(true);
 
     try {
-      const { reply, suggested_projects, project_proposal, location_request } =
-        await sendChatMessage(token, trimmed, history);
+      const {
+        reply,
+        mode: resolvedMode,
+        suggested_projects,
+        project_proposal,
+        created_report,
+        report_offer,
+        location_request,
+      } = await sendChatMessage(token, trimmed, history, nextModeHint);
+      setMode(resolvedMode);
       setMessages((prev) => [
         ...prev,
         {
@@ -178,9 +212,14 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
           timestamp: new Date(),
           suggestedProjects: suggested_projects,
           projectProposal: project_proposal,
+          createdReport: created_report,
+          reportOffer: report_offer,
           locationRequest: location_request,
         },
       ]);
+      if (created_report) {
+        onReportCreated?.(created_report);
+      }
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -281,6 +320,11 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
                 ? "Napisz, co się dzieje w Twojej okolicy — razem znajdziemy sensowny kierunek."
                 : "Opowiedz, co Cię zajmuje — razem pomyślimy nad rozwiązaniem."}
             </p>
+            {mode !== "clarify" && (
+              <p className="chat-mode-pill" aria-live="polite">
+                Tryb: {MODE_LABEL[mode]}
+              </p>
+            )}
           </div>
         </div>
       </header>
@@ -353,6 +397,46 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
                     </div>
                   )}
 
+                  {message.createdReport && (
+                    <div className="project-draft-note" role="status">
+                      <p className="project-draft-note-label">Zgłoszenie zapisane</p>
+                      <p className="font-display project-draft-note-title">
+                        {message.createdReport.title}
+                      </p>
+                      <p className="project-draft-note-text">
+                        Status: przyjęte
+                        {message.createdReport.unit_name
+                          ? ` · ${message.createdReport.unit_name}`
+                          : " · jednostka do przydzielenia przez zespół"}
+                        . Śledź postęp na liście spraw poniżej.
+                      </p>
+                    </div>
+                  )}
+
+                  {message.reportOffer && !message.createdReport && (
+                    <div className="report-offer-card" role="group" aria-label="Zapisz zgłoszenie">
+                      <p className="report-offer-text">
+                        {guestMode
+                          ? "Żeby zapisać zgłoszenie i śledzić status, potrzebne jest konto."
+                          : "Mogę zapisać to jako zgłoszenie — wtedy zobaczysz status sprawy."}
+                      </p>
+                      {guestMode ? (
+                        <Link href="/register" className="btn-primary">
+                          Załóż konto
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          disabled={busy}
+                          onClick={() => void submitMessage(REPORT_CONFIRM_MESSAGE, "report")}
+                        >
+                          Zapisz zgłoszenie
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   {message.locationRequest && !message.locationResolved && (
                     <LocationRequestCard
                       kind={message.locationRequest}
@@ -388,14 +472,14 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
 
       {onlyWelcome && !busy && (
         <div className="flex flex-wrap gap-2 px-4 py-3 sm:px-6">
-          {SUGGESTIONS.map((suggestion) => (
+          {MODE_CHIPS.map((chip) => (
             <button
-              key={suggestion}
+              key={chip.mode}
               type="button"
-              onClick={() => void submitMessage(suggestion)}
+              onClick={() => void submitMessage(chip.label, chip.mode)}
               className="chat-chip"
             >
-              {suggestion}
+              {chip.label}
             </button>
           ))}
         </div>

@@ -59,7 +59,9 @@ export type ReportStatus = "nowe" | "w_toku" | "zakonczone";
 export type Report = {
   id: string;
   author_id: string;
-  unit_id: string;
+  author_email?: string | null;
+  author_name?: string | null;
+  unit_id: string | null;
   unit_name: string | null;
   kind: ReportKind | string;
   status: ReportStatus | string;
@@ -355,6 +357,27 @@ export async function updateReportStatus(
   return res.json() as Promise<Report>;
 }
 
+export async function updateReportUnit(
+  token: string,
+  reportId: string,
+  unitId: string | null,
+): Promise<Report> {
+  const res = await fetch(`${API_BASE}/admin/reports/${reportId}`, {
+    method: "PATCH",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ unit_id: unitId }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  return res.json() as Promise<Report>;
+}
+
 export type ChatHistoryMessage = {
   role: "user" | "assistant";
   content: string;
@@ -362,10 +385,15 @@ export type ChatHistoryMessage = {
 
 export type LocationRequestKind = "area" | "gps";
 
+export type ChatMode = "clarify" | "report" | "catalog" | "intake";
+
 export type ChatReply = {
   reply: string;
+  mode: ChatMode;
   suggested_projects: Project[];
   project_proposal: ProjectProposal | null;
+  created_report: Report | null;
+  report_offer: boolean;
   location_request: LocationRequestKind | null;
 };
 
@@ -373,6 +401,7 @@ export async function sendChatMessage(
   token: string | null,
   message: string,
   history: ChatHistoryMessage[] = [],
+  mode?: ChatMode | null,
 ): Promise<ChatReply> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -381,7 +410,11 @@ export async function sendChatMessage(
   const res = await fetch(`${API_BASE}/chat`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ message, history }),
+    body: JSON.stringify({
+      message,
+      history,
+      ...(mode ? { mode } : {}),
+    }),
   });
 
   if (!res.ok) {
@@ -389,10 +422,20 @@ export async function sendChatMessage(
   }
 
   const data = (await res.json()) as ChatReply;
+  const resolvedMode: ChatMode =
+    data.mode === "report" ||
+    data.mode === "catalog" ||
+    data.mode === "intake" ||
+    data.mode === "clarify"
+      ? data.mode
+      : "clarify";
   return {
     reply: data.reply,
+    mode: resolvedMode,
     suggested_projects: data.suggested_projects ?? [],
     project_proposal: data.project_proposal ?? null,
+    created_report: data.created_report ?? null,
+    report_offer: Boolean(data.report_offer),
     location_request:
       data.location_request === "area" || data.location_request === "gps"
         ? data.location_request

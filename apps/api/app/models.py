@@ -172,13 +172,15 @@ class ProjectProposalPublic(SQLModel):
 
 
 class Report(SQLModel, table=True):
-    """Sprawa mieszkańca — status zmienia admin."""
+    """Sprawa mieszkańca — status zmienia admin. Jednostka opcjonalna (dopasowanie kompetencji)."""
 
     __tablename__ = "reports"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     author_id: uuid.UUID = Field(foreign_key="user.id", index=True)
-    unit_id: uuid.UUID = Field(foreign_key="organizationalunit.id", index=True)
+    unit_id: uuid.UUID | None = Field(
+        default=None, foreign_key="organizationalunit.id", index=True
+    )
     kind: ReportKind = Field(index=True)
     status: ReportStatus = Field(default=ReportStatus.NEW, index=True)
     title: str = Field(max_length=255)
@@ -187,7 +189,7 @@ class Report(SQLModel, table=True):
 
 
 class ReportCreate(SQLModel):
-    unit_id: uuid.UUID
+    unit_id: uuid.UUID | None = None
     kind: ReportKind
     title: str = Field(min_length=2, max_length=255)
     description: str = Field(min_length=2)
@@ -195,13 +197,16 @@ class ReportCreate(SQLModel):
 
 
 class ReportStatusUpdate(SQLModel):
-    status: ReportStatus
+    status: ReportStatus | None = None
+    unit_id: uuid.UUID | None = None
 
 
 class ReportPublic(SQLModel):
     id: uuid.UUID
     author_id: uuid.UUID
-    unit_id: uuid.UUID
+    author_email: str | None = None
+    author_name: str | None = None
+    unit_id: uuid.UUID | None = None
     unit_name: str | None = None
     kind: ReportKind
     status: ReportStatus

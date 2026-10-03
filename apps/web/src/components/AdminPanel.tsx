@@ -451,7 +451,8 @@ export function AdminPanel() {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{report.title}</p>
                   <p className="mt-1 text-sm text-[var(--muted)]">
-                    {report.unit_name ?? `Jednostka #${report.unit_id}`} · user #{report.author_id}
+                    {report.unit_name ?? "Nieprzydzielona"} ·{" "}
+                    {report.author_name || report.author_email || "autor"}
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
                     {report.description}

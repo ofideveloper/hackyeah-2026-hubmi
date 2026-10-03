@@ -90,6 +90,9 @@ export default function AppHomePage() {
         <section className="mt-8">
           <AssistantChat
             userName={user.full_name || `${user.name} ${user.surname}`.trim()}
+            onReportCreated={(report) =>
+              setReports((prev) => [report, ...prev.filter((r) => r.id !== report.id)])
+            }
           />
         </section>
 
@@ -111,7 +114,7 @@ export default function AppHomePage() {
                   <div className="min-w-0">
                     <p className="font-medium">{report.title}</p>
                     <p className="mt-1 text-sm text-[var(--muted)]">
-                      {report.unit_name ?? "Jednostka"}
+                      {report.unit_name ?? "Jednostka do przydzielenia"}
                     </p>
                   </div>
                   <span className={statusClass(report.status ?? "nowe")}>

@@ -22,7 +22,7 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 | PATCH | `/categories/{id}` | Zmień nazwę |
 | DELETE | `/categories/{id}` | Usuń (409, gdy używana przez projekt / propozycję) |
 | POST | `/projects/` | Utwórz projekt (`category_id`, `name`, `description`) — zalogowany |
-| POST | `/chat` | Body: `{ message, history?, chat_id? }` → `{ reply, chat_id, suggested_projects[], project_proposal?, location_request? }` (JWT opcjonalny; LLM przez `LLM_*`) |
+| POST | `/chat` | Body: `{ message, history?, chat_id? }` → `{ reply, chat_id, suggested_projects[], report_offer, created_report?, project_proposal?, location_request? }` (JWT opcjonalny) |
 | PATCH | `/admin/units/{id}` | Edycja jednostki (`name` / `territory` / `competencies`) |
 | PATCH | `/admin/projects/{id}` | Edycja projektu jednostki (`unit_id` / `name` / `description`) |
 | POST | `/llm/chat` | **Legacy** — bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
@@ -48,9 +48,10 @@ Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProj
 
 - `DATABASE_URL` (domyślnie SQLite `apps/api/data/hubmi.db`) — `app/dependencies/db.py`
 - Vercel: SQLite trafia do `/tmp` (nietrwałe) — produkcja: ustaw `DATABASE_URL` (np. Postgres)
-- Tabele tworzy `SQLModel.metadata.create_all` przy starcie; brak migracji
+- Startup: `create_all` + przebudowa legacy tabel `reports` / `project_proposals` (INTEGER → UUID), jeśli wykryte
+- Sprawy z czatu: tryb `report` + marker `[[hubmi-new-report]]` **albo** CTA „Zapisz zgłoszenie” (synteza z historii) — wymaga JWT
 
-[UZUPEŁNIJ — model domenowy / migracje]
+[UZUPEŁNIJ — pełne migracje / Postgres]
 
 ## Konwencje kodu
 

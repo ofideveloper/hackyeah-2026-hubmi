@@ -12,16 +12,25 @@ from ..models import (
     ReportPublic,
     ReportStatus,
     RoleEnum,
+    User,
 )
 
 router = APIRouter(tags=["reports"])
 
 
 def _report_public(session: SessionDep, report: Report) -> ReportPublic:
-    unit = session.get(OrganizationalUnit, report.unit_id)
+    unit = (
+        session.get(OrganizationalUnit, report.unit_id) if report.unit_id is not None else None
+    )
+    author = session.get(User, report.author_id)
+    author_name = None
+    if author is not None:
+        author_name = f"{author.name} {author.surname}".strip() or None
     return ReportPublic(
         id=report.id,
         author_id=report.author_id,
+        author_email=author.email if author else None,
+        author_name=author_name,
         unit_id=report.unit_id,
         unit_name=unit.name if unit else None,
         kind=report.kind,
@@ -57,18 +66,21 @@ async def create_report(
     current_user: CurrentUserDep,
     session: SessionDep,
 ) -> ReportPublic:
-    unit = session.get(OrganizationalUnit, payload.unit_id)
-    if unit is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Wybrana jednostka nie istnieje",
-        )
+    unit_id = payload.unit_id
+    if unit_id is not None:
+        unit = session.get(OrganizationalUnit, unit_id)
+        if unit is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Wybrana jednostka nie istnieje",
+            )
+        unit_id = unit.id
     author_id = current_user.id
     if payload.author_id is not None and current_user.role == RoleEnum.ADMIN:
         author_id = payload.author_id
     report = Report(
         author_id=author_id,
-        unit_id=unit.id,
+        unit_id=unit_id,
         kind=payload.kind,
         status=ReportStatus.NEW,
         title=payload.title.strip(),

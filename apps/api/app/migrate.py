@@ -39,3 +39,43 @@ def ensure_sqlite_schema(engine: Engine) -> None:
                         "NOT NULL DEFAULT 'nowe'"
                     )
                 )
+
+        if "users" in tables:
+            cols = {
+                row[1]
+                for row in conn.execute(text("PRAGMA table_info(users)")).fetchall()
+            }
+            if "name" not in cols:
+                conn.execute(
+                    text("ALTER TABLE users ADD COLUMN name VARCHAR(255) NOT NULL DEFAULT ''")
+                )
+            if "surname" not in cols:
+                conn.execute(
+                    text(
+                        "ALTER TABLE users ADD COLUMN surname VARCHAR(255) NOT NULL DEFAULT ''"
+                    )
+                )
+            if "phone_number" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN phone_number VARCHAR(32)"))
+            # Backfill z full_name (pierwsze słowo → name, reszta → surname)
+            conn.execute(
+                text(
+                    """
+                    UPDATE users
+                    SET
+                      name = CASE
+                        WHEN (name IS NULL OR name = '')
+                             AND full_name IS NOT NULL AND trim(full_name) != ''
+                        THEN trim(substr(full_name, 1, instr(full_name || ' ', ' ') - 1))
+                        ELSE name
+                      END,
+                      surname = CASE
+                        WHEN (surname IS NULL OR surname = '')
+                             AND full_name IS NOT NULL
+                             AND instr(trim(full_name), ' ') > 0
+                        THEN trim(substr(full_name, instr(full_name, ' ') + 1))
+                        ELSE surname
+                      END
+                    """
+                )
+            )

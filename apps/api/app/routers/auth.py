@@ -24,13 +24,17 @@ def register(payload: UserCreate, db: Session = Depends(get_db)) -> User:
             detail="Email already registered",
         )
 
+    phone = (payload.phone_number or "").strip() or None
     user = User(
         email=payload.email.lower(),
         hashed_password=hash_password(payload.password),
-        full_name=payload.full_name,
+        name=payload.name.strip(),
+        surname=payload.surname.strip(),
+        phone_number=phone,
         role=UserRole.USER.value,
         is_active=True,
     )
+    user.sync_full_name()
     db.add(user)
     db.commit()
     db.refresh(user)

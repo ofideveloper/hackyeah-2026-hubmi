@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -22,11 +23,13 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      const phone = phoneNumber.trim();
       await registerUser({
         email,
         password,
-        name,
-        surname,
+        name: name.trim(),
+        surname: surname.trim(),
+        phone_number: phone || null,
       });
       setSuccess(true);
       setTimeout(() => {
@@ -82,6 +85,17 @@ export default function RegisterPage() {
                   />
                 </label>
               </div>
+              <label className="block text-sm">
+                <span className="mb-1.5 block text-[var(--muted)]">Telefon</span>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="field"
+                  autoComplete="tel"
+                  placeholder="np. +48 500 000 000"
+                />
+              </label>
               <label className="block text-sm">
                 <span className="mb-1.5 block text-[var(--muted)]">Email</span>
                 <input

@@ -36,6 +36,10 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
+    name: Mapped[str] = mapped_column(String(255), default="")
+    surname: Mapped[str] = mapped_column(String(255), default="")
+    phone_number: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # Zachowane pod chat / starsze wpisy — sync z name+surname przy zapisie
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     role: Mapped[str] = mapped_column(String(32), default=UserRole.USER.value, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -52,6 +56,10 @@ class User(Base):
     @property
     def is_admin(self) -> bool:
         return self.role == UserRole.ADMIN.value
+
+    def sync_full_name(self) -> None:
+        joined = f"{(self.name or '').strip()} {(self.surname or '').strip()}".strip()
+        self.full_name = joined or None
 
 
 class OrganizationalUnit(Base):

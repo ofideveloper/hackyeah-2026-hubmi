@@ -40,7 +40,9 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
               HubMI Admin
             </Link>
             <p className="mt-1 truncate text-xs text-[var(--muted)]">
-              {gate.admin.full_name ?? gate.admin.email}
+              {gate.admin.full_name ||
+                `${gate.admin.name} ${gate.admin.surname}`.trim() ||
+                gate.admin.email}
             </p>
           </div>
 

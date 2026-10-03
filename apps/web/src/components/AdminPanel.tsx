@@ -230,7 +230,8 @@ export function AdminPanel() {
             Panel administracyjny
           </h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Jednostki, projekty i odpowiedzialność · {`${admin.name} ${admin.surname}`}
+            Jednostki, projekty i odpowiedzialność ·{" "}
+            {admin.full_name || `${admin.name} ${admin.surname}`.trim() || admin.email}
           </p>
         </div>
         <div className="flex gap-2">
@@ -486,9 +487,10 @@ export function AdminPanel() {
               <tr>
                 <th className="px-4 py-3 font-medium">ID</th>
                 <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Nazwa</th>
-                <th className="px-4 py-3 font-medium">Rola</th>
+                <th className="px-4 py-3 font-medium">Imię</th>
+                <th className="px-4 py-3 font-medium">Nazwisko</th>
                 <th className="px-4 py-3 font-medium">Telefon</th>
+                <th className="px-4 py-3 font-medium">Rola</th>
               </tr>
             </thead>
             <tbody>
@@ -499,7 +501,9 @@ export function AdminPanel() {
                 >
                   <td className="px-4 py-3 font-mono text-[var(--muted)]">{user.id}</td>
                   <td className="px-4 py-3">{user.email}</td>
-                  <td className="px-4 py-3">{`${user.name} ${user.surname}`}</td>
+                  <td className="px-4 py-3">{user.name || "—"}</td>
+                  <td className="px-4 py-3">{user.surname || "—"}</td>
+                  <td className="px-4 py-3">{user.phone_number ?? "—"}</td>
                   <td className="px-4 py-3">
                     <span
                       className={
@@ -511,7 +515,6 @@ export function AdminPanel() {
                       {user.role}
                     </span>
                   </td>
-                  <td className="px-4 py-3">{user.phone_number ?? "—"}</td>
                 </tr>
               ))}
             </tbody>

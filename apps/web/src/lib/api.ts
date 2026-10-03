@@ -1,13 +1,17 @@
 /** Browser talks to Next.js BFF at /api/*; the BFF proxies to the internal FastAPI service. */
 const API_BASE = "/api";
 
+/** Zgodne z API `UserPublic` (`apps/api/app/schemas.py`). */
 export type User = {
-  id: string;
+  id: number;
   email: string;
   name: string;
   surname: string;
   phone_number: string | null;
-  role: "user" | "admin" | "specialist" | string;
+  full_name: string | null;
+  role: "user" | "admin" | string;
+  is_active: boolean;
+  created_at: string;
 };
 
 export type AdminStats = {
@@ -98,7 +102,7 @@ export async function registerUser(payload: {
   password: string;
   name: string;
   surname: string;
-  phone_number?: string;
+  phone_number?: string | null;
 }): Promise<User> {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: "POST",

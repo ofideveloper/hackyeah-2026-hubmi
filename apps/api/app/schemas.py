@@ -6,7 +6,9 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
-    full_name: str | None = Field(default=None, max_length=255)
+    name: str = Field(min_length=1, max_length=255)
+    surname: str = Field(min_length=1, max_length=255)
+    phone_number: str | None = Field(default=None, max_length=32)
 
 
 class UserLogin(BaseModel):
@@ -19,7 +21,10 @@ class UserPublic(BaseModel):
 
     id: int
     email: EmailStr
-    full_name: str | None
+    name: str
+    surname: str
+    phone_number: str | None
+    full_name: str | None = None
     role: str
     is_active: bool
     created_at: datetime

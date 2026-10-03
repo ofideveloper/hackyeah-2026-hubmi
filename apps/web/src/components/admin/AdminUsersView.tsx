@@ -36,7 +36,9 @@ export function AdminUsersView() {
             <tr>
               <th className="px-4 py-3 font-medium">ID</th>
               <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Nazwa</th>
+              <th className="px-4 py-3 font-medium">Imię</th>
+              <th className="px-4 py-3 font-medium">Nazwisko</th>
+              <th className="px-4 py-3 font-medium">Telefon</th>
               <th className="px-4 py-3 font-medium">Rola</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Utworzono</th>
@@ -50,7 +52,9 @@ export function AdminUsersView() {
               >
                 <td className="px-4 py-3 font-mono text-[var(--muted)]">{user.id}</td>
                 <td className="px-4 py-3">{user.email}</td>
-                <td className="px-4 py-3">{user.full_name ?? "—"}</td>
+                <td className="px-4 py-3">{user.name || "—"}</td>
+                <td className="px-4 py-3">{user.surname || "—"}</td>
+                <td className="px-4 py-3">{user.phone_number ?? "—"}</td>
                 <td className="px-4 py-3">
                   <span
                     className={

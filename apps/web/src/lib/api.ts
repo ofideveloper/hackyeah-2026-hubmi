@@ -315,7 +315,12 @@ export async function updateReportStatus(
   return res.json() as Promise<Report>;
 }
 
-export async function sendChatMessage(token: string, message: string): Promise<string> {
+export type ChatReply = {
+  reply: string;
+  suggested_projects: Project[];
+};
+
+export async function sendChatMessage(token: string, message: string): Promise<ChatReply> {
   const res = await fetch(`${API_BASE}/chat`, {
     method: "POST",
     headers: {
@@ -329,6 +334,9 @@ export async function sendChatMessage(token: string, message: string): Promise<s
     throw new Error(await parseError(res));
   }
 
-  const data = (await res.json()) as { reply: string };
-  return data.reply;
+  const data = (await res.json()) as ChatReply;
+  return {
+    reply: data.reply,
+    suggested_projects: data.suggested_projects ?? [],
+  };
 }

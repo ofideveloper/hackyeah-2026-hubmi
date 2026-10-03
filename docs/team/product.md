@@ -36,7 +36,7 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 |---------|-----|---------|
 | Mieszkaniec (`user`) | Rozmowa + podgląd statusów spraw | `/login` → `/app` (bez CRUD zgłoszeń/projektów) |
 | Admin | Jednostki, projekty, zmiana statusów | `/admin` |
-| AI / czat | Prowadzi rozmowę na bazie jednostek/projektów; może sugerować sprawy | `AssistantChat` → `/chat` → Gemini (`LLM_PROVIDER=gemini`) lub `fake` |
+| AI / czat | Szeroka pomoc na opis problemu + dopasowanie do jednostek/projektów HubMI | `AssistantChat` → `/chat` → Gemini / `fake`; prompt: `caretaker_system.md` |
 
 ## Zakres HackYeah (in / out)
 
@@ -75,3 +75,4 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | 2026-10 | User bez formularza zgłoszeń i listy projektów | Fajna platforma rozmowy; AI/admin under the hood |
 | 2026-10 | Admin zmienia statusy spraw | User tylko je widzi |
 | 2026-10 | Gemini jako provider czatu | Odpowiedzi z kontekstu jednostek/projektów z DB |
+| 2026-10 | Prompt opiekuna w `caretaker_system.md` | Jedno źródło zaleceń formatu (Markdown) pod UI czatu |

@@ -1,10 +1,13 @@
 /**
- * Czat mieszkańca — ciepły, prosty UX.
+ * Czat mieszkańca — ciepły UX + karty projektów z modalem.
  * Bez export / import / zapisu rozmowy.
  */
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
-import { sendChatMessage } from "@/lib/api";
+import { ChatMarkdown } from "@/components/ChatMarkdown";
+import { ProjectPreviewModal } from "@/components/ProjectPreviewModal";
+import { ProjectSuggestionCards } from "@/components/ProjectSuggestionCards";
+import { sendChatMessage, type Project } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
 export type ChatRole = "user" | "assistant" | "error";
@@ -14,6 +17,7 @@ export type ChatMessage = {
   role: ChatRole;
   content: string;
   timestamp: Date;
+  suggestedProjects?: Project[];
 };
 
 const CARETAKER = "Twój społeczny opiekun";
@@ -42,7 +46,6 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
       className={`chat-caretaker-avatar flex shrink-0 items-center justify-center rounded-full ${dim}`}
       aria-hidden
     >
-      {/* Symbol opieki: dwie sylwetki + serce */}
       <svg className={icon} viewBox="0 0 32 32" fill="none">
         <circle cx="11" cy="11" r="3.2" fill="currentColor" opacity="0.95" />
         <circle cx="21" cy="11" r="3.2" fill="currentColor" opacity="0.95" />
@@ -69,23 +72,6 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
   );
 }
 
-function renderPlain(content: string, onAccent = false) {
-  const parts = content.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, index) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return (
-        <strong
-          key={index}
-          className={onAccent ? "font-semibold text-white" : "font-semibold text-[var(--text)]"}
-        >
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-    return <span key={index}>{part}</span>;
-  });
-}
-
 type AssistantChatProps = {
   userName?: string | null;
 };
@@ -104,6 +90,7 @@ export function AssistantChat({ userName }: AssistantChatProps) {
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<Project | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const onlyWelcome = messages.length === 1 && messages[0]?.id === "welcome";
 
@@ -130,7 +117,7 @@ export function AssistantChat({ userName }: AssistantChatProps) {
     setBusy(true);
 
     try {
-      const reply = await sendChatMessage(token, trimmed);
+      const { reply, suggested_projects } = await sendChatMessage(token, trimmed);
       setMessages((prev) => [
         ...prev,
         {
@@ -138,6 +125,7 @@ export function AssistantChat({ userName }: AssistantChatProps) {
           role: "assistant",
           content: reply,
           timestamp: new Date(),
+          suggestedProjects: suggested_projects,
         },
       ]);
     } catch (err) {
@@ -188,12 +176,14 @@ export function AssistantChat({ userName }: AssistantChatProps) {
 
       <div
         ref={listRef}
-        className="chat-thread max-h-[420px] min-h-[260px] space-y-5 overflow-y-auto px-4 py-5 sm:px-6"
+        className="chat-thread max-h-[480px] min-h-[260px] space-y-5 overflow-y-auto px-4 py-5 sm:px-6"
       >
         {messages.map((message, index) => {
           const prev = messages[index - 1];
           const isCaretaker = message.role !== "user";
           const showMark = isCaretaker && (!prev || prev.role === "user");
+          const hasProjects =
+            message.role === "assistant" && (message.suggestedProjects?.length ?? 0) > 0;
           return (
             <div key={message.id} data-role={message.role} className="animate-soft-in">
               <div
@@ -210,10 +200,10 @@ export function AssistantChat({ userName }: AssistantChatProps) {
                 <div
                   className={`max-w-[min(100%,28rem)] ${
                     message.role === "user" ? "items-end" : "items-start"
-                  } flex flex-col`}
+                  } flex w-full flex-col`}
                 >
                   <div
-                    className={`px-4 py-3 text-[0.9375rem] leading-relaxed whitespace-pre-wrap ${
+                    className={`px-4 py-3 text-[0.9375rem] leading-relaxed ${
                       message.role === "user"
                         ? "chat-bubble-user"
                         : message.role === "error"
@@ -221,8 +211,25 @@ export function AssistantChat({ userName }: AssistantChatProps) {
                           : "chat-bubble-caretaker"
                     }`}
                   >
-                    {renderPlain(message.content, message.role === "user")}
+                    <ChatMarkdown
+                      content={message.content}
+                      variant={
+                        message.role === "user"
+                          ? "user"
+                          : message.role === "error"
+                            ? "error"
+                            : "caretaker"
+                      }
+                    />
                   </div>
+
+                  {hasProjects && (
+                    <ProjectSuggestionCards
+                      projects={message.suggestedProjects!}
+                      onOpen={setPreview}
+                    />
+                  )}
+
                   <p
                     className={`mt-1.5 px-1 text-[11px] text-[var(--muted)] ${
                       message.role === "user" ? "self-end" : "self-start"
@@ -301,6 +308,10 @@ export function AssistantChat({ userName }: AssistantChatProps) {
           Enter wysyła · Shift+Enter nowa linia
         </p>
       </form>
+
+      {preview && (
+        <ProjectPreviewModal project={preview} onClose={() => setPreview(null)} />
+      )}
     </section>
   );
 }

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     # LLM: `fake` (lokalny stub) | `gemini` (Google AI)
     llm_provider: str = "fake"
     llm_api_key: str = ""
-    llm_model: str = "gemini-2.5-flash"
+    llm_model: str = "gemini-3.8-flash"
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -29,12 +29,12 @@ Stack: FastAPI w `apps/api` (`app/main.py`, `app/routers/`, `app/models.py`, …
 | POST | `/reports` | Tworzenie sprawy (API / AI — nie UI mieszkańca) |
 | GET | `/admin/reports` | Wszystkie sprawy |
 | PATCH | `/admin/reports/{id}` | Zmiana statusu (`nowe` \| `w_toku` \| `zakonczone`) |
-| POST | `/chat` | Asystent UI → buduje kontekst projektów → woła bypass LLM |
+| POST | `/chat` | Asystent → kontekst + LLM → `{ reply, suggested_projects[] }` |
 | POST | `/llm/chat` | Bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
 | GET | `/llm/health` | Provider aktualnego klienta (`fake` / `gemini`) |
 | GET | `/health` | Healthcheck |
 
-**LLM:** `app/llm/client.py` — `LLM_PROVIDER=fake|gemini`. `/chat` buduje kontekst (jednostki + projekty) jako system prompt i woła klienta. Gemini: `LLM_API_KEY` + opcjonalnie `LLM_MODEL` (domyślnie `gemini-2.5-flash`).
+**LLM:** `app/llm/client.py` — `LLM_PROVIDER=fake|gemini`. `/chat` ładuje `app/llm/prompts/caretaker_system.md`, dokleja jednostki + projekty, woła klienta. Model dokleja `[[hubmi-project:ID]]` → `app/llm/suggestions.py` czyści tekst i zwraca `suggested_projects`. Gemini: `LLM_API_KEY` + `LLM_MODEL`.
 
 Modele: `OrganizationalUnit`, `Project`, `Report`, kontrakt `LLMChatRequest/Response`.
 

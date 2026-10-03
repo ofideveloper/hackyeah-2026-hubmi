@@ -1,4 +1,4 @@
-"""Czat produktu — zbiera kontekst jednostek/projektów i woła LLM (`/llm`)."""
+"""Czat produktu — kontekst jednostek/projektów + sugestie kart do UI."""
 
 from __future__ import annotations
 
@@ -9,23 +9,34 @@ from sqlalchemy.orm import Session, joinedload
 from app.auth import get_current_user
 from app.database import get_db
 from app.llm import get_llm_client
+from app.llm.prompts import load_prompt
+from app.llm.suggestions import extract_project_ids
 from app.models import OrganizationalUnit, Project, User
-from app.schemas import ChatRequest, ChatResponse, LLMChatRequest, LLMMessage
+from app.schemas import ChatRequest, ChatResponse, LLMChatRequest, LLMMessage, ProjectPublic
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-SYSTEM_INTRO = """Jesteś społecznym opiekunem HubMI. Rozmawiasz z mieszkańcem po polsku — ciepło, zwięźle, bez żargonu technicznego.
 
-Korzystaj WYŁĄCZNIE z listy jednostek i projektów poniżej (dodatkowe informacje z systemu). Nie wymyślaj jednostek ani projektów spoza listy.
-Dopasuj potrzebę mieszkańca do najlepszego projektu / jednostki, wyjaśnij dlaczego i zaproponuj prosty kolejny krok.
-Jeśli nic nie pasuje — dopytaj o lokalizację i rodzaj sprawy, albo wskaż najbliższe opcje z listy.
-Format linii PROJECT|id|jednostka|nazwa|opis zachowaj jako źródło faktów (nie cytuj go dosłownie użytkownikowi).
-
-Dane systemowe:"""
+def _project_public(project: Project) -> ProjectPublic:
+    return ProjectPublic(
+        id=project.id,
+        unit_id=project.unit_id,
+        unit_name=project.unit.name if project.unit else None,
+        name=project.name,
+        description=project.description,
+        created_at=project.created_at,
+    )
 
 
 def _build_system_context(units: list[OrganizationalUnit], projects: list[Project]) -> str:
-    lines = [SYSTEM_INTRO, "", "Jednostki:"]
+    lines = [
+        load_prompt("caretaker_system"),
+        "",
+        "---",
+        "Dane systemowe (źródło faktów):",
+        "",
+        "Jednostki:",
+    ]
     if not units:
         lines.append("(brak jednostek)")
     else:
@@ -46,6 +57,30 @@ def _build_system_context(units: list[OrganizationalUnit], projects: list[Projec
             lines.append(f"PROJECT|{project.id}|{unit_name}|{project.name}|{desc}")
 
     return "\n".join(lines)
+
+
+def _resolve_suggested(
+    projects: list[Project],
+    ids: list[int],
+    reply_text: str,
+) -> list[ProjectPublic]:
+    by_id = {p.id: p for p in projects}
+    ordered: list[Project] = []
+    for pid in ids:
+        project = by_id.get(pid)
+        if project:
+            ordered.append(project)
+
+    # Fallback: nazwa projektu wspomniana w tekście (gdy model zapomni markera)
+    if not ordered:
+        reply_lower = reply_text.casefold()
+        for project in projects:
+            if project.name and project.name.casefold() in reply_lower:
+                ordered.append(project)
+            if len(ordered) >= 3:
+                break
+
+    return [_project_public(p) for p in ordered[:3]]
 
 
 @router.post("", response_model=ChatResponse)
@@ -71,4 +106,6 @@ def chat(
         model=None,
     )
     result = get_llm_client().chat(llm_request)
-    return ChatResponse(reply=result.content)
+    reply, ids = extract_project_ids(result.content)
+    suggested = _resolve_suggested(projects, ids, reply)
+    return ChatResponse(reply=reply, suggested_projects=suggested)

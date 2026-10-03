@@ -88,6 +88,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
+    suggested_projects: list[ProjectPublic] = []
 
 
 class LLMMessage(BaseModel):

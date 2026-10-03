@@ -23,6 +23,10 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 Flow usera: rozmowa ze społecznym opiekunem + podgląd statusów.
 Projekty / tworzenie spraw: under the hood (AI / API), nie UI mieszkańca.
 
+**Czat / Markdown:** `AssistantChat` → `ChatMarkdown` (`react-markdown` + GFM). AI ma odpowiadać wg `apps/api/app/llm/prompts/caretaker_system.md` (bold, listy, `###`, linki — bez tabel/kodu).
+
+**Sugestie projektów:** API zwraca `suggested_projects[]`; pod dymkiem `ProjectSuggestionCards`, klik → `ProjectPreviewModal`. Markery `[[hubmi-project:ID]]` z odpowiedzi AI są zdejmowane po stronie API.
+
 ## Architektura wywołań API
 
 ```

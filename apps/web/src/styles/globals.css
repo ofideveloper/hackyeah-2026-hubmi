@@ -182,6 +182,298 @@ body {
   color: var(--danger);
 }
 
+/* Markdown w bubble — zgodny z apps/api/app/llm/prompts/caretaker_system.md */
+.chat-md :first-child {
+  margin-top: 0;
+}
+
+.chat-md :last-child {
+  margin-bottom: 0;
+}
+
+.chat-md-p {
+  margin: 0.45em 0;
+  white-space: pre-wrap;
+}
+
+.chat-md-strong {
+  font-weight: 600;
+}
+
+.chat-md-em {
+  font-style: italic;
+}
+
+.chat-md-h {
+  margin: 0.65em 0 0.3em;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 1.02em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.chat-md-ul,
+.chat-md-ol {
+  margin: 0.4em 0;
+  padding-left: 1.2em;
+}
+
+.chat-md-li {
+  margin: 0.2em 0;
+}
+
+.chat-md-ul {
+  list-style: disc;
+}
+
+.chat-md-ol {
+  list-style: decimal;
+}
+
+.chat-md-a {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chat-md-on-accent .chat-md-a {
+  color: #e8fffb;
+}
+
+.chat-md-on-accent .chat-md-strong {
+  color: #fff;
+}
+
+.chat-md-code {
+  font-size: 0.9em;
+  border-radius: 0.3em;
+  padding: 0.1em 0.35em;
+  background: rgba(26, 35, 48, 0.06);
+}
+
+.chat-md-pre {
+  margin: 0.5em 0;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(26, 35, 48, 0.06);
+  font-size: 0.85em;
+}
+
+/* Karty projektów pod dymkiem opiekuna */
+.project-suggest-rail {
+  margin-top: 0.65rem;
+  width: 100%;
+}
+
+.project-suggest-label {
+  margin: 0 0 0.45rem 0.15rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.project-suggest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-suggest-list > li {
+  animation: fade-up 0.35s ease both;
+}
+
+.project-suggest-card {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(13, 143, 130, 0.2);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(236, 248, 246, 0.95)),
+    #fff;
+  padding: 0.85rem 0.95rem;
+  text-align: left;
+  box-shadow: 0 4px 14px rgba(13, 143, 130, 0.08);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.project-suggest-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(13, 143, 130, 0.45);
+  box-shadow: 0 8px 22px rgba(13, 143, 130, 0.14);
+}
+
+.project-suggest-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.project-suggest-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.project-suggest-unit {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-hover);
+}
+
+.project-suggest-cta {
+  border-radius: 999px;
+  background: var(--accent-soft);
+  padding: 0.15rem 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--accent-hover);
+}
+
+.project-suggest-name {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.project-suggest-excerpt {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* Modal podglądu projektu */
+.project-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(18, 28, 36, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+@media (min-width: 640px) {
+  .project-modal-root {
+    align-items: center;
+  }
+}
+
+.project-modal {
+  width: min(100%, 28rem);
+  max-height: min(88vh, 36rem);
+  overflow: auto;
+  border-radius: 1.35rem;
+  background: var(--bg-elevated);
+  box-shadow: 0 24px 60px rgba(18, 28, 36, 0.28);
+}
+
+.project-modal-hero {
+  position: relative;
+  min-height: 7.5rem;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.35), transparent 45%),
+    linear-gradient(145deg, #2bb8a4 0%, var(--accent) 50%, #0a6e65 100%);
+  padding: 1.25rem 1.35rem;
+}
+
+.project-modal-badge {
+  display: inline-block;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  backdrop-filter: blur(6px);
+}
+
+.project-modal-body {
+  padding: 1.25rem 1.35rem 1.4rem;
+}
+
+.project-modal-kicker {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.project-modal-title {
+  margin: 0.4rem 0 0.75rem;
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.project-modal-desc {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.project-modal-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 1.15rem 0 0;
+  padding: 0.85rem 0.9rem;
+  border-radius: 0.9rem;
+  background: var(--bg);
+}
+
+.project-modal-meta dt {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.project-modal-meta dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.project-modal-hint {
+  margin: 1rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.project-modal-actions {
+  margin-top: 1.15rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .chat-chip {
   border-radius: 999px;
   border: 1px solid rgba(13, 143, 130, 0.28);

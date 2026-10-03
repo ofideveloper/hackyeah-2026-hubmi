@@ -7,7 +7,9 @@ Providery: `fake` (lokalny stub) | `gemini` (Google Generative Language API).
 from __future__ import annotations
 
 import json
+import logging
 import re
+import time
 import unicodedata
 import urllib.error
 import urllib.request
@@ -15,7 +17,10 @@ import uuid
 from abc import ABC, abstractmethod
 from functools import lru_cache
 
+logger = logging.getLogger(__name__)
+
 from app.config import get_settings
+from app.llm.suggestions import format_project_markers
 from app.schemas import LLMChatRequest, LLMChatResponse, LLMMessage
 
 _STOPWORDS = {
@@ -78,10 +83,13 @@ class GeminiLLMClient(LLMClient):
     """Google Gemini — odpowiedzi na podstawie system promptu (projekty / jednostki)."""
 
     provider = "gemini"
+    _max_attempts = 3
+    _retry_statuses = {429, 503}
 
     def __init__(self, api_key: str, model: str) -> None:
         self.api_key = api_key.strip()
-        self.model = model.strip() or "gemini-2.5-flash"
+        self.model = model.strip() or "gemini-3.8-flash"
+        self._fallback = FakeLLMClient()
 
     def chat(self, request: LLMChatRequest) -> LLMChatResponse:
         model = (request.model or self.model).strip()
@@ -113,49 +121,102 @@ class GeminiLLMClient(LLMClient):
 
         url = f"{_GEMINI_BASE}/{model}:generateContent"
         payload = json.dumps(body).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            method="POST",
-            headers={
-                "Content-Type": "application/json",
-                "x-goog-api-key": self.api_key,
-            },
-        )
 
-        try:
-            with urllib.request.urlopen(req, timeout=45) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as exc:
-            err_body = exc.read().decode("utf-8", errors="replace")[:500]
-            return LLMChatResponse(
-                id=f"gemini-err-{uuid.uuid4().hex[:8]}",
-                model=model,
-                provider=self.provider,
-                content=(
-                    f"Gemini zwrócił błąd HTTP {exc.code}. "
-                    "Sprawdź klucz API i nazwę modelu (`LLM_MODEL`). "
-                    f"Szczegóły: {err_body}"
-                ),
+        last_http: urllib.error.HTTPError | None = None
+        for attempt in range(1, self._max_attempts + 1):
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                method="POST",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": self.api_key,
+                },
             )
-        except urllib.error.URLError as exc:
-            return LLMChatResponse(
-                id=f"gemini-net-{uuid.uuid4().hex[:8]}",
-                model=model,
-                provider=self.provider,
-                content=f"Nie udało się połączyć z Gemini: {exc.reason}",
-            )
+            try:
+                with urllib.request.urlopen(req, timeout=45) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                content = _extract_gemini_text(data)
+                if not content:
+                    content = "Gemini nie zwrócił treści — spróbuj przeformułować wiadomość."
+                return LLMChatResponse(
+                    id=data.get("responseId") or f"gemini-{uuid.uuid4().hex[:12]}",
+                    model=model,
+                    provider=self.provider,
+                    content=content,
+                )
+            except urllib.error.HTTPError as exc:
+                last_http = exc
+                err_body = exc.read().decode("utf-8", errors="replace")[:400]
+                if exc.code in self._retry_statuses and attempt < self._max_attempts:
+                    delay = 0.8 * attempt
+                    logger.warning(
+                        "Gemini HTTP %s (próba %s/%s), retry za %.1fs",
+                        exc.code,
+                        attempt,
+                        self._max_attempts,
+                        delay,
+                    )
+                    time.sleep(delay)
+                    continue
+                if exc.code in self._retry_statuses:
+                    logger.warning(
+                        "Gemini niedostępny (%s) — fallback na fake. %s",
+                        exc.code,
+                        err_body,
+                    )
+                    fallback = self._fallback.chat(request)
+                    return LLMChatResponse(
+                        id=fallback.id,
+                        model=fallback.model,
+                        provider=f"{self.provider}+fake",
+                        content=fallback.content,
+                    )
+                return LLMChatResponse(
+                    id=f"gemini-err-{uuid.uuid4().hex[:8]}",
+                    model=model,
+                    provider=self.provider,
+                    content=_gemini_http_message(exc.code, err_body),
+                )
+            except urllib.error.URLError as exc:
+                return LLMChatResponse(
+                    id=f"gemini-net-{uuid.uuid4().hex[:8]}",
+                    model=model,
+                    provider=self.provider,
+                    content=(
+                        "Nie udało się połączyć z Gemini (sieć). "
+                        "Spróbuj za chwilę ponownie."
+                    ),
+                )
 
-        content = _extract_gemini_text(data)
-        if not content:
-            content = "Gemini nie zwrócił treści — spróbuj przeformułować wiadomość."
-
+        # teoretycznie nieosiągalne
+        code = last_http.code if last_http else 503
         return LLMChatResponse(
-            id=data.get("responseId") or f"gemini-{uuid.uuid4().hex[:12]}",
+            id=f"gemini-err-{uuid.uuid4().hex[:8]}",
             model=model,
             provider=self.provider,
-            content=content,
+            content=_gemini_http_message(code, ""),
         )
+
+
+def _gemini_http_message(code: int, err_body: str) -> str:
+    if code in (429, 503):
+        return (
+            "Opiekun jest chwilowo przeciążony (dużo zapytań do Gemini). "
+            "Spróbuj za kilka sekund ponownie."
+        )
+    if code in (401, 403):
+        return (
+            "Gemini odrzucił klucz API. Sprawdź `LLM_API_KEY` w Google AI Studio "
+            "i zrestartuj API."
+        )
+    if code == 404:
+        return (
+            "Model Gemini nie istnieje lub nie jest dostępny. "
+            "Ustaw `LLM_MODEL=gemini-3.8-flash` (lub inny aktualny) i zrestartuj API."
+        )
+    detail = f" Szczegóły: {err_body}" if err_body else ""
+    return f"Gemini zwrócił błąd HTTP {code}.{detail}"
 
 
 def _to_gemini_contents(messages: list[LLMMessage]) -> list[dict]:
@@ -274,7 +335,7 @@ def _fake_complete(user_text: str, system_text: str) -> str:
 
     if matches:
         lines = [
-            f"Dzięki — wygląda na to, że chodzi o: „{user_text[:220]}”.",
+            f"Rozumiem — chodzi o „{user_text[:220]}”.",
             "",
             "Oto co mogę Ci zaproponować:",
         ]
@@ -282,16 +343,18 @@ def _fake_complete(user_text: str, system_text: str) -> str:
             lines.extend(
                 [
                     "",
-                    f"**{project['name']}**",
-                    f"Opiekun / jednostka: {project['unit']}",
-                    f"{project['description']}",
+                    f"### **{project['name']}**",
+                    f"Opiekun: {project['unit']}",
+                    "",
+                    project["description"],
                 ]
             )
         lines.extend(
             [
                 "",
-                "Jeśli to brzmi sensownie — napisz, czy chcesz iść w tę stronę. "
-                "Jeśli nie, opisz sprawę inaczej, a pomyślimy dalej.",
+                "**Co dalej:** napisz, czy chcesz iść w tę stronę — albo opisz sprawę inaczej.",
+                "",
+                format_project_markers([int(p["id"]) for p, _ in matches]),
             ]
         )
         return "\n".join(lines)
@@ -300,13 +363,17 @@ def _fake_complete(user_text: str, system_text: str) -> str:
         f"Jeszcze nie mam pewnego kierunku dla „{user_text[:120]}”.",
         "",
         "Możemy rozważyć m.in.:",
+        "",
     ]
-    for project in projects[:8]:
-        lines.append(f"• **{project['name']}** — {project['unit']}")
+    preview = projects[:3]
+    for project in preview:
+        lines.append(f"- **{project['name']}** — {project['unit']}")
     lines.extend(
         [
             "",
-            "Albo po prostu opisz sytuację własnymi słowami — razem pomyślimy nad rozwiązaniem.",
+            "Opisz sytuację własnymi słowami — razem pomyślimy nad rozwiązaniem.",
+            "",
+            format_project_markers([int(p["id"]) for p in preview if p.get("id")]),
         ]
     )
     return "\n".join(lines)

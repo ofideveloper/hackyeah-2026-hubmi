@@ -10,7 +10,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,8 @@ export default function RegisterPage() {
       await registerUser({
         email,
         password,
-        full_name: fullName || undefined,
+        name,
+        surname,
       });
       setSuccess(true);
       setTimeout(() => {
@@ -58,15 +60,28 @@ export default function RegisterPage() {
             </p>
 
             <div className="mt-7 space-y-4">
-              <label className="block text-sm">
-                <span className="mb-1.5 block text-[var(--muted)]">Imię i nazwisko</span>
-                <input
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="field"
-                  autoComplete="name"
-                />
-              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-[var(--muted)]">Imię</span>
+                  <input
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="field"
+                    autoComplete="given-name"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-[var(--muted)]">Nazwisko</span>
+                  <input
+                    required
+                    value={surname}
+                    onChange={(e) => setSurname(e.target.value)}
+                    className="field"
+                    autoComplete="family-name"
+                  />
+                </label>
+              </div>
               <label className="block text-sm">
                 <span className="mb-1.5 block text-[var(--muted)]">Email</span>
                 <input

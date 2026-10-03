@@ -2,12 +2,12 @@
 const API_BASE = "/api";
 
 export type User = {
-  id: number;
+  id: string;
   email: string;
-  full_name: string | null;
-  role: "user" | "admin" | string;
-  is_active: boolean;
-  created_at: string;
+  name: string;
+  surname: string;
+  phone_number: string | null;
+  role: "user" | "admin" | "specialist" | string;
 };
 
 export type AdminStats = {
@@ -81,7 +81,9 @@ function authHeaders(token: string): HeadersInit {
 export async function registerUser(payload: {
   email: string;
   password: string;
-  full_name?: string;
+  name: string;
+  surname: string;
+  phone_number?: string;
 }): Promise<User> {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: "POST",

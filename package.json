@@ -5,15 +5,15 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently -n web,api -c cyan,magenta \"npm run dev -w @hubmi/web\" \"npm run dev -w @hubmi/api\"",
+    "dev": "concurrently -n web,api -c cyan,magenta \"npm run dev -w @hubmi/web\" \"npm run dev:api\"",
     "dev:web": "npm run dev -w @hubmi/web",
-    "dev:api": "npm run dev -w @hubmi/api",
+    "dev:api": "cd apps/api && uv run fastapi dev main.py --port 8000",
     "build": "npm run build -w @hubmi/web",
     "lint": "npm run lint -w @hubmi/web",
-    "setup:api": "npm run setup -w @hubmi/api"
+    "setup:api": "cd apps/api && uv sync"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.2.4"
   },
   "engines": {
     "node": ">=20"

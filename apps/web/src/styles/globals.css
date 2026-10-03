@@ -272,3 +272,12 @@ body {
   background: rgba(46, 125, 90, 0.12);
   color: #2e7d5a;
 }
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid rgba(216, 224, 232, 0.85);
+  background: rgba(246, 248, 250, 0.82);
+  backdrop-filter: blur(10px);
+}

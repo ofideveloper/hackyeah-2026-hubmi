@@ -1,8 +1,9 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
+from ..dependencies.auth import get_current_user
 from ..dependencies.db import SessionDep
 from ..models import (
     ActualProject,
@@ -11,7 +12,11 @@ from ..models import (
     ProposalOfNewProject,
 )
 
-router = APIRouter(prefix="/categories", tags=["categories"])
+router = APIRouter(
+    prefix="/categories",
+    tags=["categories"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def get_category_or_404(session: Session, category_id: uuid.UUID) -> CategoriesOfProjects:

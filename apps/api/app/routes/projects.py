@@ -1,9 +1,14 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from ..dependencies.auth import get_current_user
 from ..dependencies.db import SessionDep
 from ..models import ActualProject, ActualProjectCreate, CategoriesOfProjects
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+router = APIRouter(
+    prefix="/projects",
+    tags=["projects"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.post("/", response_model=ActualProject, status_code=status.HTTP_201_CREATED)

@@ -1,12 +1,16 @@
 import hashlib
 import hmac
 import os
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jwt.exceptions import InvalidTokenError
 from sqlmodel import Session, select
 
+from ..config import get_settings
 from ..models import User
 from .db import SessionDep
 
@@ -41,21 +45,29 @@ def authenticate_user(session: Session, email: str, password: str) -> User | Non
 
 
 def create_access_token(user: User) -> str:
-    # Same as the "simple OAuth2" tutorial: the token is just the username (email).
-    # Replace with a signed JWT before this goes anywhere real.
-    return user.email
+    settings = get_settings()
+    expire = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
+    payload = {"sub": user.email, "exp": expire}
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)], session: SessionDep
 ) -> User:
-    user = get_user(session, token)
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    settings = get_settings()
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except InvalidTokenError as exc:
+        raise credentials_exception from exc
+    email = payload.get("sub")
+    user = get_user(session, email) if isinstance(email, str) else None
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise credentials_exception
     return user
 
 

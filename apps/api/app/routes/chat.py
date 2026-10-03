@@ -1,8 +1,6 @@
 import os
 import time
 
-from api.dependencies.db import SessionDep
-from api.models import ActualProject
 from dotenv import find_dotenv, load_dotenv
 from fastapi import APIRouter, HTTPException, status
 from google import genai
@@ -10,11 +8,28 @@ from google.genai import errors
 from pydantic import BaseModel, Field
 from sqlmodel import select
 
+from ..dependencies.db import SessionDep
+from ..models import ActualProject
+
 load_dotenv(find_dotenv(usecwd=True))
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+_client: genai.Client | None = None
+
+
+def get_client() -> genai.Client:
+    # Lazy: bez GEMINI_API_KEY genai.Client() rzuca już przy imporcie i API nie wstaje.
+    global _client
+    if _client is None:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Brak GEMINI_API_KEY — czat jest niedostępny",
+            )
+        _client = genai.Client(api_key=api_key)
+    return _client
 
 
 class ChatRequest(BaseModel):
@@ -37,6 +52,7 @@ async def chat(payload: ChatRequest, session: SessionDep):
         user_message=payload.message,
     )
 
+    client = get_client()
     try:
         print(f"Sending request to Gemini API with message: {prompt}")
         response = await client.aio.models.generate_content(

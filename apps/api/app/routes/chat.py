@@ -9,11 +9,11 @@ from dataclasses import dataclass
 from typing import Literal
 
 import httpx
-from dotenv import find_dotenv, load_dotenv
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
+from ..config import get_settings
 from ..dependencies.db import SessionDep
 from ..dependencies.logger import get_logger
 from ..llm.suggestions import (
@@ -24,36 +24,66 @@ from ..llm.suggestions import (
 from ..models import ActualProject, CategoriesOfProjects, ChatHistory, NeedSignal
 from ..scripts.scrape_rops import refresh_new_projects
 
-load_dotenv(find_dotenv(usecwd=True))
-
 router = APIRouter(prefix="/chat", tags=["chat"])
 logger = get_logger(__name__)
 
-# Dowolne API zgodne z OpenAI (chat/completions). Domyślnie DeepSeek przez OpenRouter;
-# bezpośrednio: LLM_BASE_URL=https://api.deepseek.com, LLM_MODEL=deepseek-chat.
-LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")
-LLM_API_KEY = os.getenv("LLM_API_KEY", "")
-LLM_MODEL = os.getenv("LLM_MODEL", "qwen/qwen3.8-27b:free")
-# Błąd modelu (limit, chwilowa awaria dostawcy) ponawiamy po losowej pauzie,
-# żeby użytkownik nie dostawał 502 w czacie.
+# Błąd modelu (limit, chwilowa awaria dostawcy) ponawiamy po losowej pauzie.
 LLM_RETRIES = int(os.getenv("LLM_RETRIES", "2"))
 LLM_RETRY_DELAY_S = (3.0, 7.0)
+
+# Domyślne endpointy OpenAI-compatible — wybór wg LLM_PROVIDER / LLM_BASE_URL.
+_PROVIDER_BASE = {
+    "openai": "https://api.openai.com/v1",
+    "openrouter": "https://openrouter.ai/api/v1",
+    "deepseek": "https://api.deepseek.com",
+}
+_PROVIDER_MODEL = {
+    "openai": "gpt-4o-mini",
+    "openrouter": "qwen/qwen3.8-27b:free",
+    "deepseek": "deepseek-chat",
+}
 
 
 class LLMError(Exception):
     pass
 
 
+def _llm_config() -> tuple[str, str, str]:
+    """URL, klucz i model — z Settings / env (czytane przy każdym wywołaniu).
+
+    Bez `LLM_BASE_URL` bierzemy host z `LLM_PROVIDER` (openai → api.openai.com).
+    Wcześniej domyślnie szło na OpenRouter nawet przy kluczu OpenAI → „Missing Authentication header”.
+    """
+    settings = get_settings()
+    provider = (settings.llm_provider or os.getenv("LLM_PROVIDER") or "openai").strip().lower()
+    key = (settings.llm_api_key or os.getenv("LLM_API_KEY") or "").strip()
+    base = (settings.llm_base_url or os.getenv("LLM_BASE_URL") or "").strip().rstrip("/")
+    if not base:
+        base = _PROVIDER_BASE.get(provider, _PROVIDER_BASE["openai"])
+    model = (settings.llm_model or os.getenv("LLM_MODEL") or "").strip()
+    if not model:
+        model = _PROVIDER_MODEL.get(provider, _PROVIDER_MODEL["openai"])
+    return base, key, model
+
+
 async def ask_llm(messages: list[dict[str, str]]) -> str:
     """Pyta model; przy błędzie czeka 3–7 s i ponawia (łącznie 1 + LLM_RETRIES prób)."""
+    base, key, model = _llm_config()
+    if not key:
+        logger.error("Brak LLM_API_KEY — ustaw go w env serwisu api na Vercel")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Brak LLM_API_KEY w środowisku API — ustaw klucz w Vercel (service api)",
+        )
+
     for attempt in range(LLM_RETRIES + 1):
         try:
-            return await _ask_llm_once(messages)
+            return await _ask_llm_once(messages, base=base, key=key, model=model)
         except LLMError as exc:
             if attempt == LLM_RETRIES:
                 logger.warning(
                     "LLM %s nie odpowiedział po %s próbach: %s",
-                    LLM_MODEL,
+                    model,
                     attempt + 1,
                     exc,
                 )
@@ -73,19 +103,19 @@ async def ask_llm(messages: list[dict[str, str]]) -> str:
     raise AssertionError("unreachable")
 
 
-async def _ask_llm_once(messages: list[dict[str, str]]) -> str:
+async def _ask_llm_once(
+    messages: list[dict[str, str]], *, base: str, key: str, model: str
+) -> str:
     try:
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(
-                f"{LLM_BASE_URL}/chat/completions",
-                headers={"Authorization": f"Bearer {LLM_API_KEY}"},
+                f"{base}/chat/completions",
+                headers={"Authorization": f"Bearer {key}"},
                 # Niska temperatura: odpowiedzi mają trzymać się katalogu.
-                json={"model": LLM_MODEL, "messages": messages, "temperature": 0.2},
+                json={"model": model, "messages": messages, "temperature": 0.2},
             )
     except httpx.HTTPError as exc:
-        raise LLMError(
-            f"brak połączenia z {LLM_BASE_URL} ({type(exc).__name__})"
-        ) from exc
+        raise LLMError(f"brak połączenia z {base} ({type(exc).__name__})") from exc
 
     try:
         data = response.json()

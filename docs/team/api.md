@@ -60,7 +60,7 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 | GET | `/llm/health` | **Legacy** — provider klienta (`fake` / `openai` / `gemini`) |
 | GET | `/health` | Healthcheck (`{ status: "healthy" }`) |
 
-**LLM:** `/chat/` woła Gemini bezpośrednio (`app/routes/chat.py`, env `GEMINI_API_KEY`). Pakiet `app/llm/` (klient `fake|openai|gemini`, prompt opiekuna) i router `app/routes/llm.py` to **legacy** — działają (`LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`), ale nie rozwijamy ich.
+**LLM:** `/chat/` woła API zgodne z OpenAI (`LLM_BASE_URL` + `LLM_API_KEY` + `LLM_MODEL`; domyślnie OpenRouter). Na Vercel klucz musi być w env serwisu **api**. Pakiet `app/llm/` i router `app/routes/llm.py` to **legacy**.
 
 Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProject`, `ProposalOfNewProject`, `Benefice`, `ProjectBenefices`, `ChatHistory`, `GrantCall`, `GrantApplication`, `TesterSignup`, `SolutionReview`, `Conversation`, `Message`, `PartnershipListing`.
 

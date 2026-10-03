@@ -537,13 +537,6 @@ body {
   color: var(--text);
 }
 
-.project-modal-hint {
-  margin: 1rem 0 0;
-  font-size: 0.8125rem;
-  line-height: 1.45;
-  color: var(--muted);
-}
-
 .project-modal-actions {
   margin-top: 1.15rem;
   display: flex;
@@ -584,6 +577,11 @@ body {
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
+.chat-input-with-send {
+  padding-right: 2.6rem;
+  padding-top: 0.9rem;
+}
+
 .chat-input:focus {
   outline: none;
   border-color: var(--accent);
@@ -596,11 +594,31 @@ body {
 }
 
 .chat-send {
-  height: 3.25rem;
-  min-width: 3.25rem;
-  border-radius: 1rem;
-  padding-left: 1.1rem;
-  padding-right: 1.1rem;
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  display: inline-flex;
+  height: 1.85rem;
+  width: 1.85rem;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.65rem;
+  padding: 0;
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 1px 2px rgba(13, 143, 130, 0.25);
+  transition: background 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+.chat-send:hover:not(:disabled) {
+  background: #0b7a6f;
+  transform: translateY(-0.5px);
+}
+
+.chat-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .sr-only {

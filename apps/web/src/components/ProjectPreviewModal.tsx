@@ -64,10 +64,6 @@ export function ProjectPreviewModal({ project, onClose }: ProjectPreviewModalPro
             </div>
           </dl>
 
-          <p className="project-modal-hint">
-            To podgląd z rozmowy — jeśli pasuje, napisz opiekunowi, że chcesz iść w tę stronę.
-          </p>
-
           <div className="project-modal-actions">
             <button ref={closeRef} type="button" className="btn-primary" onClick={onClose}>
               Zamknij

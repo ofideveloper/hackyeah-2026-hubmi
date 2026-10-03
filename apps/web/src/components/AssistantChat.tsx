@@ -87,26 +87,36 @@ type AssistantChatProps = {
   guestMode?: boolean;
 };
 
+function welcomeMessage(guestMode: boolean): ChatMessage {
+  return {
+    id: "welcome",
+    role: "assistant",
+    content: guestMode
+      ? `Miło Cię widzieć. Opowiedz krótko, co Cię zajmuje — albo wybierz podpowiedź poniżej. ` +
+        `Razem pomyślimy nad rozwiązaniem.`
+      : `Miło Cię widzieć. Jestem Twoim społecznym opiekunem — razem pomyślimy nad rozwiązaniem. ` +
+        `Napisz, co Cię zajmuje, albo wybierz podpowiedź poniżej.`,
+    timestamp: new Date(),
+  };
+}
+
 export function AssistantChat({ userName, guestMode = false }: AssistantChatProps) {
   const displayName = userName?.trim() || "mieszkańcu";
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [
-    {
-      id: "welcome",
-      role: "assistant",
-      content: guestMode
-        ? `Miło Cię widzieć. Opowiedz krótko, co Cię zajmuje — albo wybierz podpowiedź poniżej. ` +
-          `Razem pomyślimy nad rozwiązaniem.`
-        : `Miło Cię widzieć. Jestem Twoim społecznym opiekunem — razem pomyślimy nad rozwiązaniem. ` +
-          `Napisz, co Cię zajmuje, albo wybierz podpowiedź poniżej.`,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage(guestMode)]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Project | null>(null);
   const [locatingId, setLocatingId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const onlyWelcome = messages.length === 1 && messages[0]?.id === "welcome";
+
+  function startNewChat() {
+    if (busy || onlyWelcome) return;
+    setMessages([welcomeMessage(guestMode)]);
+    setInput("");
+    setPreview(null);
+    setLocatingId(null);
+  }
 
   useEffect(() => {
     const el = listRef.current;
@@ -381,41 +391,53 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
       )}
 
       <form onSubmit={onSubmit} className="chat-composer border-t border-[var(--border)] px-4 py-4 sm:px-6">
-        <div className="flex items-end gap-3">
-          <label className="relative min-w-0 flex-1">
-            <span className="sr-only">Twoja wiadomość</span>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-              rows={2}
-              disabled={busy}
-              placeholder="Napisz, czego potrzebujesz…"
-              className="chat-input"
-            />
-          </label>
+        <label className="relative block min-w-0">
+          <span className="sr-only">Twoja wiadomość</span>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            rows={2}
+            disabled={busy}
+            placeholder="Napisz, czego potrzebujesz…"
+            className="chat-input chat-input-with-send"
+          />
           <button
             type="submit"
             disabled={busy || !input.trim()}
-            className="btn-primary chat-send"
+            className="chat-send"
             aria-label="Wyślij wiadomość"
+            title="Wyślij"
           >
-            <span className="hidden sm:inline">Wyślij</span>
             <svg
-              className="h-5 w-5 sm:hidden"
+              className="h-3.5 w-3.5"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               aria-hidden
             >
-              <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="m22 2-7 20-4-9-9-4Z" />
+              <path d="M22 2 11 13" />
             </svg>
           </button>
+        </label>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-[11px] text-[var(--muted)]">
+            Enter wysyła · Shift+Enter nowa linia
+          </p>
+          <button
+            type="button"
+            onClick={startNewChat}
+            disabled={busy || onlyWelcome}
+            className="btn-ghost shrink-0 px-2.5 py-1.5 text-xs font-medium"
+            title="Wyczyść rozmowę i zacznij od nowa"
+          >
+            Nowy chat
+          </button>
         </div>
-        <p className="mt-2 text-[11px] text-[var(--muted)]">
-          Enter wysyła · Shift+Enter nowa linia
-        </p>
       </form>
 
       {preview && (

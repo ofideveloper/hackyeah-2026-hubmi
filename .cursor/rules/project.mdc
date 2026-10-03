@@ -1,0 +1,35 @@
+---
+description: HubMI monorepo — architektura, Vercel Services, niełamalne reguły
+alwaysApply: true
+---
+
+# HubMI — projekt
+
+**Produkt:** PWA zgłoszeń (problem / wydarzenie / informacja) w jednostkach; zadania predefiniowane + opis; 2 modele AI (kategorie treści, matching podobnych spraw → priority). Copy UI: `docs/team/product.md` — bez żargonu technicznego na landingu.
+
+Monorepo: `apps/web` (Next.js Pages Router) + `apps/api` (FastAPI).
+
+## Vercel Services
+
+- `web` — publiczny (`/*`)
+- `api` — **internal** (brak publicznego rewrite)
+- Binding: `web` → `api` jako `API_URL` (nie ustawiać ręcznie na Vercel)
+
+## Wywołania
+
+```
+Browser → /api/* (Next BFF) → process.env.API_URL → FastAPI (/auth, /admin, …)
+```
+
+- Klient: tylko `@/lib/api.ts` i ścieżki `/api/...`
+- Zakaz: `NEXT_PUBLIC_` z URL-em FastAPI, bezpośredni fetch do serwisu `api`
+
+## Reguły zespołu
+
+Pełny, uzupełnialny kontekst: `docs/team/` + indeks `AGENTS.md`.
+Po decyzji zespołu zaktualizuj `docs/team/*`, a kluczowe punkty przenieś tu.
+
+## Bezpieczeństwo
+
+- Nie commituj `.env`, sekretów, `*.db`
+- Lokalnie: `API_URL` w `apps/web/.env.local`

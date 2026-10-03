@@ -1,16 +1,13 @@
-import Head from "next/head";
+import { useEffect } from "react";
+import { useRouter } from "next/router";
 
-import { AdminLoginForm } from "@/components/AdminLoginForm";
+/** Stary URL — przekierowanie na logowanie użytkownika. */
+export default function AdminLoginRedirectPage() {
+  const router = useRouter();
 
-export default function AdminLoginPage() {
-  return (
-    <>
-      <Head>
-        <title>Admin login · HubMI</title>
-      </Head>
-      <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-6 py-12">
-        <AdminLoginForm />
-      </main>
-    </>
-  );
+  useEffect(() => {
+    void router.replace("/login");
+  }, [router]);
+
+  return null;
 }

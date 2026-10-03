@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     admin_password: str = "admin12345"
     admin_full_name: str = "HubMI Admin"
 
+    # LLM bypass: `fake` (domyślnie) | `http` (stub pod prawdziwy endpoint)
+    llm_provider: str = "fake"
+    llm_base_url: str = "http://localhost:11434/v1"
+    llm_api_key: str = ""
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

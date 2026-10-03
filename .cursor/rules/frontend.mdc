@@ -1,0 +1,38 @@
+---
+description: Konwencje frontendu Next.js (Pages Router)
+globs: apps/web/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Frontend (`apps/web`)
+
+## Router
+
+- Używaj **Pages Router** (`src/pages`, `src/components`, `src/lib`).
+- Nie rozwijaj `src/app/` dopóki zespół tego nie uzgodni (mogą być stare pliki).
+
+## API z UI
+
+```ts
+// ✅
+import { loginUser } from "@/lib/api";
+await loginUser(email, password); // → fetch("/api/auth/login")
+
+// ❌
+await fetch("http://localhost:8000/auth/login", …);
+```
+
+BFF: `src/pages/api/[...path].ts` → `process.env.API_URL`.
+
+## Wzorce
+
+- Auth token: `@/lib/auth.ts`
+- Formularze / panele: `src/components/`
+- Szczegóły designu i checklisty: `docs/team/frontend.md` (uzupełniaj `[UZUPEŁNIJ]`)
+
+## UI
+
+- Light theme, tokeny i klasy: `globals.css` (`.btn-primary`, `.field`, `.surface`)
+- Fonty: Sora (display), Manrope (body)
+- Design z Figmy: `docs/team/figma.md` + reguła `figma.mdc`
+- Unikaj ciężkiego dark mode i domyślnych „AI looks”, chyba że świadomie z Figmy / `docs/team/frontend.md`

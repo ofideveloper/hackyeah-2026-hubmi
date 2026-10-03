@@ -1,0 +1,14 @@
+---
+description: Jak utrzymywać reguły zespołu i docs/team
+globs: docs/team/**/*.md,AGENTS.md,.cursor/rules/**/*
+alwaysApply: false
+---
+
+# Utrzymanie reguł
+
+1. `docs/team/*` = źródło prawdy (może być dłuższe, z `[UZUPEŁNIJ]`).
+2. `.cursor/rules/*.mdc` = krótkie egzekwowalne reguły dla AI (< ~50 linii, jedna sprawa).
+3. `AGENTS.md` = indeks / onboarding dla agenta.
+
+Przy nowej decyzji zespołu: wpis w `docs/team` → skrót w `.mdc` jeśli AI ma tego przestrzegać.
+Nie twórz zbędnych plików markdown poza tą strukturą.

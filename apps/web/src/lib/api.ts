@@ -14,6 +14,39 @@ export type AdminStats = {
   users_total: number;
   users_active: number;
   admins_total: number;
+  units_total: number;
+  reports_total: number;
+  projects_total: number;
+};
+
+export type OrganizationalUnit = {
+  id: number;
+  name: string;
+  territory: string;
+  competencies: string;
+  created_at: string;
+};
+
+export type Project = {
+  id: number;
+  unit_id: number;
+  unit_name: string | null;
+  name: string;
+  description: string;
+  created_at: string;
+};
+
+export type ReportKind = "problem" | "wydarzenie" | "informacja";
+
+export type Report = {
+  id: number;
+  author_id: number;
+  unit_id: number;
+  unit_name: string | null;
+  kind: ReportKind | string;
+  title: string;
+  description: string;
+  created_at: string;
 };
 
 type AuthError = {
@@ -37,6 +70,10 @@ async function parseError(res: Response): Promise<string> {
   } catch {
     return "Request failed";
   }
+}
+
+function authHeaders(token: string): HeadersInit {
+  return { Authorization: `Bearer ${token}` };
 }
 
 export async function registerUser(payload: {
@@ -79,7 +116,7 @@ export async function loginUser(email: string, password: string): Promise<string
 
 export async function fetchMe(token: string): Promise<User> {
   const res = await fetch(`${API_BASE}/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeaders(token),
     cache: "no-store",
   });
 
@@ -92,7 +129,7 @@ export async function fetchMe(token: string): Promise<User> {
 
 export async function fetchAdminStats(token: string): Promise<AdminStats> {
   const res = await fetch(`${API_BASE}/admin/stats`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeaders(token),
     cache: "no-store",
   });
 
@@ -105,7 +142,7 @@ export async function fetchAdminStats(token: string): Promise<AdminStats> {
 
 export async function fetchAdminUsers(token: string): Promise<User[]> {
   const res = await fetch(`${API_BASE}/admin/users`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeaders(token),
     cache: "no-store",
   });
 
@@ -114,4 +151,173 @@ export async function fetchAdminUsers(token: string): Promise<User[]> {
   }
 
   return res.json() as Promise<User[]>;
+}
+
+export async function fetchUnits(token: string): Promise<OrganizationalUnit[]> {
+  const res = await fetch(`${API_BASE}/units`, {
+    headers: authHeaders(token),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  return res.json() as Promise<OrganizationalUnit[]>;
+}
+
+export async function createUnit(
+  token: string,
+  payload: { name: string; territory: string; competencies: string },
+): Promise<OrganizationalUnit> {
+  const res = await fetch(`${API_BASE}/admin/units`, {
+    method: "POST",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  return res.json() as Promise<OrganizationalUnit>;
+}
+
+export async function deleteUnit(token: string, unitId: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin/units/${unitId}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+}
+
+export async function fetchProjects(
+  token: string,
+  unitId?: number,
+): Promise<Project[]> {
+  const query = unitId != null ? `?unit_id=${unitId}` : "";
+  const res = await fetch(`${API_BASE}/projects${query}`, {
+    headers: authHeaders(token),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  return res.json() as Promise<Project[]>;
+}
+
+export async function createProject(
+  token: string,
+  payload: { unit_id: number; name: string; description: string },
+): Promise<Project> {
+  const res = await fetch(`${API_BASE}/admin/projects`, {
+    method: "POST",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  return res.json() as Promise<Project>;
+}
+
+export async function updateProject(
+  token: string,
+  projectId: number,
+  payload: { unit_id?: number; name?: string; description?: string },
+): Promise<Project> {
+  const res = await fetch(`${API_BASE}/admin/projects/${projectId}`, {
+    method: "PATCH",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  return res.json() as Promise<Project>;
+}
+
+export async function deleteProject(token: string, projectId: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin/projects/${projectId}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+}
+
+export async function fetchMyReports(token: string): Promise<Report[]> {
+  const res = await fetch(`${API_BASE}/reports`, {
+    headers: authHeaders(token),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  return res.json() as Promise<Report[]>;
+}
+
+export async function createReport(
+  token: string,
+  payload: {
+    unit_id: number;
+    kind: ReportKind;
+    title: string;
+    description: string;
+  },
+): Promise<Report> {
+  const res = await fetch(`${API_BASE}/reports`, {
+    method: "POST",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  return res.json() as Promise<Report>;
+}
+
+export async function sendChatMessage(token: string, message: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: "POST",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ message }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  const data = (await res.json()) as { reply: string };
+  return data.reply;
 }

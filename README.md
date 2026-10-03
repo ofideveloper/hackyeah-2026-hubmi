@@ -8,7 +8,12 @@ Szkielet na HackYeah: frontend Next.js (Pages Router), backend FastAPI, panel ad
 apps/
   web/   # Next.js Pages Router (panel admina + BFF /api/*)
   api/   # FastAPI + SQLAlchemy + SQLite (internal on Vercel)
+docs/team/   # uzupełnialne reguły zespołu (produkt, front, api, AI)
+.cursor/rules/  # krótkie reguły dla Cursor / agentów
+AGENTS.md       # indeks dla AI
 ```
+
+Reguły zespołu: zacznij od [`docs/team/README.md`](docs/team/README.md) i [`AGENTS.md`](AGENTS.md).
 
 ## Wymagania
 

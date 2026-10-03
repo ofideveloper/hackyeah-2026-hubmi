@@ -27,7 +27,7 @@ export default function RegisterPage() {
       });
       setSuccess(true);
       setTimeout(() => {
-        void router.push("/admin/login");
+        void router.push("/login");
       }, 1200);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Rejestracja nie powiodła się");
@@ -39,27 +39,27 @@ export default function RegisterPage() {
   return (
     <>
       <Head>
-        <title>Rejestracja · HubMI</title>
+        <title>Załóż konto · HubMI</title>
       </Head>
       <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-6 py-12">
-        <form
-          onSubmit={onSubmit}
-          className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-8"
-        >
-          <p className="mb-1 font-mono text-xs tracking-wide text-[var(--accent)]">HubMI</p>
-          <h1 className="text-2xl font-semibold">Rejestracja użytkownika</h1>
+        <form onSubmit={onSubmit} className="surface animate-fade-up w-full max-w-md p-8">
+          <p className="font-display text-sm font-semibold tracking-wide text-[var(--accent)]">
+            HubMI
+          </p>
+          <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight">
+            Załóż konto
+          </h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Tworzy konto z rolą <code className="text-[var(--text)]">user</code> (widoczne w
-            panelu admina).
+            Dołącz do jednostki i zaczynaj zgłaszać pomysły oraz sprawy.
           </p>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-7 space-y-4">
             <label className="block text-sm">
               <span className="mb-1.5 block text-[var(--muted)]">Imię i nazwisko</span>
               <input
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5"
+                className="field"
                 autoComplete="name"
               />
             </label>
@@ -70,7 +70,7 @@ export default function RegisterPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5"
+                className="field"
                 autoComplete="email"
               />
             </label>
@@ -82,7 +82,7 @@ export default function RegisterPage() {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5"
+                className="field"
                 autoComplete="new-password"
               />
             </label>
@@ -100,14 +100,18 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading || success}
-            className="mt-6 w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-[var(--bg)] transition hover:bg-[var(--accent-hover)] disabled:opacity-60"
+            className="btn-primary mt-6 w-full"
           >
-            {loading ? "Zapisywanie…" : "Zarejestruj"}
+            {loading ? "Zapisywanie…" : "Załóż konto"}
           </button>
+
+          <p className="mt-5 text-center text-sm text-[var(--muted)]">
+            Masz już konto?{" "}
+            <Link href="/login" className="text-[var(--accent)] hover:underline">
+              Zaloguj się
+            </Link>
+          </p>
         </form>
-        <Link href="/" className="mt-6 text-sm text-[var(--muted)] hover:text-[var(--text)]">
-          ← Strona główna
-        </Link>
       </main>
     </>
   );

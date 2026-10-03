@@ -1,21 +1,21 @@
 import type { AppProps } from "next/app";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Manrope, Sora } from "next/font/google";
 
 import "@/styles/globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const body = Manrope({
+  variable: "--font-body",
+  subsets: ["latin", "latin-ext"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const display = Sora({
+  variable: "--font-display",
+  subsets: ["latin", "latin-ext"],
 });
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <div className={`${geistSans.variable} ${geistMono.variable}`}>
+    <div className={`${body.variable} ${display.variable}`}>
       <Component {...pageProps} />
     </div>
   );

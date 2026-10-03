@@ -1,0 +1,17 @@
+---
+description: Implementacja UI z Figma MCP — workflow z teamem UI
+globs: apps/web/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Figma → HubMI web
+
+Gdy użytkownik podaje link Figma lub prosi o sync z designem:
+
+1. Użyj **Figma MCP** (`figma`) — nie zgaduj layoutu z samego screenshota, jeśli MCP jest dostępne.
+2. Mapuj design na **Pages Router** (`apps/web/src/pages`, `components`, `lib`).
+3. Tokeny trzymaj w `apps/web/src/styles/globals.css` (`--bg`, `--accent`, `.btn-primary`, `.field`, `.surface`).
+4. Linki do plików zespołu: `docs/team/figma.md` — po nowym ekranie dopisz wiersz w tabeli.
+5. Nie zmieniaj architektury BFF (`/api` → `API_URL`) pod design.
+
+Jeśli MCP Figma nie jest połączone: poproś o **Connect** w Tools & MCP albo `/add-plugin figma`, zamiast udawać dostęp do pliku.

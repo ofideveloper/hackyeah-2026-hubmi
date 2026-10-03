@@ -1,0 +1,32 @@
+---
+description: Konwencje FastAPI backendu HubMI
+globs: apps/api/**/*.py
+alwaysApply: false
+---
+
+# API (`apps/api`)
+
+## Struktura
+
+- Wejście: `app/main.py`
+- Routery: `app/routers/` (prefixy `/auth`, `/admin`, `/chat`, `/llm`, …)
+- LLM: tylko przez `app/llm/client.py` (bypass `fake` → później real HTTP)- Modele / schematy: `models.py`, `schemas.py`
+- Auth JWT: `app/auth.py`
+
+## Ścieżki
+
+FastAPI eksponuje `/auth/*`, `/admin/*`, `/health` — **bez** prefiksu `/api`.
+Prefiks `/api` dodaje wyłącznie Next BFF po stronie web.
+
+## Bezpieczeństwo endpointów
+
+- User: `Depends(get_current_user)`
+- Admin: `Depends(get_current_admin)`
+- Nie loguj haseł ani tokenów
+
+## Dane
+
+- SQLite lokalnie; na Vercel bez trwałego dysku (`/tmp`) — produkcja: `DATABASE_URL`
+- Seed admina z env przy starcie
+
+Szczegóły i nowe endpointy: `docs/team/api.md`.

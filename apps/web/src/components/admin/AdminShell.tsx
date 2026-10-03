@@ -31,13 +31,13 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
   return (
     <>
       <Head>
-        <title>{title} · Admin · HubMI</title>
+        <title>{title} · Admin · MaloHUB</title>
       </Head>
       <div className="admin-shell min-h-screen">
         <aside className="admin-sidebar" aria-label="Panel admina">
           <div className="admin-sidebar-brand">
             <Link href="/admin" className="font-display text-sm font-semibold text-[var(--accent)]">
-              HubMI Admin
+              MaloHUB Admin
             </Link>
             <p className="mt-1 truncate text-xs text-[var(--muted)]">
               {gate.admin.full_name ||

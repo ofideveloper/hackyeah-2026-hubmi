@@ -1,9 +1,9 @@
 ---
-description: HubMI monorepo — architektura, Vercel Services, niełamalne reguły
+description: MaloHUB monorepo — architektura, Vercel Services, niełamalne reguły
 alwaysApply: true
 ---
 
-# HubMI — projekt
+# MaloHUB — projekt
 
 **Produkt:** PWA zgłoszeń (problem / wydarzenie / informacja) w jednostkach; zadania predefiniowane + opis; 2 modele AI (kategorie treści, matching podobnych spraw → priority). Copy UI: `docs/team/product.md` — bez żargonu technicznego na landingu.
 
@@ -29,7 +29,9 @@ Browser → /api/* (Next BFF) → process.env.API_URL → FastAPI (/auth, /admin
 Pełny, uzupełnialny kontekst: `docs/team/` + indeks `AGENTS.md`.
 Po decyzji zespołu zaktualizuj `docs/team/*`, a kluczowe punkty przenieś tu.
 
-## Bezpieczeństwo
+## Bezpieczeństwo i dostępność
 
 - Nie commituj `.env`, sekretów, `*.db`
 - Lokalnie: `API_URL` w `apps/web/.env.local`
+- Cybersec: `docs/team/security.md` / `security.mdc`
+- UI: WCAG 2.1 AA — `docs/team/accessibility.md` / `accessibility.mdc`

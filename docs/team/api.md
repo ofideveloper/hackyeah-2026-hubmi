@@ -22,7 +22,9 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 | PATCH | `/categories/{id}` | Zmień nazwę |
 | DELETE | `/categories/{id}` | Usuń (409, gdy używana przez projekt / propozycję) |
 | POST | `/projects/` | Utwórz projekt (`category_id`, `name`, `description`) — zalogowany |
-| POST | `/chat/` | Body: `{ message }` → `{ reply }` (Gemini; bez `GEMINI_API_KEY` → 503) |
+| POST | `/chat` | Body: `{ message, history?, chat_id? }` → `{ reply, chat_id, suggested_projects[], project_proposal?, location_request? }` (JWT opcjonalny; LLM przez `LLM_*`) |
+| PATCH | `/admin/units/{id}` | Edycja jednostki (`name` / `territory` / `competencies`) |
+| PATCH | `/admin/projects/{id}` | Edycja projektu jednostki (`unit_id` / `name` / `description`) |
 | POST | `/llm/chat` | **Legacy** — bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
 | GET | `/llm/health` | **Legacy** — provider klienta (`fake` / `openai` / `gemini`) |
 | GET | `/health` | Healthcheck (`{ status: "healthy" }`) |
@@ -37,7 +39,8 @@ Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProj
 
 - JWT (Bearer, `sub` = email, `exp`), sekret: `SECRET_KEY`, ważność: `ACCESS_TOKEN_EXPIRE_MINUTES`; hasła: scrypt
 - Role: `admin` | `user` | `specialist`
-- Brak seeda admina; `/categories` i `/projects` wymagają zalogowania (dowolna rola)
+- Przy starcie `seed_admin_user` (`app/seed.py`) tworzy admina z `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_FULL_NAME` (domyślnie `admin@malohub.dev`); istniejący user z tym emailem dostaje `role=admin`
+- `/categories` i `/projects` wymagają zalogowania (dowolna rola)
 
 [UZUPEŁNIJ — reguły haseł, expiry, refresh?]
 
@@ -56,8 +59,13 @@ Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProj
 - Zależności FastAPI w `app/dependencies/` (`SessionDep`, `CurrentUserDep`)
 - [UZUPEŁNIJ — walidacja, paginacja, format błędów]
 
+## Bezpieczeństwo
+
+Reguły cybersec (authz, input, sekrety, BFF): [`security.md`](./security.md); egzekucja AI: `.cursor/rules/security.mdc`.
+
 ## Checklist PR (api)
 
 - [ ] Endpoint chroniony właściwą zależnością (`CurrentUserDep`)
 - [ ] Brak sekretów w kodzie
 - [ ] Zmiana schematu udokumentowana w `docs/team` lub README
+- [ ] Authz / walidacja inputu zgodna z `security.md`

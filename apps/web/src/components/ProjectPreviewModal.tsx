@@ -45,24 +45,13 @@ export function ProjectPreviewModal({ project, onClose }: ProjectPreviewModalPro
         </div>
 
         <div className="project-modal-body">
-          <p className="project-modal-kicker">
-            {project.unit_name ?? "Jednostka organizacyjna"}
-          </p>
+          {project.unit_name ? (
+            <p className="project-modal-kicker">{project.unit_name}</p>
+          ) : null}
           <h2 id={titleId} className="font-display project-modal-title">
             {project.name}
           </h2>
           <p className="project-modal-desc">{project.description}</p>
-
-          <dl className="project-modal-meta">
-            <div>
-              <dt>Opiekun</dt>
-              <dd>{project.unit_name ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>W HubMI</dt>
-              <dd>Projekt #{project.id}</dd>
-            </div>
-          </dl>
 
           <div className="project-modal-actions">
             <button ref={closeRef} type="button" className="btn-primary" onClick={onClose}>

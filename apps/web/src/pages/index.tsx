@@ -20,7 +20,7 @@ const steps = [
     number: "03",
     title: "Śledź postęp",
     description:
-      "Po założeniu konta zobaczysz statusy spraw w swojej przestrzeni HubMI.",
+      "Po założeniu konta zobaczysz statusy spraw w swojej przestrzeni MaloHUB.",
   },
 ];
 
@@ -28,7 +28,7 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>HubMI — Twoja sprawa ma znaczenie</title>
+        <title>MaloHUB — Twoja sprawa ma znaczenie</title>
         <meta
           name="description"
           content="Zgłaszaj problemy, wydarzenia i informacje do właściwych jednostek. Prosto, lokalnie i w jednym miejscu."
@@ -40,12 +40,12 @@ export default function HomePage() {
           <Link
             href="/"
             className="font-display flex items-center gap-2 text-xl font-semibold tracking-tight"
-            aria-label="HubMI — strona główna"
+            aria-label="MaloHUB — strona główna"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-sm font-bold text-white">
               H
             </span>
-            HubMI
+            MaloHUB
           </Link>
           <nav className="flex items-center gap-3" aria-label="Nawigacja główna">
             <Link
@@ -134,7 +134,7 @@ export default function HomePage() {
                   Mniej szukania. Więcej działania.
                 </h2>
                 <p className="mt-4 leading-7 text-[var(--muted)]">
-                  HubMI pomaga przejść od zauważonej sprawy do właściwej jednostki
+                  MaloHUB pomaga przejść od zauważonej sprawy do właściwej jednostki
                   w kilku prostych krokach.
                 </p>
               </div>
@@ -179,7 +179,7 @@ export default function HomePage() {
 
         <footer className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-7 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-10">
           <Link href="/" className="font-display font-semibold text-[var(--text)]">
-            HubMI
+            MaloHUB
           </Link>
           <p>Twoja sprawa ma znaczenie.</p>
           <Link href="/login" className="transition hover:text-[var(--accent)]">

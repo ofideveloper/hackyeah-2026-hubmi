@@ -15,14 +15,16 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     algorithm: str = "HS256"
     cors_origins: str = "http://localhost:3000"
-    admin_email: str = "admin@hubmi.dev"
+    admin_email: str = "admin@malohub.dev"
     admin_password: str = "admin12345"
-    admin_full_name: str = "HubMI Admin"
+    admin_full_name: str = "MaloHUB Admin"
 
     # LLM: `fake` | `openai` | `gemini`
     llm_provider: str = "fake"
     llm_api_key: str = ""
     llm_model: str = "gpt-4o-mini"
+    # Opcjonalnie nadpisuje URL (np. OpenRouter). Puste = z providera.
+    llm_base_url: str = ""
 
     @property
     def cors_origin_list(self) -> list[str]:

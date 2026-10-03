@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import re
+import uuid
 from dataclasses import dataclass
 
-# Istniejące projekty → karty w UI
-PROJECT_MARKER_RE = re.compile(r"\[\[hubmi-project:(\d+)\]\]", re.IGNORECASE)
+# Istniejące projekty → karty w UI (UUID lub legacy int)
+PROJECT_MARKER_RE = re.compile(
+    r"\[\[hubmi-project:([0-9a-fA-F-]{36}|\d+)\]\]",
+    re.IGNORECASE,
+)
 
 # Nowy projekt zebrany w rozmowie → kolejka admina
 NEW_PROJECT_BLOCK_RE = re.compile(
@@ -25,15 +29,24 @@ LOCATION_MARKER_RE = re.compile(
 class NewProjectDraft:
     name: str
     description: str
-    suggested_unit_id: int | None = None
+    suggested_unit_id: uuid.UUID | None = None
 
 
-def extract_project_ids(content: str) -> tuple[str, list[int]]:
-    """Zwraca (tekst bez markerów kart, unikalne id projektów)."""
-    ids: list[int] = []
-    seen: set[int] = set()
+def _parse_id(raw: str) -> str:
+    """Normalizuje id markera do stringa (UUID lowercase albo cyfry)."""
+    text = raw.strip()
+    try:
+        return str(uuid.UUID(text))
+    except ValueError:
+        return text
+
+
+def extract_project_ids(content: str) -> tuple[str, list[str]]:
+    """Zwraca (tekst bez markerów kart, unikalne id projektów jako string)."""
+    ids: list[str] = []
+    seen: set[str] = set()
     for match in PROJECT_MARKER_RE.finditer(content):
-        pid = int(match.group(1))
+        pid = _parse_id(match.group(1))
         if pid not in seen:
             seen.add(pid)
             ids.append(pid)
@@ -84,9 +97,12 @@ def _parse_new_project_body(body: str) -> NewProjectDraft | None:
     if len(name) < 2 or len(description) < 2:
         return None
 
-    unit_id: int | None = None
-    if unit_raw.isdigit():
-        unit_id = int(unit_raw)
+    unit_id: uuid.UUID | None = None
+    if unit_raw:
+        try:
+            unit_id = uuid.UUID(unit_raw)
+        except ValueError:
+            unit_id = None
 
     return NewProjectDraft(
         name=name[:255],
@@ -108,5 +124,5 @@ def extract_location_request(content: str) -> tuple[str, str | None]:
     return cleaned, kind
 
 
-def format_project_markers(project_ids: list[int]) -> str:
+def format_project_markers(project_ids: list[str] | list[int]) -> str:
     return " ".join(f"[[hubmi-project:{pid}]]" for pid in project_ids)

@@ -1,4 +1,4 @@
-# HubMI — reguły dla agentów AI i zespołu
+# MaloHUB — reguły dla agentów AI i zespołu
 
 Ten plik jest wejściem dla AI (Cursor) i ludzi. Szczegóły żyją w `.cursor/rules/` oraz w `docs/team/`.
 
@@ -20,6 +20,8 @@ Na Vercel: **web publiczny**, **api internal** — przeglądarka woła tylko `/a
 | [`docs/team/product.md`](docs/team/product.md) | cały zespół | produkt, domena, słownik, out-of-scope |
 | [`docs/team/frontend.md`](docs/team/frontend.md) | frontend + AI | UI, routing, komponenty, design |
 | [`docs/team/api.md`](docs/team/api.md) | backend + AI | endpointy, auth, dane |
+| [`docs/team/accessibility.md`](docs/team/accessibility.md) | frontend + AI | WCAG 2.1 AA, brak barier |
+| [`docs/team/security.md`](docs/team/security.md) | cały zespół + AI | cybersec, authz, sekrety, BFF |
 | [`docs/team/ai.md`](docs/team/ai.md) | AI agent | preferencje pracy z agentem |
 | [`docs/team/figma.md`](docs/team/figma.md) | UI + AI | Figma MCP, linki do frame’ów |
 | [`.cursor/rules/`](.cursor/rules/) | Cursor | krótkie, egzekwowalne reguły (skrót z docs) |
@@ -46,4 +48,6 @@ npm run dev
 1. Nie wystawiaj FastAPI publicznie na Vercel — tylko przez BFF / binding.
 2. Nie wołaj API z przeglądarki przez `localhost:8000` ani bezpośredni URL serwisu `api`.
 3. Nie commituj `.env`, sekretów ani `*.db`.
-4. Nowe reguły zespołu → `docs/team/` + ewentualnie `.cursor/rules/`.
+4. UI: **WCAG 2.1 AA** — szczegóły w `docs/team/accessibility.md` / `accessibility.mdc`.
+5. Cybersec: `docs/team/security.md` / `security.mdc` (authz, sekrety, XSS, input).
+6. Nowe reguły zespołu → `docs/team/` + ewentualnie `.cursor/rules/`.

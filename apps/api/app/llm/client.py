@@ -613,7 +613,7 @@ def _housing_draft(facts: dict[str, object], system_text: str) -> str:
     desc = (
         f"Potrzeba mieszkaniowa ({duration}). Miejsce: {place}. "
         f"{public}Sytuacja: {who}. "
-        "Zebrane z rozmowy z mieszkańcem przez społecznego opiekuna HubMI."
+        "Zebrane z rozmowy z mieszkańcem przez społecznego opiekuna MaloHUB."
     )
     place_bit = f" na {place}" if place and place != "lokalizacja do uzupełnienia" else ""
     horizon = "na dłużej" if facts.get("duration") == "long" else "na już"
@@ -622,7 +622,7 @@ def _housing_draft(facts: dict[str, object], system_text: str) -> str:
         f"zależy Ci na wsparciu **{horizon}**"
         + (", najlepiej w jednostce publicznej" if facts.get("public_unit") else "")
         + ".\n\n"
-        "Przekazuję to jako **propozycję dla zespołu HubMI**, żeby właściwa jednostka "
+        "Przekazuję to jako **propozycję dla zespołu MaloHUB**, żeby właściwa jednostka "
         "mogła przejąć sprawę i dopracować dalsze kroki.\n\n"
         "Jeśli chcesz coś dopisać (np. czy jesteś sam/sama) — napisz śmiało.\n\n"
         "[[hubmi-new-project]]\n"
@@ -638,7 +638,7 @@ def _fake_complete(user_text: str, system_text: str, history_text: str = "") -> 
     if not user_text:
         return (
             "Cześć — opowiedz krótko, co Cię zajmuje. "
-            "Mogę poszukać sensownego kierunku w HubMI albo po prostu pomóc poukładać sprawę."
+            "Mogę poszukać sensownego kierunku w MaloHUB albo po prostu pomóc poukładać sprawę."
         )
 
     # System ukrył listę projektów / oznaczył ogólnik — tylko dopytaj
@@ -684,7 +684,7 @@ def _fake_complete(user_text: str, system_text: str, history_text: str = "") -> 
             lead = "Słyszę, że chodzi o dach nad głową w okolicy, którą podałeś"
         elif known_location:
             lead = "Trzymam się tego, co już wiem o miejscu i sprawie"
-        lines = [f"{lead}. Widzę sensowny kierunek w HubMI:"]
+        lines = [f"{lead}. Widzę sensowny kierunek w MaloHUB:"]
         for project, _score in matches:
             lines.extend(
                 [
@@ -700,7 +700,7 @@ def _fake_complete(user_text: str, system_text: str, history_text: str = "") -> 
                 "",
                 "Pasuje Ci ta ścieżka, czy raczej szukamy czegoś innego?",
                 "",
-                format_project_markers([int(p["id"]) for p, _ in matches]),
+                format_project_markers([str(p["id"]) for p, _ in matches]),
             ]
         )
         return "\n".join(lines)
@@ -753,7 +753,7 @@ def _fake_complete(user_text: str, system_text: str, history_text: str = "") -> 
             f"Trzymam to, co już napisałeś: „{user_text[:140]}”. "
             "Lokalizację mam.\n\n"
             "Powiedz proszę jeszcze jednym zdaniem, **czego najbardziej potrzebujesz teraz** "
-            "— wtedy dobiorę kierunek albo złożę propozycję dla zespołu HubMI."
+            "— wtedy dobiorę kierunek albo złożę propozycję dla zespołu MaloHUB."
         )
 
     return (

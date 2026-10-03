@@ -30,7 +30,7 @@ export function AdminReportsView() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function onChangeStatus(reportId: number, status: ReportStatus) {
+  async function onChangeStatus(reportId: string, status: ReportStatus) {
     const token = getToken();
     if (!token) return;
     try {

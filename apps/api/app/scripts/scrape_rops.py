@@ -25,7 +25,7 @@ DEFAULT_URL = (
     "https://rops.krakow.pl/innowacje-spoleczne/"
     "biblioteka-innowacji-spolecznych/dla-seniorow"
 )
-USER_AGENT = "HubMI-scraper/0.1 (HackYeah 2026)"
+USER_AGENT = "MaloHUB-scraper/0.1 (HackYeah 2026)"
 REQUEST_DELAY_S = 0.3
 
 BLOCK_TAGS = {"h4", "p", "li"}

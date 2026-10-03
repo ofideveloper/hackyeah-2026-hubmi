@@ -8,7 +8,7 @@ type SiteHeaderProps = {
 };
 
 /**
- * Wspólny pasek nawigacji HubMI — ten sam układ na LP, auth i w aplikacji.
+ * Wspólny pasek nawigacji MaloHUB — ten sam układ na LP, auth i w aplikacji.
  */
 export function SiteHeader({ actions, wide = false }: SiteHeaderProps) {
   return (
@@ -22,7 +22,7 @@ export function SiteHeader({ actions, wide = false }: SiteHeaderProps) {
           href="/"
           className="font-display text-sm font-semibold tracking-wide text-[var(--accent)] transition-opacity hover:opacity-80"
         >
-          HubMI
+          MaloHUB
         </Link>
         <nav className="flex flex-wrap items-center justify-end gap-2" aria-label="Główne">
           {actions}

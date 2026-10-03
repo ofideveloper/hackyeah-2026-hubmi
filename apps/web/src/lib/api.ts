@@ -1,17 +1,15 @@
 /** Browser talks to Next.js BFF at /api/*; the BFF proxies to the internal FastAPI service. */
 const API_BASE = "/api";
 
-/** Zgodne z API `UserPublic` (`apps/api/app/schemas.py`). */
+/** Zgodne z API `UserPublic` (`apps/api/app/models.py`). */
 export type User = {
-  id: number;
+  id: string;
   email: string;
   name: string;
   surname: string;
   phone_number: string | null;
-  full_name: string | null;
-  role: "user" | "admin" | string;
-  is_active: boolean;
-  created_at: string;
+  full_name?: string | null;
+  role: "user" | "admin" | "specialist" | string;
 };
 
 export type AdminStats = {
@@ -24,7 +22,7 @@ export type AdminStats = {
 };
 
 export type OrganizationalUnit = {
-  id: number;
+  id: string;
   name: string;
   territory: string;
   competencies: string;
@@ -32,8 +30,8 @@ export type OrganizationalUnit = {
 };
 
 export type Project = {
-  id: number;
-  unit_id: number;
+  id: string;
+  unit_id: string;
   unit_name: string | null;
   name: string;
   description: string;
@@ -43,11 +41,11 @@ export type Project = {
 export type ProjectProposalStatus = "nowe" | "zaakceptowane" | "odrzucone";
 
 export type ProjectProposal = {
-  id: number;
-  author_id: number;
+  id: string;
+  author_id: string;
   author_email: string | null;
   author_name: string | null;
-  suggested_unit_id: number | null;
+  suggested_unit_id: string | null;
   suggested_unit_name: string | null;
   name: string;
   description: string;
@@ -59,9 +57,9 @@ export type ReportKind = "problem" | "wydarzenie" | "informacja";
 export type ReportStatus = "nowe" | "w_toku" | "zakonczone";
 
 export type Report = {
-  id: number;
-  author_id: number;
-  unit_id: number;
+  id: string;
+  author_id: string;
+  unit_id: string;
   unit_name: string | null;
   kind: ReportKind | string;
   status: ReportStatus | string;
@@ -209,7 +207,28 @@ export async function createUnit(
   return res.json() as Promise<OrganizationalUnit>;
 }
 
-export async function deleteUnit(token: string, unitId: number): Promise<void> {
+export async function updateUnit(
+  token: string,
+  unitId: string,
+  payload: { name?: string; territory?: string; competencies?: string },
+): Promise<OrganizationalUnit> {
+  const res = await fetch(`${API_BASE}/admin/units/${unitId}`, {
+    method: "PATCH",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+
+  return res.json() as Promise<OrganizationalUnit>;
+}
+
+export async function deleteUnit(token: string, unitId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/admin/units/${unitId}`, {
     method: "DELETE",
     headers: authHeaders(token),
@@ -222,7 +241,7 @@ export async function deleteUnit(token: string, unitId: number): Promise<void> {
 
 export async function fetchProjects(
   token: string,
-  unitId?: number,
+  unitId?: string,
 ): Promise<Project[]> {
   const query = unitId != null ? `?unit_id=${unitId}` : "";
   const res = await fetch(`${API_BASE}/projects${query}`, {
@@ -239,7 +258,7 @@ export async function fetchProjects(
 
 export async function createProject(
   token: string,
-  payload: { unit_id: number; name: string; description: string },
+  payload: { unit_id: string; name: string; description: string },
 ): Promise<Project> {
   const res = await fetch(`${API_BASE}/admin/projects`, {
     method: "POST",
@@ -259,8 +278,8 @@ export async function createProject(
 
 export async function updateProject(
   token: string,
-  projectId: number,
-  payload: { unit_id?: number; name?: string; description?: string },
+  projectId: string,
+  payload: { unit_id?: string; name?: string; description?: string },
 ): Promise<Project> {
   const res = await fetch(`${API_BASE}/admin/projects/${projectId}`, {
     method: "PATCH",
@@ -278,7 +297,7 @@ export async function updateProject(
   return res.json() as Promise<Project>;
 }
 
-export async function deleteProject(token: string, projectId: number): Promise<void> {
+export async function deleteProject(token: string, projectId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/admin/projects/${projectId}`, {
     method: "DELETE",
     headers: authHeaders(token),
@@ -317,7 +336,7 @@ export async function fetchAdminReports(token: string): Promise<Report[]> {
 
 export async function updateReportStatus(
   token: string,
-  reportId: number,
+  reportId: string,
   status: ReportStatus,
 ): Promise<Report> {
   const res = await fetch(`${API_BASE}/admin/reports/${reportId}`, {
@@ -394,8 +413,8 @@ export async function fetchProjectProposals(token: string): Promise<ProjectPropo
 
 export async function acceptProjectProposal(
   token: string,
-  proposalId: number,
-  payload: { unit_id: number; name?: string; description?: string },
+  proposalId: string,
+  payload: { unit_id: string; name?: string; description?: string },
 ): Promise<Project> {
   const res = await fetch(`${API_BASE}/admin/project-proposals/${proposalId}/accept`, {
     method: "POST",
@@ -413,7 +432,7 @@ export async function acceptProjectProposal(
 
 export async function rejectProjectProposal(
   token: string,
-  proposalId: number,
+  proposalId: string,
 ): Promise<ProjectProposal> {
   const res = await fetch(`${API_BASE}/admin/project-proposals/${proposalId}/reject`, {
     method: "POST",

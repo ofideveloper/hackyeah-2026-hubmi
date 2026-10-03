@@ -45,7 +45,7 @@ export default function RegisterPage() {
   return (
     <>
       <Head>
-        <title>Załóż konto · HubMI</title>
+        <title>Załóż konto · MaloHUB</title>
       </Head>
       <div className="flex min-h-screen flex-col">
         <SiteHeader

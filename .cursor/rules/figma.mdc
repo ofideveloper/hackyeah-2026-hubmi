@@ -4,7 +4,7 @@ globs: apps/web/**/*.{ts,tsx,css}
 alwaysApply: false
 ---
 
-# Figma → HubMI web
+# Figma → MaloHUB web
 
 Gdy użytkownik podaje link Figma lub prosi o sync z designem:
 

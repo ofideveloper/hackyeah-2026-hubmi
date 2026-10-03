@@ -5,10 +5,10 @@ export default function Document() {
     <Html lang="pl">
       <Head>
         <meta name="theme-color" content="#27227d" />
-        <meta name="application-name" content="HubMI" />
+        <meta name="application-name" content="MaloHUB" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="HubMI" />
+        <meta name="apple-mobile-web-app-title" content="MaloHUB" />
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />

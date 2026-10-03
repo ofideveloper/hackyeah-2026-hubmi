@@ -12,12 +12,20 @@ import {
 } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
+type ProjectDraft = {
+  unit_id: string;
+  name: string;
+  description: string;
+};
+
 export function AdminProjectsView() {
   const [units, setUnits] = useState<OrganizationalUnit[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [unitId, setUnitId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<ProjectDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -37,6 +45,21 @@ export function AdminProjectsView() {
       .finally(() => setLoading(false));
   }, []);
 
+  function startEdit(project: Project) {
+    setError(null);
+    setEditingId(project.id);
+    setDraft({
+      unit_id: project.unit_id,
+      name: project.name,
+      description: project.description,
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setDraft(null);
+  }
+
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const token = getToken();
@@ -45,7 +68,7 @@ export function AdminProjectsView() {
     setBusy(true);
     try {
       const project = await createProject(token, {
-        unit_id: Number(unitId),
+        unit_id: unitId,
         name,
         description,
       });
@@ -59,24 +82,35 @@ export function AdminProjectsView() {
     }
   }
 
-  async function onReassign(projectId: number, nextUnitId: number) {
+  async function onSaveEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     const token = getToken();
-    if (!token) return;
+    if (!token || !editingId || !draft) return;
+    setError(null);
+    setBusy(true);
     try {
-      const updated = await updateProject(token, projectId, { unit_id: nextUnitId });
-      setProjects((prev) => prev.map((p) => (p.id === projectId ? updated : p)));
+      const updated = await updateProject(token, editingId, {
+        unit_id: draft.unit_id,
+        name: draft.name,
+        description: draft.description,
+      });
+      setProjects((prev) => prev.map((p) => (p.id === editingId ? updated : p)));
+      cancelEdit();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Nie udało się przydzielić projektu");
+      setError(err instanceof Error ? err.message : "Nie udało się zapisać projektu");
+    } finally {
+      setBusy(false);
     }
   }
 
-  async function onDelete(projectId: number) {
+  async function onDelete(projectId: string) {
     const token = getToken();
     if (!token) return;
     if (!window.confirm("Usunąć ten projekt?")) return;
     try {
       await deleteProject(token, projectId);
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      if (editingId === projectId) cancelEdit();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się usunąć projektu");
     }
@@ -98,6 +132,7 @@ export function AdminProjectsView() {
         </p>
       ) : (
         <form onSubmit={onCreate} className="surface space-y-4 p-5">
+          <p className="text-sm font-medium">Nowy projekt jednostki</p>
           <label className="block text-sm">
             <span className="mb-1.5 block text-[var(--muted)]">Przydziel do jednostki</span>
             <select
@@ -133,13 +168,13 @@ export function AdminProjectsView() {
               placeholder="Opis pod podpowiedzi AI…"
             />
           </label>
-          {error && (
+          {error && !editingId && (
             <p className="text-sm text-[var(--danger)]" role="alert">
               {error}
             </p>
           )}
           <button type="submit" disabled={busy} className="btn-primary">
-            {busy ? "Zapisywanie…" : "Utwórz i przydziel projekt"}
+            {busy && !editingId ? "Zapisywanie…" : "Utwórz i przydziel projekt"}
           </button>
         </form>
       )}
@@ -150,15 +185,15 @@ export function AdminProjectsView() {
         )}
         {projects.map((project) => (
           <li key={project.id} className="surface p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium">{project.name}</p>
-                <p className="mt-2 text-sm leading-relaxed">{project.description}</p>
-                <label className="mt-3 block max-w-sm text-sm">
-                  <span className="mb-1.5 block text-[var(--muted)]">Przydzielona jednostka</span>
+            {editingId === project.id && draft ? (
+              <form onSubmit={onSaveEdit} className="space-y-4">
+                <p className="text-sm font-medium">Edycja projektu</p>
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-[var(--muted)]">Jednostka</span>
                   <select
-                    value={project.unit_id}
-                    onChange={(e) => void onReassign(project.id, Number(e.target.value))}
+                    required
+                    value={draft.unit_id}
+                    onChange={(e) => setDraft({ ...draft, unit_id: e.target.value })}
                     className="field"
                     disabled={units.length === 0}
                   >
@@ -169,15 +204,73 @@ export function AdminProjectsView() {
                     ))}
                   </select>
                 </label>
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-[var(--muted)]">Nazwa</span>
+                  <input
+                    required
+                    minLength={2}
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    className="field"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-[var(--muted)]">Opis</span>
+                  <textarea
+                    required
+                    minLength={2}
+                    value={draft.description}
+                    onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                    className="field min-h-[100px]"
+                  />
+                </label>
+                {error && (
+                  <p className="text-sm text-[var(--danger)]" role="alert">
+                    {error}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <button type="submit" disabled={busy} className="btn-primary">
+                    {busy ? "Zapisywanie…" : "Zapisz"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    disabled={busy}
+                    onClick={cancelEdit}
+                  >
+                    Anuluj
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{project.name}</p>
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    {project.unit_name ?? `Jednostka ${project.unit_id}`}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed">{project.description}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(project)}
+                    className="btn-ghost text-sm"
+                    disabled={units.length === 0}
+                  >
+                    Edytuj
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void onDelete(project.id)}
+                    className="btn-ghost text-sm"
+                  >
+                    Usuń
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => void onDelete(project.id)}
-                className="btn-ghost text-sm"
-              >
-                Usuń
-              </button>
-            </div>
+            )}
           </li>
         ))}
       </ul>

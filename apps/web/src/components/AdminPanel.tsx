@@ -124,7 +124,7 @@ export function AdminPanel() {
     }
   }
 
-  async function onDeleteUnit(unitId: number) {
+  async function onDeleteUnit(unitId: string) {
     const token = getToken();
     if (!token) return;
     if (!window.confirm("Usunąć jednostkę oraz powiązane zgłoszenia i projekty?")) return;
@@ -136,9 +136,9 @@ export function AdminPanel() {
       const nextStats = await fetchAdminStats(token);
       setStats(nextStats);
       setProjectUnitId((current) => {
-        if (current !== String(unitId)) return current;
+        if (current !== unitId) return current;
         const remaining = units.filter((u) => u.id !== unitId);
-        return remaining[0] ? String(remaining[0].id) : "";
+        return remaining[0]?.id ?? "";
       });
     } catch (err) {
       setUnitError(err instanceof Error ? err.message : "Nie udało się usunąć jednostki");
@@ -154,7 +154,7 @@ export function AdminPanel() {
     setProjectBusy(true);
     try {
       const project = await createProject(token, {
-        unit_id: Number(projectUnitId),
+        unit_id: projectUnitId,
         name: projectName,
         description: projectDescription,
       });
@@ -171,7 +171,7 @@ export function AdminPanel() {
     }
   }
 
-  async function onDeleteProject(projectId: number) {
+  async function onDeleteProject(projectId: string) {
     const token = getToken();
     if (!token) return;
     if (!window.confirm("Usunąć ten projekt?")) return;
@@ -187,7 +187,7 @@ export function AdminPanel() {
     }
   }
 
-  async function onReassignProject(projectId: number, unitId: number) {
+  async function onReassignProject(projectId: string, unitId: string) {
     const token = getToken();
     if (!token) return;
 
@@ -200,7 +200,7 @@ export function AdminPanel() {
     }
   }
 
-  async function onChangeReportStatus(reportId: number, status: ReportStatus) {
+  async function onChangeReportStatus(reportId: string, status: ReportStatus) {
     const token = getToken();
     if (!token) return;
 
@@ -225,7 +225,7 @@ export function AdminPanel() {
     <main className="animate-soft-in mx-auto min-h-screen max-w-5xl px-6 py-12">
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-8">
         <div>
-          <p className="font-display text-sm font-semibold text-[var(--accent)]">HubMI</p>
+          <p className="font-display text-sm font-semibold text-[var(--accent)]">MaloHUB</p>
           <h1 className="font-display mt-1 text-3xl font-semibold tracking-tight">
             Panel administracyjny
           </h1>
@@ -405,7 +405,7 @@ export function AdminPanel() {
                     <select
                       value={project.unit_id}
                       onChange={(e) =>
-                        void onReassignProject(project.id, Number(e.target.value))
+                        void onReassignProject(project.id, e.target.value)
                       }
                       className="field"
                       disabled={units.length === 0}

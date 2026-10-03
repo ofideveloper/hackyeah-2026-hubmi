@@ -1,0 +1,29 @@
+---
+description: WCAG 2.1 AA — dostępność UI MaloHUB
+globs: apps/web/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Dostępność (WCAG 2.1 AA)
+
+Wymóg produktu: UI bez barier, **WCAG 2.1 poziom AA**. Pełny opis: `docs/team/accessibility.md`.
+
+## Rób
+
+- Semantyka: jeden `h1` / widok, natywne `<button>` / `<a href>` / `<label htmlFor>`
+- Klawiatura: Tab, Enter, Esc; widoczny `:focus-visible` (nie usuwaj outline bez zamiennika)
+- Kontrast: tekst ≥ 4.5:1, UI/ikony ≥ 3:1 względem tła (sprawdzaj tokeny `--muted` / `--accent`)
+- Ikony-only: `aria-label`; błędy pól: tekst + `aria-invalid` / `aria-describedby`
+- Czat / toasty: `aria-live="polite"`; dialogi: fokus + Escape + powrót fokusu
+- `lang="pl"`; animacje: respektuj `prefers-reduced-motion`
+- Statusy spraw: nie tylko kolor — tekst lub ikona + etykieta
+
+## Nie rób
+
+- `div onClick` bez roli, tabIndex i obsługi klawiatury
+- Informacja wyłącznie kolorem
+- Placeholder zamiast `<label>`
+- Autoplay / migające treści
+- Tabele / raw HTML w Markdown czatu (zgodnie z promptem opiekuna)
+
+Przy nowym UI: checklist w `docs/team/accessibility.md`.

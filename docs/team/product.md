@@ -2,7 +2,7 @@
 
 ## Nazwa i one-liner
 
-- **Nazwa:** HubMI
+- **Nazwa:** MaloHUB
 - **One-liner:** PWA, w której mieszkaniec rozmawia ze społecznym opiekunem, a jednostki i projekty działają „pod spodem”.
 
 ## Opis (HackYeah)
@@ -17,7 +17,7 @@ Aplikacja webowa (PWA) z dwoma perspektywami:
 
 | Ekran | Element | Tekst |
 |-------|---------|--------|
-| Landing | Brand | HubMI |
+| Landing | Brand | MaloHUB |
 | Landing | Headline | Zgłaszaj problemy i wydarzenia w swojej jednostce. |
 | Landing | CTA | Porozmawiaj z opiekunem → `#opiekun`, Załóż konto → `/register` |
 | Landing | Hero — czat | Ten sam `AssistantChat` co w `/app` (`guestMode`); pełny zapis spraw po koncie |
@@ -49,6 +49,8 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 - Czat mieszkańca (bez export/save)
 - Sprawy: status `nowe` / `w_toku` / `zakonczone` (admin zmienia; user czyta)
 - API tworzenia spraw (pod AI/system), nie UI mieszkańca
+- Dostępność cyfrowa: **WCAG 2.1 poziom AA** (brak barier) — `docs/team/accessibility.md`
+- Cyberbezpieczeństwo (BFF, sekrety, authz) — `docs/team/security.md`
 
 **Out of scope (na teraz)**
 
@@ -81,3 +83,5 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | 2026-10 | Intake nowego projektu z czatu | Gdy brak dopasowania — AI zbiera dane, admin tworzy projekt w jednostce |
 | 2026-10 | Czat opiekuna na landingu (gość) | Demo bez bariery rejestracji; propozycje do admina tylko po zalogowaniu |
 | 2026-10 | Paleta szaro–czarna + `#27227d` / `#3661a8` / `#94c0e5` | Brand zamiast teal |
+| 2026-10 | WCAG 2.1 AA jako wymóg produktu | HackYeah / brak barier |
+| 2026-10 | Reguły cybersec w docs + `.cursor/rules` | Egzekwowalne dla AI i zespołu |

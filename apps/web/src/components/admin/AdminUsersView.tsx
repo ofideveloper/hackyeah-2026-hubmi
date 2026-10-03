@@ -34,14 +34,11 @@ export function AdminUsersView() {
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-[var(--border)] text-[var(--muted)]">
             <tr>
-              <th className="px-4 py-3 font-medium">ID</th>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Imię</th>
               <th className="px-4 py-3 font-medium">Nazwisko</th>
               <th className="px-4 py-3 font-medium">Telefon</th>
               <th className="px-4 py-3 font-medium">Rola</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Utworzono</th>
             </tr>
           </thead>
           <tbody>
@@ -50,7 +47,6 @@ export function AdminUsersView() {
                 key={user.id}
                 className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--accent-soft)]"
               >
-                <td className="px-4 py-3 font-mono text-[var(--muted)]">{user.id}</td>
                 <td className="px-4 py-3">{user.email}</td>
                 <td className="px-4 py-3">{user.name || "—"}</td>
                 <td className="px-4 py-3">{user.surname || "—"}</td>
@@ -65,10 +61,6 @@ export function AdminUsersView() {
                   >
                     {user.role}
                   </span>
-                </td>
-                <td className="px-4 py-3">{user.is_active ? "active" : "inactive"}</td>
-                <td className="px-4 py-3 text-[var(--muted)]">
-                  {new Date(user.created_at).toLocaleString("pl-PL")}
                 </td>
               </tr>
             ))}

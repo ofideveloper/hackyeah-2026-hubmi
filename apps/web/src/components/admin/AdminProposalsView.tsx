@@ -19,10 +19,10 @@ const STATUS_LABEL: Record<string, string> = {
 export function AdminProposalsView() {
   const [units, setUnits] = useState<OrganizationalUnit[]>([]);
   const [proposals, setProposals] = useState<ProjectProposal[]>([]);
-  const [unitById, setUnitById] = useState<Record<number, string>>({});
+  const [unitById, setUnitById] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<number | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     const token = getToken();
@@ -31,12 +31,12 @@ export function AdminProposalsView() {
       .then(([nextUnits, nextProposals]) => {
         setUnits(nextUnits);
         setProposals(nextProposals);
-        const map: Record<number, string> = {};
+        const map: Record<string, string> = {};
         for (const proposal of nextProposals) {
           if (proposal.suggested_unit_id) {
-            map[proposal.id] = String(proposal.suggested_unit_id);
+            map[proposal.id] = proposal.suggested_unit_id;
           } else if (nextUnits[0]) {
-            map[proposal.id] = String(nextUnits[0].id);
+            map[proposal.id] = nextUnits[0].id;
           }
         }
         setUnitById(map);
@@ -49,7 +49,7 @@ export function AdminProposalsView() {
 
   async function onAccept(proposal: ProjectProposal) {
     const token = getToken();
-    const unitId = Number(unitById[proposal.id]);
+    const unitId = unitById[proposal.id];
     if (!token || !unitId) return;
     setBusyId(proposal.id);
     setError(null);

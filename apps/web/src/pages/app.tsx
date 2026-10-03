@@ -61,12 +61,12 @@ export default function AppHomePage() {
   return (
     <>
       <Head>
-        <title>HubMI</title>
+        <title>MaloHUB</title>
       </Head>
       <main className="animate-soft-in mx-auto min-h-screen max-w-3xl px-6 py-12">
         <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-8">
           <div>
-            <p className="font-display text-sm font-semibold text-[var(--accent)]">HubMI</p>
+            <p className="font-display text-sm font-semibold text-[var(--accent)]">MaloHUB</p>
             <h1 className="font-display mt-1 text-3xl font-semibold tracking-tight">
               Twoja przestrzeń
             </h1>

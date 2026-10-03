@@ -13,8 +13,8 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 | `/register` | Rejestracja → `/login` |
 | `/app` | Dom mieszkańca: czat + statusy spraw (bez formularzy) |
 | `/admin` | Panel admin — przegląd (tylko `role=admin`) |
-| `/admin/units` | Jednostki |
-| `/admin/projects` | Projekty |
+| `/admin/units` | Jednostki — create + edycja (`name`/`territory`/`competencies`) + delete |
+| `/admin/projects` | Projekty jednostek (`UnitProject`) — create + pełna edycja + delete |
 | `/admin/proposals` | Propozycje projektów z czatu → jednostka |
 | `/admin/reports` | Sprawy / statusy |
 | `/admin/users` | Użytkownicy |
@@ -26,7 +26,7 @@ Projekty / tworzenie spraw: under the hood (AI / API), nie UI mieszkańca.
 
 **Czat / Markdown:** `AssistantChat` → `ChatMarkdown` (`react-markdown` + GFM). AI ma odpowiadać wg `apps/api/app/llm/prompts/caretaker_system.md` (bold, listy, `###`, linki — bez tabel/kodu). Landing: `<AssistantChat guestMode />` w `#opiekun` (bez JWT). App: z `userName`.
 
-**Sugestie / propozycje / lokalizacja:** `suggested_projects[]` → karty; `project_proposal` → notka; `location_request` (`area`|`gps`) → `LocationRequestCard` + geolocation. Admin: `/admin/proposals`. Historia w `POST /chat` (JWT opcjonalny).
+**Sugestie / propozycje / lokalizacja:** `POST /chat` zwraca `suggested_projects[]` (z `UnitProject` + markerów / scoringu), `project_proposal`, `location_request` (`area`|`gps`) → karty w `AssistantChat`. JWT opcjonalny (gość). Admin: `/admin/proposals`.
 
 ## Architektura wywołań API
 
@@ -87,9 +87,14 @@ Motyw: **light**, szaro–czarny + niebieski brand. Tokeny: `apps/web/src/styles
 - [UZUPEŁNIJ — czy React Query / Zustand / tylko useState]
 - Błędy API: pokazuj `detail` z FastAPI użytkownikowi w formie czytelnego komunikatu
 
+## Dostępność
+
+Wymóg: **WCAG 2.1 AA** — reguły i checklista: [`accessibility.md`](./accessibility.md); egzekucja AI: `.cursor/rules/accessibility.mdc`.
+
 ## Checklist PR (frontend)
 
 - [ ] Działa na mobile i desktop
 - [ ] Auth redirect działa bez tokena
 - [ ] Brak sekretów w kliencie
 - [ ] Wywołania tylko przez `/api` + `lib/api.ts`
+- [ ] WCAG 2.1 AA: klawiatura, focus, label, kontrast, `aria-label` na ikonach (patrz `accessibility.md`)

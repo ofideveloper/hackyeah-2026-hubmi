@@ -1,26 +1,77 @@
-# HubMI — Next.js (Pages) + FastAPI monorepo
+# MaloHUB
 
-Szkielet na HackYeah: frontend Next.js (Pages Router), backend FastAPI, panel administracyjny z JWT i bazą SQLite.
+**Twój społeczny opiekun lokalnych spraw.**
 
-## Struktura
+PWA na [HackYeah](https://hackyeah.pl): mieszkaniec rozmawia naturalnie z AI, a system dopasowuje projekty i jednostki — bez formularzy i bez zgadywania, „do kogo napisać”.
+
+---
+
+## Problem
+
+Ludzie nie wiedzą, która jednostka odpowiada za ich sprawę. Formularze zniechęcają, a pomoc społeczna / lokalne inicjatywy giną w szumie.
+
+## Rozwiązanie
+
+**MaloHUB** zamienia zgłoszenie w rozmowę ze **społecznym opiekunem**:
+
+1. Opisujesz sytuację własnymi słowami (nawet bez konta — na landingu).
+2. AI dobiera pasujący **projekt** albo zbiera materiał pod **nową propozycję**.
+3. Admin i jednostka widzą propozycje / sprawy i prowadzą status dalej.
 
 ```
-apps/
-  web/   # Next.js Pages Router (panel admina + BFF /api/*)
-  api/   # FastAPI + SQLAlchemy + SQLite (internal on Vercel)
-docs/team/   # uzupełnialne reguły zespołu (produkt, front, api, AI)
-.cursor/rules/  # krótkie reguły dla Cursor / agentów
-AGENTS.md       # indeks dla AI
+Mieszkaniec  →  czat opiekuna  →  sugestia projektu / intake
+                     ↓
+              Admin + jednostka  →  projekt / sprawa / status
 ```
 
-Reguły zespołu: zacznij od [`docs/team/README.md`](docs/team/README.md) i [`AGENTS.md`](AGENTS.md).
+---
 
-## Wymagania
+## Demo na scenę (2–3 min)
 
-- Node.js 20+
-- Python 3.11+
+| Krok | Co pokazać | Gdzie |
+|------|------------|--------|
+| 1 | Landing + czat gościa | `/` — napisz np. *„moja mama ma autyzm”* |
+| 2 | Karta projektu (np. Himalaje) | sugestia w czacie → podgląd |
+| 3 | Konto mieszkańca + sprawy | `/register` → `/app` |
+| 4 | Panel admina | `/admin` — jednostki, projekty, propozycje, statusy |
 
-## Setup
+**Konto demo (admin)**
+
+| | |
+|---|---|
+| Email | `admin@malohub.dev` |
+| Hasło | `admin12345` |
+
+---
+
+## Co działa (MVP HackYeah)
+
+- **Czat opiekuna** — Markdown, historia w sesji, „Nowa sprawa”
+- **Matching projektów** — scoring + markery kart w UI
+- **Lokalizacja** — prośba o obszar / GPS, gdy sprawa jest terenowa
+- **Propozycje projektów** — z czatu do kolejki admina
+- **Sprawy** — statusy `nowe` → `w_toku` → `zakonczone`
+- **PWA** — installable (manifest + ikony + service worker)
+- **Gość na landingu** — rozmowa bez logowania; zapis dalej po koncie
+
+---
+
+## Stack (krótko)
+
+| Warstwa | Tech |
+|---------|------|
+| Web | Next.js (Pages Router) + React · BFF `/api/*` |
+| API | FastAPI + SQLAlchemy + SQLite |
+| AI | OpenAI / Gemini / fake · prompt w `caretaker_system.md` |
+| Deploy | Vercel Services — web publiczny, API internal |
+
+Przeglądarka **nigdy** nie woła FastAPI bezpośrednio — tylko Next BFF → `API_URL`.
+
+---
+
+## Uruchomienie lokalne
+
+**Wymagania:** Node 20+, Python 3.11+
 
 ```bash
 npm install
@@ -28,61 +79,30 @@ npm run setup:api
 
 cp .env.example .env
 cp apps/web/.env.local.example apps/web/.env.local
-```
+# w .env ustaw LLM_PROVIDER + LLM_API_KEY (albo fake)
 
-## Uruchomienie lokalne
-
-```bash
 npm run dev
 ```
 
-- Web: http://localhost:3000  
-- Admin login: http://localhost:3000/admin/login  
-- Admin panel: http://localhost:3000/admin  
-- Public API (przez Next BFF): http://localhost:3000/api/...  
-- FastAPI bezpośrednio (dev): http://localhost:8000/docs  
+| Adres | Rola |
+|-------|------|
+| http://localhost:3000 | Aplikacja (landing, czat, `/app`, `/admin`) |
+| http://localhost:8000/docs | FastAPI (tylko lokalnie) |
 
-Przeglądarka woła tylko `/api/*` na Next.js. Next proxy’uje do FastAPI (`API_URL`, domyślnie `http://localhost:8000`).
+Szczegóły zespołu / AI: [`AGENTS.md`](AGENTS.md) · [`docs/team/`](docs/team/).
 
-### Domyślne konto admina
+---
 
-| Pole | Wartość |
-|------|---------|
-| Email | `admin@hubmi.dev` |
-| Hasło | `admin12345` |
+## Persony
 
-Zmienisz w `.env` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`). Przy starcie API konto jest seedowane automatycznie.
+| Kto | Co robi |
+|-----|---------|
+| **Mieszkaniec** | Rozmawia z opiekunem, śledzi status spraw |
+| **Admin** | Jednostki, projekty, propozycje z czatu, statusy |
+| **Opiekun (AI)** | Dopasowuje projekt albo zbiera draft dla jednostki |
 
-Jeśli zmieniasz schemat bazy lokalnie, usuń `apps/api/data/hubmi.db` i zrestartuj API.
+---
 
-## Deploy na Vercel (Services)
+## HackYeah — one-liner
 
-Projekt używa [Vercel Services](https://vercel.com/docs/services): `web` (publiczny) + `api` (internal).
-
-1. Utwórz projekt i ustaw **Framework** na **Services**.
-2. Podłącz repozytorium (root = katalog z `vercel.json`).
-3. Ustaw env dla API: `SECRET_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` (opcjonalnie `DATABASE_URL` → Postgres).
-4. **Nie ustawiaj** `API_URL` ręcznie — Vercel wstrzyknie je z bindingu `web → api`.
-
-Lokalnie pełny stack jak na Vercel: `vercel dev` (lub `vercel dev -L`).
-
-### Routing
-
-| Ścieżka publiczna | Serwis | Uwagi |
-|-------------------|--------|--------|
-| `/*` | `web` | Next.js UI + BFF `/api/*` |
-| — | `api` | brak rewrite; tylko przez binding `API_URL` |
-
-## Auth / Admin API
-
-Publicznie (przez BFF):
-
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| `POST` | `/api/auth/register` | Rejestracja użytkownika (`role=user`) |
-| `POST` | `/api/auth/login` | Login → JWT |
-| `GET`  | `/api/auth/me` | Profil (Bearer) |
-| `GET`  | `/api/admin/stats` | Statystyki (tylko admin) |
-| `GET`  | `/api/admin/users` | Lista użytkowników (tylko admin) |
-
-Wewnętrznie FastAPI nadal eksponuje `/auth/*` i `/admin/*` (bez prefiksu `/api`).
+> MaloHUB: jeden czat zamiast labiryntu urzędów — społeczny opiekun łączy mieszkańca z właściwym projektem i jednostką.

@@ -1,5 +1,5 @@
 ---
-description: Konwencje FastAPI backendu HubMI
+description: Konwencje FastAPI backendu MaloHUB
 globs: apps/api/**/*.py
 alwaysApply: false
 ---
@@ -29,6 +29,7 @@ Prefiks `/api` dodaje wyłącznie Next BFF po stronie web.
 ## Dane
 
 - `DATABASE_URL` z `app/config.py`; SQLite lokalnie (`data/hubmi.db`), na Vercel `/tmp` (nietrwałe)
+- Startup: `create_db_and_tables` + `seed_admin_user` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`)
 - Czat: `GEMINI_API_KEY`
 
 Szczegóły i nowe endpointy: `docs/team/api.md`.

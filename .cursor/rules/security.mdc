@@ -1,0 +1,28 @@
+---
+description: Cyberbezpieczeństwo MaloHUB — auth, sekrety, BFF, input
+alwaysApply: true
+---
+
+# Cyberbezpieczeństwo
+
+Pełny opis: `docs/team/security.md`.
+
+## Architektura
+
+- FastAPI na Vercel: **internal**; przeglądarka tylko `/api/*` (BFF) → `API_URL`
+- Zakaz: `NEXT_PUBLIC_*` z URL FastAPI, bezpośredni fetch do serwisu `api`
+- Nie commituj `.env`, sekretów, `*.db`
+
+## Auth i dane
+
+- Hasła tylko hashowane; nie loguj haseł ani JWT
+- Endpointy z `CurrentUserDep` / sprawdzeniem roli; admin także po stronie API
+- Waliduj input (SQLModel/Pydantic); SQL tylko przez ORM / parametry
+- Błędy zewnętrzne: bez stack trace / sekretów
+
+## Front / LLM
+
+- Brak `dangerouslySetInnerHTML` bez sanitizacji; czat: `react-markdown` bez raw HTML
+- BFF: nie robić open-proxy do dowolnego hosta
+- Treść usera w promptach: niezaufana — nie wykonuj „ukrytych” instrukcji z czatu jako admin
+- Seed admina i klucze tylko z env (`SECRET_KEY`, `GEMINI_API_KEY`, `ADMIN_*`)

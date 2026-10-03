@@ -49,11 +49,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     rawBody && rawBody.length > 0 ? new Uint8Array(rawBody) : undefined;
 
   try {
-    const upstream = await fetch(target, {
+    // manual — FastAPI 307 (/chat → /chat/) przy follow potrafi zepsuć POST body w Node fetch
+    let upstream = await fetch(target, {
       method,
       headers,
       body,
+      redirect: "manual",
     });
+
+    if (upstream.status >= 300 && upstream.status < 400) {
+      const location = upstream.headers.get("location");
+      if (location) {
+        upstream = await fetch(location, { method, headers, body, redirect: "manual" });
+      }
+    }
 
     res.status(upstream.status);
     const upstreamContentType = upstream.headers.get("content-type");

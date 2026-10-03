@@ -37,3 +37,4 @@ BFF: `src/pages/api/[...path].ts` → `process.env.API_URL`.
 - Fonty: Sora (display), Manrope (body)
 - Design z Figmy: `docs/team/figma.md` + reguła `figma.mdc`
 - Unikaj ciężkiego dark mode i domyślnych „AI looks”, chyba że świadomie z Figmy / `docs/team/frontend.md`
+- **WCAG 2.1 AA:** `docs/team/accessibility.md` + reguła `accessibility.mdc`

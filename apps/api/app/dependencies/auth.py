@@ -11,10 +11,11 @@ from jwt.exceptions import InvalidTokenError
 from sqlmodel import Session, select
 
 from ..config import get_settings
-from ..models import User
+from ..models import RoleEnum, User
 from .db import SessionDep
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -71,4 +72,33 @@ async def get_current_user(
     return user
 
 
+async def get_current_admin(current_user: Annotated[User, Depends(get_current_user)]) -> User:
+    if current_user.role != RoleEnum.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user
+
+
+async def get_current_user_optional(
+    token: Annotated[str | None, Depends(oauth2_scheme_optional)],
+    session: SessionDep,
+) -> User | None:
+    """JWT opcjonalny — czat gościa na landingu bez 401."""
+    if not token:
+        return None
+    settings = get_settings()
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except InvalidTokenError:
+        return None
+    email = payload.get("sub")
+    if not isinstance(email, str):
+        return None
+    return get_user(session, email)
+
+
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+CurrentAdminDep = Annotated[User, Depends(get_current_admin)]
+OptionalUserDep = Annotated[User | None, Depends(get_current_user_optional)]

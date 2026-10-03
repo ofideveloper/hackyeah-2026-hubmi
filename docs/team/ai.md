@@ -25,12 +25,13 @@
 
 - Publicznie wystawiać serwis `api` na Vercel
 - Commitować `.env`, credentiale, bazy
+- Łamać WCAG 2.1 AA / reguł cybersec (`accessibility.md`, `security.md`)
 - [UZUPEŁNIJ]
 
 ## Szablon promptu dla feature
 
 ```
-Kontekst: HubMI (apps/web Pages + apps/api FastAPI, BFF /api).
+Kontekst: MaloHUB (apps/web Pages + apps/api FastAPI, BFF /api).
 Cel: [UZUPEŁNIJ]
 Ograniczenia: [UZUPEŁNIJ]
 Definition of done: [UZUPEŁNIJ]

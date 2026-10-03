@@ -1,0 +1,21 @@
+{
+  "name": "hackyeah-2026-hubmi",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n web,api -c cyan,magenta \"npm run dev -w @hubmi/web\" \"npm run dev -w @hubmi/api\"",
+    "dev:web": "npm run dev -w @hubmi/web",
+    "dev:api": "npm run dev -w @hubmi/api",
+    "build": "npm run build -w @hubmi/web",
+    "lint": "npm run lint -w @hubmi/web",
+    "setup:api": "npm run setup -w @hubmi/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

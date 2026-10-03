@@ -94,6 +94,8 @@ export function AssistantChat({ userName }: AssistantChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage()]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  // Id rozmowy z backendu — kolejne wiadomości trafiają do tego samego kontekstu.
+  const chatIdRef = useRef<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -125,7 +127,8 @@ export function AssistantChat({ userName }: AssistantChatProps) {
 
     setBusy(true);
     try {
-      const reply = await sendChatMessage(token, text);
+      const { reply, chat_id } = await sendChatMessage(token, text, chatIdRef.current);
+      chatIdRef.current = chat_id;
       setMessages((prev) => [
         ...prev,
         {
@@ -177,6 +180,7 @@ export function AssistantChat({ userName }: AssistantChatProps) {
   }
 
   function resetConversation() {
+    chatIdRef.current = null;
     setMessages([welcomeMessage()]);
     setInput("");
     inputRef.current?.focus();

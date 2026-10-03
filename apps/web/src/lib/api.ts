@@ -317,20 +317,29 @@ export async function updateReportStatus(
   return res.json() as Promise<Report>;
 }
 
-export async function sendChatMessage(token: string, message: string): Promise<string> {
+export type ChatReply = {
+  reply: string;
+  chat_id: string;
+};
+
+/** Bez `chatId` backend zakłada nową rozmowę; zwrócone `chat_id` podaj przy kolejnych wiadomościach. */
+export async function sendChatMessage(
+  token: string,
+  message: string,
+  chatId?: string | null,
+): Promise<ChatReply> {
   const res = await fetch(`${API_BASE}/chat`, {
     method: "POST",
     headers: {
       ...authHeaders(token),
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, chat_id: chatId ?? null }),
   });
 
   if (!res.ok) {
     throw new Error(await parseError(res));
   }
 
-  const data = (await res.json()) as { reply: string };
-  return data.reply;
+  return res.json() as Promise<ChatReply>;
 }

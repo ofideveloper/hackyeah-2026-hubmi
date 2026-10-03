@@ -3,7 +3,6 @@
  * i propozycje usprawnień. Lista i opinie są publiczne, zapis wymaga logowania.
  */
 import Head from "next/head";
-import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import { AppNav, SiteHeader } from "@/components/SiteHeader";

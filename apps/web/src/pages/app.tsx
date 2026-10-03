@@ -73,8 +73,8 @@ export default function AppHomePage() {
 
   if (loading || !user) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
-        <p className="text-[var(--muted)]">Ładowanie…</p>
+      <main id="tresc" tabIndex={-1} className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
+        <p className="text-[var(--muted)]" role="status">Ładowanie…</p>
       </main>
     );
   }
@@ -85,9 +85,6 @@ export default function AppHomePage() {
         <title>Moja przestrzeń · MaloHUB</title>
       </Head>
 
-      <a href="#opiekun" className="skip-link">
-        Przejdź do opiekuna
-      </a>
       <SiteHeader
         width="full"
         actions={
@@ -100,7 +97,7 @@ export default function AppHomePage() {
         }
       />
 
-      <main className="kb-page mx-auto max-w-3xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
+      <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-3xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
         <header className="animate-fade-up">
           <p className="kb-meta">Twoja przestrzeń</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">

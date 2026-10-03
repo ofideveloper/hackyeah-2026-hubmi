@@ -91,7 +91,7 @@ export function AdminProposalsView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie propozycji…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie propozycji…</p>;
   }
 
   const open = proposals.filter((p) => p.status === "nowe");

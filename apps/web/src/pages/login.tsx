@@ -11,7 +11,7 @@ export default function LoginPage() {
       </Head>
       <div className="flex min-h-screen flex-col">
         <SiteHeader width="full" logoSize="lg" actions={<GuestHeaderActions />} />
-        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center px-6 py-12">
+        <main id="tresc" tabIndex={-1} className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center px-6 py-12">
           <LoginForm />
         </main>
       </div>

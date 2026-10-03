@@ -215,14 +215,14 @@ export function AdminPanel() {
 
   if (loading || !admin || !stats) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6">
-        <p className="animate-soft-in text-[var(--muted)]">{error ?? "Ładowanie panelu…"}</p>
+      <main id="tresc" tabIndex={-1} className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6">
+        <p className="animate-soft-in text-[var(--muted)]" role="status">{error ?? "Ładowanie panelu…"}</p>
       </main>
     );
   }
 
   return (
-    <main className="animate-soft-in mx-auto min-h-screen max-w-5xl px-6 py-12">
+    <main id="tresc" tabIndex={-1} className="animate-soft-in mx-auto min-h-screen max-w-5xl px-6 py-12">
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-8">
         <div>
           <p className="font-display text-sm font-semibold text-[var(--accent)]">MaloHUB</p>
@@ -484,14 +484,15 @@ export function AdminPanel() {
         <h2 className="text-base font-semibold">Lista użytkowników</h2>
         <div className="surface mt-4 overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
+            <caption className="sr-only">Lista użytkowników</caption>
             <thead className="border-b border-[var(--border)] text-[var(--muted)]">
               <tr>
-                <th className="px-4 py-3 font-medium">ID</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Imię</th>
-                <th className="px-4 py-3 font-medium">Nazwisko</th>
-                <th className="px-4 py-3 font-medium">Telefon</th>
-                <th className="px-4 py-3 font-medium">Rola</th>
+                <th scope="col" className="px-4 py-3 font-medium">ID</th>
+                <th scope="col" className="px-4 py-3 font-medium">Email</th>
+                <th scope="col" className="px-4 py-3 font-medium">Imię</th>
+                <th scope="col" className="px-4 py-3 font-medium">Nazwisko</th>
+                <th scope="col" className="px-4 py-3 font-medium">Telefon</th>
+                <th scope="col" className="px-4 py-3 font-medium">Rola</th>
               </tr>
             </thead>
             <tbody>

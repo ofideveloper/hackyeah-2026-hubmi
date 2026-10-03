@@ -31,7 +31,7 @@ export function AdminMessagesView() {
         {error}
       </p>
     ) : (
-      <p className="text-sm text-[var(--muted)]">Ładowanie…</p>
+      <p className="text-sm text-[var(--muted)]" role="status">Ładowanie…</p>
     );
   }
 

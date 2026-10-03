@@ -29,6 +29,9 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <div className={`${body.variable} ${display.variable}`}>
+      <a href="#tresc" className="skip-link">
+        Przejdź do treści
+      </a>
       <Component {...pageProps} />
     </div>
   );

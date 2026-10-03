@@ -5,7 +5,7 @@
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "lang": "pl",

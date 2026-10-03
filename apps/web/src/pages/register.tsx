@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 
 import { GuestHeaderActions, SiteHeader } from "@/components/SiteHeader";
 import { registerUser } from "@/lib/api";
@@ -17,16 +17,20 @@ export default function RegisterPage() {
   const [surname, setSurname] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [phoneInvalid, setPhoneInvalid] = useState(false);
+  const errorId = useId();
+  const phoneHintId = useId();
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setPhoneInvalid(false);
 
     const phone = phoneNumber.trim();
     if (phone && !PHONE_NUMBER_RE.test(phone)) {
-      setError("Nieprawidłowy numer telefonu");
+      setPhoneInvalid(true);
+      setError("Nieprawidłowy numer telefonu — wpisz 9–15 cyfr, np. +48 500 000 000");
       return;
     }
 
@@ -40,10 +44,7 @@ export default function RegisterPage() {
         surname: surname.trim(),
         phone_number: phone || null,
       });
-      setSuccess(true);
-      setTimeout(() => {
-        void router.push("/login");
-      }, 1200);
+      await router.push("/login?registered=1");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Rejestracja nie powiodła się");
     } finally {
@@ -58,8 +59,8 @@ export default function RegisterPage() {
       </Head>
       <div className="flex min-h-screen flex-col">
         <SiteHeader width="full" logoSize="lg" actions={<GuestHeaderActions />} />
-        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center px-6 py-12">
-          <form onSubmit={onSubmit} className="surface animate-fade-up w-full max-w-md p-8">
+        <main id="tresc" tabIndex={-1} className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center px-6 py-12">
+          <form onSubmit={onSubmit} aria-describedby={error ? errorId : undefined} className="surface animate-fade-up w-full max-w-md p-8">
             <h1 className="font-display text-2xl font-semibold tracking-tight">Załóż konto</h1>
             <p className="mt-2 text-sm text-[var(--muted)]">
               Załóż konto, żeby korzystać z opiekuna, zasobnika wiedzy i kreatora pomysłów.
@@ -97,9 +98,12 @@ export default function RegisterPage() {
                   className="field"
                   autoComplete="tel"
                   pattern={PHONE_NUMBER_PATTERN}
-                  title="9–15 cyfr, opcjonalnie z + na początku, spacjami lub myślnikami"
-                  placeholder="np. +48 500 000 000"
+                  aria-invalid={phoneInvalid || undefined}
+                  aria-describedby={phoneInvalid ? `${phoneHintId} ${errorId}` : phoneHintId}
                 />
+                <span id={phoneHintId} className="mt-1.5 block text-xs text-[var(--muted)]">
+                  Opcjonalnie. 9–15 cyfr, np. +48 500 000 000
+                </span>
               </label>
               <label className="block text-sm">
                 <span className="mb-1.5 block text-[var(--muted)]">Email</span>
@@ -127,17 +131,14 @@ export default function RegisterPage() {
             </div>
 
             {error && (
-              <p className="mt-4 text-sm text-[var(--danger)]" role="alert">
+              <p id={errorId} className="mt-4 text-sm text-[var(--danger)]" role="alert">
                 {error}
               </p>
-            )}
-            {success && (
-              <p className="mt-4 text-sm text-[var(--accent)]">Konto utworzone. Przekierowanie…</p>
             )}
 
             <button
               type="submit"
-              disabled={loading || success}
+              disabled={loading}
               className="btn-primary mt-6 w-full"
             >
               {loading ? "Zapisywanie…" : "Załóż konto"}
@@ -145,7 +146,7 @@ export default function RegisterPage() {
 
             <p className="mt-5 text-center text-sm text-[var(--muted)]">
               Masz już konto?{" "}
-              <Link href="/login" className="text-[var(--accent)] hover:underline">
+              <Link href="/login" className="text-[var(--accent)] underline underline-offset-2">
                 Zaloguj się
               </Link>
             </p>

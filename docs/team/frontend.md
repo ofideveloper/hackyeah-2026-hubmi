@@ -79,18 +79,27 @@ src/
 
 ## Design / UI (aktualny baseline)
 
-Motyw: **light**, szaro–czarny + niebieski brand. Tokeny: `apps/web/src/styles/globals.css`.
+Motyw: **light**, szaro–czarny + ciepły brąz brand. Tokeny: `apps/web/src/styles/globals.css` — dobrane pod **WCAG 2.1 AA** (kontrast liczony na `--bg` i `--bg-elevated`).
 
-| Token | Rola |
-|-------|------|
-| `--bg` `#f3f5f8` | tło |
-| `--bg-elevated` `#ffffff` | surface formularzy / tabeli |
-| `--text` `#12131a` | tekst (blisko czerni) |
-| `--muted` `#5c6474` | opis |
-| `--accent` `#3661a8` | CTA / brand |
-| `--accent-hover` `#27227d` | hover / głęboki brand |
-| `--accent-light` `#94c0e5` | miękkie highlighty / gradienty |
-| `.btn-primary` / `.btn-ghost` / `.field` / `.surface` | wspólne klasy UI |
+| Token | Rola | Kontrast |
+|-------|------|----------|
+| `--bg` `#f3f5f8` | tło | — |
+| `--bg-elevated` `#ffffff` | surface formularzy / tabeli | — |
+| `--text` `#12131a` | tekst; także tekst i obrysy w headerze (`#ada399`) | 17:1 / 7.5:1 na headerze |
+| `--muted` `#525a69` | opis | 6.4:1 |
+| `--accent` `#6b5c4e` | CTA / brand, tekst akcentu, tło pod biały tekst | 5.9:1 (biały na nim 6.4:1) |
+| `--accent-hover` `#54473b` | hover / głęboki brand | 8.2:1 |
+| `--accent-light` `#a8927e` | **tylko dekoracja** — nie pod biały tekst (3:1) | — |
+| `--border` `#d5dae3` | linie dekoracyjne, karty | — |
+| `--border-strong` `#7c8494` | granice pól, chipów, przycisków outline | 3.4:1 |
+| `--danger` `#a82a2a` / `--success` `#1f6b4a` | błędy / potwierdzenia | 6.3:1 / 5.9:1 |
+| `--focus` + `--focus-halo` | globalny `:focus-visible` (ciemny obrys + biała otoczka) | ≥ 3:1 wszędzie |
+| `.btn-primary` / `.btn-ghost` / `.field` / `.surface` | wspólne klasy UI | |
+
+- Fokus: **nie nadpisuj** `outline` lokalnie — globalny `:focus-visible` działa na jasnych i ciemnych tłach
+- Header ma jasne tło → tekst `--text`, nie biały
+- Linki w treści: zawsze podkreślone (nie tylko kolor)
+- Tło strony (`background.png`) jest przykryte nakładką ≥ 90% — nie zmniejszaj, bo ilustracje obniżą kontrast tekstu
 
 - Typografia: **Sora** (display / brand), **Manrope** (body) — `pages/_app.tsx`
 - Karty tylko przy interakcji (formularze, tabela); hero bez kart

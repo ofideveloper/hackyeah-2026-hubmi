@@ -111,6 +111,7 @@ function ProfileForm({ user, onSaved }: { user: User; onSaved: (user: User) => v
           <span className="mb-1.5 block text-[var(--muted)]">Organizacja (opcjonalnie)</span>
           <input
             type="text"
+            autoComplete="organization"
             maxLength={ORGANIZATION_MAX}
             className="field"
             value={organization}
@@ -322,12 +323,9 @@ export default function ContactPage() {
         />
       </Head>
 
-      <a href="#tresc" className="skip-link">
-        Przejdź do treści
-      </a>
       <SiteHeader width="full" actions={<AppNav current="kontakt" />} />
 
-      <main id="tresc" className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
+      <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
         <header className="animate-fade-up">
           <p className="kb-meta">Kontakt i współpraca</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">

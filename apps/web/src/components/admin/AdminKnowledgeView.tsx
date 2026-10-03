@@ -134,7 +134,7 @@ export function AdminKnowledgeView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie zasobów…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie zasobów…</p>;
   }
 
   const areaName = (id: string | null) => areas.find((a) => a.id === id)?.name;

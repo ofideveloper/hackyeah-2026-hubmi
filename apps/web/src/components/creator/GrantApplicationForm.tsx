@@ -121,7 +121,7 @@ export function GrantApplicationForm({ call, ideas }: GrantApplicationFormProps)
       )}
 
       {loading ? (
-        <p className="mt-3 text-sm text-[var(--muted)]">Ładowanie wniosku…</p>
+        <p className="mt-3 text-sm text-[var(--muted)]" role="status">Ładowanie wniosku…</p>
       ) : submitted ? (
         <dl className="mt-4 space-y-4">
           {application.idea_title && (

@@ -117,7 +117,7 @@ export function AdminProjectsView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie projektów…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie projektów…</p>;
   }
 
   return (
@@ -125,7 +125,7 @@ export function AdminProjectsView() {
       {units.length === 0 ? (
         <p className="text-sm text-[var(--muted)]">
           Najpierw dodaj{" "}
-          <Link href="/admin/units" className="text-[var(--accent)] hover:underline">
+          <Link href="/admin/units" className="text-[var(--accent)] underline underline-offset-2">
             jednostkę organizacyjną
           </Link>
           .

@@ -117,7 +117,7 @@ export default function HomePage() {
           actions={loggedIn ? <AppNav /> : <GuestHeaderActions />}
         />
 
-        <main>
+        <main id="tresc" tabIndex={-1}>
           <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-12 sm:px-10 sm:pb-28 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
             <div className="animate-fade-up">
               <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/80 px-3.5 py-2 text-sm font-medium text-[var(--muted)] shadow-sm">
@@ -169,7 +169,7 @@ export default function HomePage() {
                       Statusy spraw i pełna historia są w{" "}
                       <Link
                         href="/app"
-                        className="font-medium text-[var(--accent)] hover:underline"
+                        className="font-medium text-[var(--accent)] underline underline-offset-2"
                       >
                         Twojej przestrzeni
                       </Link>
@@ -180,14 +180,14 @@ export default function HomePage() {
                       Chcesz przekazać sprawę dalej?{" "}
                       <Link
                         href="/register"
-                        className="font-medium text-[var(--accent)] hover:underline"
+                        className="font-medium text-[var(--accent)] underline underline-offset-2"
                       >
                         Załóż konto
                       </Link>{" "}
                       albo{" "}
                       <Link
                         href="/login"
-                        className="font-medium text-[var(--accent)] hover:underline"
+                        className="font-medium text-[var(--accent)] underline underline-offset-2"
                       >
                         zaloguj się
                       </Link>

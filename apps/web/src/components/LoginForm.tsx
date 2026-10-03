@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 
 import { fetchMe, loginUser } from "@/lib/api";
 import { setToken } from "@/lib/auth";
@@ -11,6 +11,9 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const errorId = useId();
+  // Po rejestracji: trwały komunikat zamiast znikającego przed przekierowaniem
+  const justRegistered = router.query.registered === "1";
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,10 +33,18 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="surface animate-fade-up w-full max-w-md p-8">
+    <form
+      onSubmit={onSubmit}
+      aria-describedby={error ? errorId : undefined}
+      className="surface animate-fade-up w-full max-w-md p-8"
+    >
       <h1 className="font-display text-2xl font-semibold tracking-tight">Zaloguj się</h1>
       <p className="mt-2 text-sm text-[var(--muted)]">
         Wejdź do MaloHUB - opiekun, wiedza, pomysły i kontakt w jednym miejscu.
+      </p>
+
+      <p className="mt-4 text-sm font-medium text-[var(--success)]" role="status">
+        {justRegistered ? "Konto utworzone. Możesz się zalogować." : ""}
       </p>
 
       <div className="mt-7 space-y-4">
@@ -65,7 +76,7 @@ export function LoginForm() {
       </div>
 
       {error && (
-        <p className="mt-4 text-sm text-[var(--danger)]" role="alert">
+        <p id={errorId} className="mt-4 text-sm text-[var(--danger)]" role="alert">
           {error}
         </p>
       )}
@@ -76,11 +87,11 @@ export function LoginForm() {
 
       <p className="mt-5 text-center text-sm text-[var(--muted)]">
         Nie masz konta?{" "}
-        <Link href="/register" className="text-[var(--accent)] hover:underline">
+        <Link href="/register" className="text-[var(--accent)] underline underline-offset-2">
           Załóż konto
         </Link>
         {" · "}
-        <Link href="/" className="text-[var(--accent)] hover:underline">
+        <Link href="/" className="text-[var(--accent)] underline underline-offset-2">
           Start
         </Link>
       </p>

@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, useId } from "react";
 
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
 import { changeMyPassword, fetchMe, type User } from "@/lib/api";
@@ -15,6 +15,8 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<"new" | "confirm" | null>(null);
+  const errorId = useId();
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
@@ -35,13 +37,16 @@ export default function ProfilePage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setErrorField(null);
     setSuccess(null);
 
     if (newPassword.length < 8) {
+      setErrorField("new");
       setError("Nowe hasło musi mieć co najmniej 8 znaków");
       return;
     }
     if (newPassword !== confirmPassword) {
+      setErrorField("confirm");
       setError("Nowe hasła nie są takie same");
       return;
     }
@@ -68,8 +73,8 @@ export default function ProfilePage() {
 
   if (loading || !user) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
-        <p className="text-[var(--muted)]">Ładowanie…</p>
+      <main id="tresc" tabIndex={-1} className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
+        <p className="text-[var(--muted)]" role="status">Ładowanie…</p>
       </main>
     );
   }
@@ -80,9 +85,6 @@ export default function ProfilePage() {
         <title>Profil · MaloHUB</title>
       </Head>
 
-      <a href="#tresc" className="skip-link">
-        Przejdź do treści
-      </a>
       <SiteHeader
         width="full"
         actions={
@@ -90,7 +92,7 @@ export default function ProfilePage() {
         }
       />
 
-      <main id="tresc" className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
+      <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
         <header className="animate-fade-up">
           <p className="kb-meta">Konto</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
@@ -135,7 +137,11 @@ export default function ProfilePage() {
           <h2 id="zmiana-hasla" className="font-display text-xl font-semibold">
             Zmiana hasła
           </h2>
-          <form className="mt-5 space-y-4" onSubmit={onSubmit}>
+          <form
+            className="mt-5 space-y-4"
+            onSubmit={onSubmit}
+            aria-describedby={error ? errorId : undefined}
+          >
             <label className="block text-sm">
               <span className="mb-1.5 block text-[var(--muted)]">Obecne hasło</span>
               <input
@@ -155,6 +161,8 @@ export default function ProfilePage() {
                 autoComplete="new-password"
                 required
                 minLength={8}
+                aria-invalid={errorField === "new" || undefined}
+                aria-describedby={errorField === "new" ? errorId : undefined}
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
               />
@@ -167,17 +175,19 @@ export default function ProfilePage() {
                 autoComplete="new-password"
                 required
                 minLength={8}
+                aria-invalid={errorField === "confirm" || undefined}
+                aria-describedby={errorField === "confirm" ? errorId : undefined}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
               />
             </label>
             {error && (
-              <p className="text-sm text-red-700" role="alert">
+              <p id={errorId} className="text-sm text-[var(--danger)]" role="alert">
                 {error}
               </p>
             )}
             {success && (
-              <p className="text-sm text-emerald-700" role="status">
+              <p className="text-sm text-[var(--success)]" role="status">
                 {success}
               </p>
             )}

@@ -76,7 +76,7 @@ export function AdminTestingView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie…</p>;
   }
 
   const shownSignups = signups.filter((signup) => !filter || signup.status === filter);

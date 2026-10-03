@@ -190,12 +190,9 @@ export default function IdeaCreatorPage() {
         />
       </Head>
 
-      <a href="#tresc" className="skip-link">
-        Przejdź do treści
-      </a>
       <SiteHeader width="full" actions={<AppNav current="kreator" />} />
 
-      <main id="tresc" className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
+      <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
         <header className="animate-fade-up">
           <p className="kb-meta">Kreator pomysłów</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
@@ -250,7 +247,7 @@ export default function IdeaCreatorPage() {
             {editingId ? "Edycja fiszki" : "Nowa fiszka pomysłu"}
           </h2>
           {!authChecked ? (
-            <p className="kb-section-lead">Ładowanie…</p>
+            <p className="kb-section-lead" role="status">Ładowanie…</p>
           ) : !user ? (
             <div className="surface mt-5 flex flex-wrap items-center justify-between gap-4 p-5">
               <p className="max-w-xl text-sm leading-relaxed text-[var(--muted)]">

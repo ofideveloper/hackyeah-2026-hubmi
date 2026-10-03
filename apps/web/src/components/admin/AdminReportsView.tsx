@@ -74,7 +74,7 @@ export function AdminReportsView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie spraw…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie spraw…</p>;
   }
 
   return (

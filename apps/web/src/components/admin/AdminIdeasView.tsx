@@ -73,7 +73,7 @@ export function AdminIdeasView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie fiszek…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie fiszek…</p>;
   }
 
   const shown = ideas.filter((idea) => !filter || idea.status === filter);

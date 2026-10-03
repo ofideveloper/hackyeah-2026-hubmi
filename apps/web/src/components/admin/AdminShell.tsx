@@ -57,7 +57,7 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
             </p>
           </div>
 
-          <nav className="admin-nav">
+          <nav className="admin-nav" aria-label="Sekcje panelu">
             {NAV.map((item) => {
               const active = item.exact
                 ? router.pathname === item.href
@@ -67,6 +67,7 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
                   key={item.href}
                   href={item.href}
                   className={`admin-nav-link ${active ? "admin-nav-link-active" : ""}`}
+                  aria-current={active ? "page" : undefined}
                 >
                   {item.label}
                 </Link>
@@ -87,7 +88,7 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
           </div>
         </aside>
 
-        <div className="admin-main">
+        <main id="tresc" tabIndex={-1} className="admin-main">
           <header className="admin-main-header">
             <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
               {title}
@@ -97,7 +98,7 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
             )}
           </header>
           <div className="admin-main-body animate-soft-in">{children}</div>
-        </div>
+        </main>
       </div>
     </>
   );

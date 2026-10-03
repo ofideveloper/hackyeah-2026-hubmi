@@ -110,7 +110,7 @@ export function AdminUnitsView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie jednostek…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie jednostek…</p>;
   }
 
   return (

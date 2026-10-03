@@ -41,7 +41,7 @@ export function AdminUsersView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie użytkowników…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie użytkowników…</p>;
   }
 
   return (
@@ -53,14 +53,15 @@ export function AdminUsersView() {
       )}
       <div className="surface overflow-x-auto">
         <table className="w-full min-w-[760px] text-left text-sm">
+          <caption className="sr-only">Użytkownicy</caption>
           <thead className="border-b border-[var(--border)] text-[var(--muted)]">
             <tr>
-              <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Imię</th>
-              <th className="px-4 py-3 font-medium">Nazwisko</th>
-              <th className="px-4 py-3 font-medium">Telefon</th>
-              <th className="px-4 py-3 font-medium">Rola</th>
-              <th className="px-4 py-3 font-medium">Akcje</th>
+              <th scope="col" className="px-4 py-3 font-medium">Email</th>
+              <th scope="col" className="px-4 py-3 font-medium">Imię</th>
+              <th scope="col" className="px-4 py-3 font-medium">Nazwisko</th>
+              <th scope="col" className="px-4 py-3 font-medium">Telefon</th>
+              <th scope="col" className="px-4 py-3 font-medium">Rola</th>
+              <th scope="col" className="px-4 py-3 font-medium">Akcje</th>
             </tr>
           </thead>
           <tbody>

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 
+import PasswordInput from "@/components/PasswordInput";
+import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { registerUser } from "@/lib/api";
 
@@ -107,18 +109,14 @@ export default function RegisterPage() {
                   autoComplete="email"
                 />
               </label>
-              <label className="block text-sm">
-                <span className="mb-1.5 block text-[var(--muted)]">Hasło</span>
-                <input
-                  type="password"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="field"
-                  autoComplete="new-password"
-                />
-              </label>
+              <PasswordInput
+                label="Hasło"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+              />
             </div>
 
             {error && (
@@ -145,7 +143,15 @@ export default function RegisterPage() {
               </Link>
             </p>
           </form>
+          <Link
+            href="/"
+            className="mt-6 inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--muted)] transition hover:bg-[var(--accent-soft)] hover:text-[var(--text)]"
+          >
+            <span aria-hidden="true">←</span>
+            Wróć do strony głównej
+          </Link>
         </main>
+        <SiteFooter />
       </div>
     </>
   );

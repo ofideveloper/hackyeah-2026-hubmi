@@ -2,6 +2,7 @@ import Head from "next/head";
 import Link from "next/link";
 
 import { AssistantChat } from "@/components/AssistantChat";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const steps = [
   {
@@ -177,15 +178,7 @@ export default function HomePage() {
           </section>
         </main>
 
-        <footer className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-7 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-10">
-          <Link href="/" className="font-display font-semibold text-[var(--text)]">
-            MaloHUB
-          </Link>
-          <p>Twoja sprawa ma znaczenie.</p>
-          <Link href="/login" className="transition hover:text-[var(--accent)]">
-            Zaloguj się
-          </Link>
-        </footer>
+        <SiteFooter />
       </div>
     </>
   );

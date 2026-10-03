@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
+import PasswordInput from "@/components/PasswordInput";
 
 import { fetchMe, loginUser } from "@/lib/api";
 import { setToken } from "@/lib/auth";
@@ -49,19 +50,15 @@ export function LoginForm() {
           />
         </label>
 
-        <label className="block text-sm">
-          <span className="mb-1.5 block text-[var(--muted)]">Hasło</span>
-          <input
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="field"
-            placeholder="••••••••"
-            autoComplete="current-password"
-          />
-        </label>
+        <PasswordInput
+          label="Hasło"
+          required
+          minLength={8}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          autoComplete="current-password"
+        />
       </div>
 
       {error && (
@@ -78,10 +75,6 @@ export function LoginForm() {
         Nie masz konta?{" "}
         <Link href="/register" className="text-[var(--accent)] hover:underline">
           Załóż konto
-        </Link>
-        {" · "}
-        <Link href="/" className="text-[var(--accent)] hover:underline">
-          Start
         </Link>
       </p>
     </form>

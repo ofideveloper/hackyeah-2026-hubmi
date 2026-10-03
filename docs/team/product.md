@@ -38,7 +38,7 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | Mieszkaniec / NGO (`user`) | Zgłasza problem / pomysł oddolnie; czat + status spraw | `/app`; zgłoszenie z czatu (`Report`) |
 | JST | Katalog gotowych rozwiązań + lokalne wyzwania | czat → karty `UnitProject`; opcjonalnie zgłoszenie |
 | ROPS / Admin | Panel: wiedza, jednostki, projekty, monitoring spraw | `/admin` |
-| Ekspert branżowy | Feedback / doradztwo w rozmowie | ta sama ścieżka czatu; bez osobnego UI (MVP) |
+| Ekspert branżowy / Mentor (`specialist`) | Doradza w prywatnej rozmowie | rolę nadaje admin; `/kontakt` → Mentorzy, własna skrzynka w Rozmowach |
 | AI / czat | Dopasowanie PROJECT\| **lub** offer/zapis zgłoszenia **lub** intake nowego projektu | markery w odpowiedzi LLM |
 
 ## Zakres HackYeah (in / out)
@@ -70,6 +70,13 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | Projekt | Inicjatywa jednostki — under the hood / sugerowana przez AI |
 | Propozycja projektu | Draft z czatu (AI zbiera dane); admin + jednostka zatwierdzają |
 | Sprawa | Zapis potrzeby; status widoczny dla mieszkańca |
+| Tester | Osoba, która zgłosiła chęć udziału w testach rozwiązania; przyjmuje ją admin |
+| Opinia | Ocena 1–5 + informacja zwrotna + propozycja usprawnień do rozwiązania (innowacja / zatwierdzona fiszka); dodaje ją tylko przyjęty tester |
+| Rozmowa | Wątek wiadomości między dwiema stronami: pytanie do ROPS, rozmowa z mentorem albo odpowiedź na ogłoszenie partnerskie |
+| Zespół ROPS | Wspólna skrzynka adminów; pytający widzi odpowiedzi podpisane „Zespół ROPS”, nie nazwiskiem |
+| Mentor | Użytkownik z rolą `specialist` — publiczna wizytówka i prywatne rozmowy |
+| Sektor | NGO / samorząd (JST) / biznes / nauka — część profilu, wymagana do dodania ogłoszenia |
+| Ogłoszenie partnerskie | Wpis „szukam / oferuję” na tablicy współpracy; odpowiedź otwiera prywatną rozmowę z autorem |
 | BFF | Next.js `/api/*` proxy do internal FastAPI |
 
 ## Decyzje produktowe (log)
@@ -89,3 +96,7 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | 2026-10 | Reguły cybersec w docs + `.cursor/rules` | Egzekwowalne dla AI i zespołu |
 | 2026-10 | Czat: katalog PROJECT\| + offer/zapis zgłoszenia | Persony HackYeah bez formularza mieszkańca |
 | 2026-10 | Tryby czatu: clarify / report / catalog / intake | Zgłoszenie ≠ katalog — twarde bramki API |
+| 2026-10 | Tester innowacji: opinie publiczne, zgłoszenia do testów zatwierdza admin | Pętla zwrotna dla innowacji i fiszek bez osobnych kampanii testów |
+| 2026-10 | Platforma komunikacji `/kontakt`: pytania do ROPS, mentorzy, ogłoszenia partnerskie na jednym modelu rozmowy | Bezpośredni dialog ROPS ↔ użytkownicy i partnerstwa międzysektorowe; uzupełnia czat AI, nie zastępuje go |
+| 2026-10 | Mentor = rola `specialist` nadawana przez admina | Bez osobnego procesu zgłoszeń; ROPS zna swoich ekspertów |
+| 2026-10 | Nowe wiadomości przez odpytywanie co 5 s, nie WebSocket | Proxy BFF buforuje odpowiedzi; działa na Vercel bez zmian w infrastrukturze |

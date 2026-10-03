@@ -3,8 +3,11 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 
-import { HeaderLoginLink, SiteHeader } from "@/components/SiteHeader";
+import { GuestHeaderActions, SiteHeader } from "@/components/SiteHeader";
 import { registerUser } from "@/lib/api";
+
+const PHONE_NUMBER_PATTERN = "\\+?\\d(?:[ \\-]?\\d){8,14}";
+const PHONE_NUMBER_RE = new RegExp(`^${PHONE_NUMBER_PATTERN}$`);
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -20,10 +23,16 @@ export default function RegisterPage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    const phone = phoneNumber.trim();
+    if (phone && !PHONE_NUMBER_RE.test(phone)) {
+      setError("Nieprawidłowy numer telefonu");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const phone = phoneNumber.trim();
       await registerUser({
         email,
         password,
@@ -48,7 +57,7 @@ export default function RegisterPage() {
         <title>Załóż konto · MaloHUB</title>
       </Head>
       <div className="flex min-h-screen flex-col">
-        <SiteHeader actions={<HeaderLoginLink />} />
+        <SiteHeader width="full" logoSize="lg" actions={<GuestHeaderActions />} />
         <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center px-6 py-12">
           <form onSubmit={onSubmit} className="surface animate-fade-up w-full max-w-md p-8">
             <h1 className="font-display text-2xl font-semibold tracking-tight">Załóż konto</h1>
@@ -87,6 +96,8 @@ export default function RegisterPage() {
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="field"
                   autoComplete="tel"
+                  pattern={PHONE_NUMBER_PATTERN}
+                  title="9–15 cyfr, opcjonalnie z + na początku, spacjami lub myślnikami"
                   placeholder="np. +48 500 000 000"
                 />
               </label>

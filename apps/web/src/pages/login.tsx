@@ -1,7 +1,7 @@
 import Head from "next/head";
 
 import { LoginForm } from "@/components/LoginForm";
-import { HeaderRegisterLink, SiteHeader } from "@/components/SiteHeader";
+import { GuestHeaderActions, SiteHeader } from "@/components/SiteHeader";
 
 export default function LoginPage() {
   return (
@@ -10,7 +10,7 @@ export default function LoginPage() {
         <title>Zaloguj się · MaloHUB</title>
       </Head>
       <div className="flex min-h-screen flex-col">
-        <SiteHeader actions={<HeaderRegisterLink />} />
+        <SiteHeader width="full" logoSize="lg" actions={<GuestHeaderActions />} />
         <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center px-6 py-12">
           <LoginForm />
         </main>

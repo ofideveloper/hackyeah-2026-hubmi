@@ -15,9 +15,21 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 | `/admin` | Panel admin — przegląd (tylko `role=admin`) |
 | `/admin/units` | Jednostki — create + edycja (`name`/`territory`/`competencies`) + delete |
 | `/admin/projects` | Projekty jednostek (`UnitProject`) — create + pełna edycja + delete |
+| `/admin/catalog` | Katalog projektów z bazy (`ActualProject`) — przegląd, szukanie, szczegóły (tylko odczyt, przez `/knowledge`) |
 | `/admin/proposals` | Propozycje projektów z czatu → jednostka |
 | `/admin/reports` | Sprawy / statusy |
-| `/admin/users` | Użytkownicy |
+| `/admin/users` | Użytkownicy + nadanie / odebranie roli mentora |
+| `/wiedza` | Zasobnik wiedzy (publiczny): wyzwania, Biblioteka Innowacji (`ActualProject`), materiały |
+| `/admin/knowledge` | Redakcja zasobów Zasobnika (`KnowledgeResource`) + dociąganie nowych innowacji |
+| `/admin/trends` | Trendy potrzeb z czatu wg obszarów (`NeedSignal`) — tylko admin |
+| `/kreator` | Kreator pomysłów: publiczna lista fiszek; po zalogowaniu fiszka + canva + asystent AI; generator wniosków tylko przy trwającym naborze |
+| `/admin/ideas` | Fiszki z Kreatora pomysłów — podgląd (autor, canva), zatwierdź / odrzuć / usuń |
+| `/admin/grants` | Nabory grantowe — terminy, pola wniosku, podgląd złożonych wniosków |
+| `/tester` | Tester innowacji: publiczna lista rozwiązań z ocenami i opiniami; po zalogowaniu zgłoszenie do testów, a po jego przyjęciu opinia (ocena, feedback, usprawnienia) i „Moje testy i opinie” |
+| `/admin/testing` | Zgłoszenia testerów (przyjmij / odrzuć) i moderacja opinii |
+| `/kontakt` | Platforma komunikacji: zakładki Rozmowy (pytania do ROPS, wątki z mentorami i partnerami — po zalogowaniu), Mentorzy i Partnerstwa (tablica ogłoszeń — publiczne); profil z sektorem |
+| `/profil` | Konto zalogowanego: dane + zmiana hasła; wejście z dropdownu przy kółku użytkownika w `AppNav` |
+| `/admin/messages` | Wspólna skrzynka ROPS — pytania użytkowników, odpowiedź, zamknięcie rozmowy |
 | `/admin/login` | Redirect → `/login` |
 | `/api/*` | BFF → FastAPI (nie UI) |
 
@@ -31,6 +43,8 @@ Projekty / tworzenie spraw: under the hood (AI / API), nie UI mieszkańca.
 - `report` → zbieranie + `report_offer` / `created_report` (bez sugestii projektów)  
 - `intake` → `project_proposal`  
 JWT opcjonalny. Admin: `/admin/proposals`, `/admin/reports`.
+
+**Rozmowy (`components/communication/`):** `ThreadList` + `ThreadView` są wspólne dla `/kontakt` i `/admin/messages`; `ComposeDialog` otwiera nową rozmowę. `ThreadView` odpytuje `GET /conversations/{id}` co 5 s (pauza, gdy karta jest w tle; stop po 401/404), a listę odświeża `hooks/useThreads.ts` co 15 s. Historia to `<ol role="log" aria-live="polite">`, każda wiadomość ma autora tekstem („Ty” / nazwa), treść renderowana jako czysty tekst (bez Markdown / HTML). Etykiety i limity: `lib/communication.ts`.
 
 ## Architektura wywołań API
 

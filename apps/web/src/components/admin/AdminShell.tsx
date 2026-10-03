@@ -10,8 +10,15 @@ const NAV: { href: string; label: string; exact?: boolean }[] = [
   { href: "/admin", label: "Przegląd", exact: true },
   { href: "/admin/units", label: "Jednostki" },
   { href: "/admin/projects", label: "Projekty" },
+  { href: "/admin/catalog", label: "Katalog projektów" },
   { href: "/admin/proposals", label: "Propozycje" },
   { href: "/admin/reports", label: "Sprawy" },
+  { href: "/admin/knowledge", label: "Zasobnik wiedzy" },
+  { href: "/admin/ideas", label: "Fiszki pomysłów" },
+  { href: "/admin/grants", label: "Nabory grantowe" },
+  { href: "/admin/testing", label: "Zgłoszenia testerów" },
+  { href: "/admin/messages", label: "Wiadomości" },
+  { href: "/admin/trends", label: "Trendy potrzeb" },
   { href: "/admin/users", label: "Użytkownicy" },
 ];
 
@@ -70,6 +77,9 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
           <div className="admin-sidebar-footer">
             <Link href="/app" className="admin-nav-link">
               Aplikacja
+            </Link>
+            <Link href="/wiedza" className="admin-nav-link">
+              Zasobnik (publiczny)
             </Link>
             <button type="button" onClick={gate.logout} className="admin-nav-link text-left">
               Wyloguj

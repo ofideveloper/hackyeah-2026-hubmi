@@ -7,13 +7,15 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 
 import { ChatMarkdown } from "@/components/ChatMarkdown";
 import { LocationRequestCard } from "@/components/LocationRequestCard";
+import { NewProjectDialog } from "@/components/NewProjectDialog";
 import { ProjectPreviewModal } from "@/components/ProjectPreviewModal";
 import { ProjectSuggestionCards } from "@/components/ProjectSuggestionCards";
 import {
   sendChatMessage,
   type ChatMode,
+  type ChatProject,
   type LocationRequestKind,
-  type Project,
+  type NewProjectDraft,
   type ProjectProposal,
   type Report,
 } from "@/lib/api";
@@ -26,7 +28,8 @@ export type ChatMessage = {
   role: ChatRole;
   content: string;
   timestamp: Date;
-  suggestedProjects?: Project[];
+  suggestedProjects?: ChatProject[];
+  newProjectDraft?: NewProjectDraft | null;
   projectProposal?: ProjectProposal | null;
   createdReport?: Report | null;
   reportOffer?: boolean;
@@ -109,6 +112,8 @@ type AssistantChatProps = {
   guestMode?: boolean;
   /** Po zapisaniu sprawy z czatu — odśwież listę na `/app` */
   onReportCreated?: (report: Report) => void;
+  /** Ustaw focus na polu wiadomości (np. po nawigacji do `#opiekun`) */
+  autoFocus?: boolean;
 };
 
 function welcomeMessage(guestMode: boolean): ChatMessage {
@@ -128,12 +133,20 @@ export function AssistantChat({
   userName,
   guestMode = false,
   onReportCreated,
+  autoFocus = false,
 }: AssistantChatProps) {
   const displayName = userName?.trim() || "mieszkańcu";
   const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage(guestMode)]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<Project | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [preview, setPreview] = useState<ChatProject | null>(null);
+  const [chatId, setChatId] = useState<string | null>(null);
+  /** Otwarte okno nowego projektu — `messageId` wskazuje wiadomość ze szkicem. */
+  const [draftDialog, setDraftDialog] = useState<{
+    messageId: string;
+    draft: NewProjectDraft;
+  } | null>(null);
   const [locatingId, setLocatingId] = useState<string | null>(null);
   const [mode, setMode] = useState<ChatMode>("clarify");
   /** Gate locale/clock UI until after hydration (SSR `new Date()` ≠ client). */
@@ -146,6 +159,8 @@ export function AssistantChat({
     setMessages([welcomeMessage(guestMode)]);
     setInput("");
     setPreview(null);
+    setChatId(null);
+    setDraftDialog(null);
     setLocatingId(null);
     setMode("clarify");
   }
@@ -153,6 +168,12 @@ export function AssistantChat({
   useEffect(() => {
     setClockReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    const timer = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(timer);
+  }, [autoFocus]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -201,16 +222,24 @@ export function AssistantChat({
         created_report,
         report_offer,
         location_request,
-      } = await sendChatMessage(token, trimmed, history, nextModeHint);
+        chat_id,
+        new_project_draft,
+      } = await sendChatMessage(token, trimmed, history, nextModeHint, chatId);
       setMode(resolvedMode);
+      setChatId(chat_id);
+      const replyId = `a-${Date.now()}`;
+      if (new_project_draft) {
+        setDraftDialog({ messageId: replyId, draft: new_project_draft });
+      }
       setMessages((prev) => [
         ...prev,
         {
-          id: `a-${Date.now()}`,
+          id: replyId,
           role: "assistant",
           content: reply,
           timestamp: new Date(),
           suggestedProjects: suggested_projects,
+          newProjectDraft: new_project_draft,
           projectProposal: project_proposal,
           createdReport: created_report,
           reportOffer: report_offer,
@@ -391,6 +420,26 @@ export function AssistantChat({
                     />
                   )}
 
+                  {message.newProjectDraft && !message.projectProposal && (
+                    <div className="report-offer-card" role="group" aria-label="Nowy projekt">
+                      <p className="report-offer-text">
+                        Nie znalazłem tego w bazie — możesz zgłosić propozycję nowego projektu.
+                      </p>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        onClick={() =>
+                          setDraftDialog({
+                            messageId: message.id,
+                            draft: message.newProjectDraft!,
+                          })
+                        }
+                      >
+                        Zgłoś nowy projekt
+                      </button>
+                    </div>
+                  )}
+
                   {message.projectProposal && (
                     <div className="project-draft-note" role="status">
                       <p className="project-draft-note-label">Propozycja dla zespołu</p>
@@ -496,6 +545,7 @@ export function AssistantChat({
           <label className="min-w-0 flex-1">
             <span className="sr-only">Twoja wiadomość</span>
             <textarea
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
@@ -559,6 +609,21 @@ export function AssistantChat({
 
       {preview && (
         <ProjectPreviewModal project={preview} onClose={() => setPreview(null)} />
+      )}
+
+      {draftDialog && (
+        <NewProjectDialog
+          draft={draftDialog.draft}
+          guestMode={guestMode}
+          onClose={() => setDraftDialog(null)}
+          onCreated={(proposal) => {
+            const { messageId } = draftDialog;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === messageId ? { ...m, projectProposal: proposal } : m)),
+            );
+            setDraftDialog(null);
+          }}
+        />
       )}
     </section>
   );

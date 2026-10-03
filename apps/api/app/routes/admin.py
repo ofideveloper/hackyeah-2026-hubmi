@@ -1,10 +1,13 @@
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel
 from sqlmodel import col, func, select
 
 from ..dependencies.auth import CurrentAdminDep
 from ..dependencies.db import SessionDep
+from ..dependencies.logger import get_logger
 from ..models import (
     AdminStats,
     OrganizationalUnit,
@@ -29,6 +32,7 @@ from ..models import (
 )
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+logger = get_logger(__name__)
 
 
 def _unit_project_public(session: SessionDep, project: UnitProject) -> UnitProjectPublic:
@@ -114,6 +118,35 @@ async def list_users(_: CurrentAdminDep, session: SessionDep) -> list[User]:
     return list(session.exec(select(User).order_by(col(User.email))).all())
 
 
+class UserRoleUpdate(BaseModel):
+    # rola admina nie jest nadawana z panelu — tylko seed
+    role: Literal["user", "specialist"]
+
+
+@router.patch("/users/{user_id}", response_model=UserPublic)
+async def set_user_role(
+    user_id: uuid.UUID,
+    payload: UserRoleUpdate,
+    admin: CurrentAdminDep,
+    session: SessionDep,
+) -> User:
+    """Nadanie lub odebranie roli mentora (`specialist`)."""
+    user = session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Brak użytkownika")
+    if user.role == RoleEnum.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nie można zmienić roli administratora",
+        )
+    user.role = RoleEnum(payload.role)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    logger.info("Admin %s ustawił rolę %s użytkownikowi %s", admin.id, user.role.value, user.id)
+    return user
+
+
 @router.post(
     "/units",
     response_model=OrganizationalUnitPublic,
@@ -181,7 +214,7 @@ async def update_unit(
 
 
 @router.delete("/units/{unit_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_unit(unit_id: uuid.UUID, _: CurrentAdminDep, session: SessionDep) -> None:
+async def delete_unit(unit_id: uuid.UUID, admin: CurrentAdminDep, session: SessionDep) -> None:
     unit = session.get(OrganizationalUnit, unit_id)
     if unit is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nie znaleziono jednostki")
@@ -197,6 +230,7 @@ async def delete_unit(unit_id: uuid.UUID, _: CurrentAdminDep, session: SessionDe
         session.add(proposal)
     session.delete(unit)
     session.commit()
+    logger.warning("Admin %s usunął jednostkę %s wraz z jej projektami", admin.id, unit_id)
 
 
 @router.post(
@@ -256,13 +290,14 @@ async def update_project(
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
-    project_id: uuid.UUID, _: CurrentAdminDep, session: SessionDep
+    project_id: uuid.UUID, admin: CurrentAdminDep, session: SessionDep
 ) -> None:
     project = session.get(UnitProject, project_id)
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nie znaleziono projektu")
     session.delete(project)
     session.commit()
+    logger.warning("Admin %s usunął projekt %s", admin.id, project_id)
 
 
 @router.get("/reports", response_model=list[ReportPublic])
@@ -315,7 +350,7 @@ async def list_proposals(_: CurrentAdminDep, session: SessionDep) -> list[Projec
 async def accept_proposal(
     proposal_id: uuid.UUID,
     payload: ProjectProposalAccept,
-    _: CurrentAdminDep,
+    admin: CurrentAdminDep,
     session: SessionDep,
 ) -> UnitProjectPublic:
     proposal = session.get(ProjectProposal, proposal_id)
@@ -341,6 +376,9 @@ async def accept_proposal(
     session.add(proposal)
     session.commit()
     session.refresh(project)
+    logger.info(
+        "Admin %s zaakceptował propozycję %s → projekt %s", admin.id, proposal_id, project.id
+    )
     return _unit_project_public(session, project)
 
 
@@ -350,7 +388,7 @@ async def accept_proposal(
 )
 async def reject_proposal(
     proposal_id: uuid.UUID,
-    _: CurrentAdminDep,
+    admin: CurrentAdminDep,
     session: SessionDep,
 ) -> ProjectProposalPublic:
     proposal = session.get(ProjectProposal, proposal_id)
@@ -365,4 +403,5 @@ async def reject_proposal(
     session.add(proposal)
     session.commit()
     session.refresh(proposal)
+    logger.info("Admin %s odrzucił propozycję %s", admin.id, proposal_id)
     return _proposal_public(session, proposal)

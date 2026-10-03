@@ -1,8 +1,11 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from .config import get_settings
 from .dependencies.auth import get_user, hash_password
-from .models import RoleEnum, User
+from .dependencies.logger import get_logger
+from .models import KnowledgeResource, KnowledgeResourceKind, RoleEnum, User
+
+logger = get_logger(__name__)
 
 
 def seed_admin_user(session: Session) -> None:
@@ -14,6 +17,7 @@ def seed_admin_user(session: Session) -> None:
             existing.role = RoleEnum.ADMIN
             session.add(existing)
             session.commit()
+            logger.warning("Istniejący użytkownik %s dostał rolę admina (seed)", existing.id)
         return
 
     parts = (settings.admin_full_name or "MaloHUB Admin").strip().split(None, 1)
@@ -27,3 +31,42 @@ def seed_admin_user(session: Session) -> None:
     )
     session.add(admin)
     session.commit()
+    logger.info("Utworzono konto admina (seed)")
+    if settings.admin_password == "admin12345":
+        logger.warning("Admin ma domyślne hasło — ustaw ADMIN_PASSWORD przed wdrożeniem")
+
+
+# Działy serwisu rops.krakow.pl — punkt startowy Zasobnika wiedzy; admin redaguje je w panelu.
+ROPS_URL = "https://rops.krakow.pl"
+KNOWLEDGE_SEED: tuple[tuple[KnowledgeResourceKind, str, str, str], ...] = (
+    (KnowledgeResourceKind.CHALLENGE, "Raporty z badań", "Raporty",
+     "/badania-analizy-raporty/raporty-z-badan"),
+    (KnowledgeResourceKind.CHALLENGE, "Internetowy Obserwator Statystyk Społecznych", "Statystyki",
+     "/badania-analizy-raporty/internetowy-obserwator-statystyk-spolecznych"),
+    (KnowledgeResourceKind.CHALLENGE,
+     "Ocena zasobów pomocy społecznej w województwie małopolskim — bieżąca ocena", "Raport",
+     "/badania-analizy-raporty/ocena-zasobow-pomocy-spolecznej-w-woj-malopolskim/biezaca-ocena"),
+    (KnowledgeResourceKind.MATERIAL, "Publikacje ze świata innowacji", "Publikacje",
+     "/innowacje-spoleczne/publikacje-ze-swiata-innowacji"),
+    (KnowledgeResourceKind.MATERIAL, "Innowacje w małopolskich modelach", "Publikacje",
+     "/innowacje-spoleczne/innowacje-w-malopolskich-modelach"),
+    (KnowledgeResourceKind.MATERIAL, "Pracownicy socjalni — materiały edukacyjne",
+     "Materiały edukacyjne", "/dla-kadr-pomocy-spolecznej/pracownicy-socjalni-materialy-edukacyjne"),
+    (KnowledgeResourceKind.MATERIAL, "Domy Pomocy Społecznej — materiały edukacyjne",
+     "Materiały edukacyjne",
+     "/dla-kadr-pomocy-spolecznej/domy-pomocy-spolecznej-materialy-edukacyjne"),
+    (KnowledgeResourceKind.MATERIAL, "Środowiskowe Domy Samopomocy — materiały edukacyjne",
+     "Materiały edukacyjne",
+     "/dla-kadr-pomocy-spolecznej/srodowiskowe-domy-samopomocy-materialy-edukacyjne"),
+)
+
+
+def seed_knowledge_resources(session: Session) -> None:
+    if session.exec(select(KnowledgeResource)).first() is not None:
+        return
+    for kind, title, label, path in KNOWLEDGE_SEED:
+        session.add(
+            KnowledgeResource(kind=kind, title=title, format=label, url=f"{ROPS_URL}{path}")
+        )
+    session.commit()
+    logger.info("Zasobnik wiedzy: dodano %s zasobów startowych", len(KNOWLEDGE_SEED))

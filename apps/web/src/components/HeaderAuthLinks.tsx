@@ -22,7 +22,7 @@ export function HeaderRegisterLink({ className = "" }: LinkClassProps) {
   );
 }
 
-/** Para akcji gościa: login + rejestracja */
+/** Para akcji gościa na LP / auth — bez menu produktowego */
 export function GuestHeaderActions() {
   return (
     <>
@@ -30,4 +30,9 @@ export function GuestHeaderActions() {
       <HeaderRegisterLink />
     </>
   );
+}
+
+/** Link do czatu opiekuna — zalogowany → `/app`, gość → landing `#opiekun`. */
+export function caretakerHref(loggedIn: boolean): string {
+  return loggedIn ? "/app" : "/#opiekun";
 }

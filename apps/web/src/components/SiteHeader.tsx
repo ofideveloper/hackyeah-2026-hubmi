@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 
 import { BrandLogo } from "@/components/BrandLogo";
-import { GuestHeaderActions } from "@/components/HeaderAuthLinks";
 
 type SiteHeaderWidth = "default" | "wide" | "full";
 
@@ -20,11 +19,12 @@ const WIDTH: Record<SiteHeaderWidth, string> = {
 
 /**
  * Wspólny pasek nawigacji MaloHUB — ten sam układ na LP, auth i w aplikacji.
+ * Menu: `AppNav` / `LoggedInMenu` albo `GuestHeaderActions`.
  */
 export function SiteHeader({
   actions,
-  width = "default",
-  logoSize = "md",
+  width = "full",
+  logoSize = "lg",
 }: SiteHeaderProps) {
   return (
     <header className="site-header">
@@ -40,4 +40,12 @@ export function SiteHeader({
   );
 }
 
-export { GuestHeaderActions, HeaderLoginLink, HeaderRegisterLink } from "@/components/HeaderAuthLinks";
+export { AppNav, LoggedInMenu, ProductHeaderActions } from "@/components/AppNav";
+export type { AppNavPage } from "@/components/AppNav";
+export { UserMenu } from "@/components/UserMenu";
+export {
+  caretakerHref,
+  GuestHeaderActions,
+  HeaderLoginLink,
+  HeaderRegisterLink,
+} from "@/components/HeaderAuthLinks";

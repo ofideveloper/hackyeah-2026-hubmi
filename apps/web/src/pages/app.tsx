@@ -1,12 +1,18 @@
 import Head from "next/head";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 import { AssistantChat } from "@/components/AssistantChat";
-import { BrandLogo } from "@/components/BrandLogo";
-import { fetchMe, fetchMyReports, type Report, type User } from "@/lib/api";
+import { AppNav, SiteHeader } from "@/components/SiteHeader";
+import {
+  fetchConversations,
+  fetchMe,
+  fetchMyReports,
+  type Report,
+  type User,
+} from "@/lib/api";
 import { clearToken, getToken } from "@/lib/auth";
+import { unreadCount } from "@/lib/communication";
 
 const STATUS_LABEL: Record<string, string> = {
   nowe: "Przyjęte",
@@ -25,6 +31,8 @@ export default function AppHomePage() {
   const [user, setUser] = useState<User | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unread, setUnread] = useState(0);
+  const [focusChat, setFocusChat] = useState(false);
 
   useEffect(() => {
     const token = getToken();
@@ -38,6 +46,8 @@ export default function AppHomePage() {
         setUser(me);
         const nextReports = await fetchMyReports(token).catch(() => [] as Report[]);
         setReports(nextReports);
+        const threads = await fetchConversations(token).catch(() => []);
+        setUnread(unreadCount(threads));
       })
       .catch(() => {
         clearToken();
@@ -46,14 +56,24 @@ export default function AppHomePage() {
       .finally(() => setLoading(false));
   }, [router]);
 
-  function logout() {
-    clearToken();
-    void router.push("/login");
-  }
+  useEffect(() => {
+    if (!router.isReady || loading) return;
+    const hash = router.asPath.includes("#")
+      ? router.asPath.slice(router.asPath.indexOf("#") + 1)
+      : "";
+    if (hash === "opiekun" || hash === "") {
+      setFocusChat(hash === "opiekun");
+      if (hash === "opiekun") {
+        document
+          .getElementById("opiekun")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }, [router.isReady, router.asPath, loading]);
 
   if (loading || !user) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6">
+      <main className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
         <p className="text-[var(--muted)]">Ładowanie…</p>
       </main>
     );
@@ -62,38 +82,44 @@ export default function AppHomePage() {
   return (
     <>
       <Head>
-        <title>MaloHUB</title>
+        <title>Moja przestrzeń · MaloHUB</title>
       </Head>
-      <main className="animate-soft-in mx-auto min-h-screen max-w-3xl px-6 py-12">
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-8">
-          <div>
-            <BrandLogo size="sm" href={null} />
-            <h1 className="font-display mt-5 text-3xl font-semibold tracking-tight">
-              Twoja przestrzeń
-            </h1>
-            <p className="mt-2 max-w-md text-sm text-[var(--muted)]">
-              Porozmawiaj ze społecznym opiekunem. Status Twoich spraw zobaczysz tutaj, gdy
-              pojawią się w systemie.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {user.role === "admin" && (
-              <Link href="/admin" className="btn-ghost">
-                Admin
-              </Link>
-            )}
-            <button type="button" onClick={logout} className="btn-ghost">
-              Wyloguj
-            </button>
-          </div>
+
+      <a href="#opiekun" className="skip-link">
+        Przejdź do opiekuna
+      </a>
+      <SiteHeader
+        width="full"
+        actions={
+          <AppNav
+            current="app"
+            isAdmin={user.role === "admin"}
+            unreadKontakt={unread}
+            user={user}
+          />
+        }
+      />
+
+      <main className="kb-page mx-auto max-w-3xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
+        <header className="animate-fade-up">
+          <p className="kb-meta">Twoja przestrzeń</p>
+          <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
+            Porozmawiaj z opiekunem i{" "}
+            <span className="text-[var(--accent)]">śledź sprawy</span>
+          </h1>
+          <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
+            Witaj
+            {user.name ? `, ${user.name}` : ""}. Opisz sprawę poniżej — statusy zobaczysz, gdy
+            pojawią się w systemie.
+          </p>
         </header>
 
-        <section className="mt-8">
+        <section id="opiekun" className="mt-10 scroll-mt-24">
           <AssistantChat
+            autoFocus={focusChat}
             userName={user.full_name || `${user.name} ${user.surname}`.trim()}
             onReportCreated={(report) => {
               setReports((prev) => [report, ...prev.filter((r) => r.id !== report.id)]);
-              // Dopnij świeżą listę z API (na wypadek wyścigu / innej sesji)
               const token = getToken();
               if (token) {
                 void fetchMyReports(token)
@@ -104,12 +130,12 @@ export default function AppHomePage() {
           />
         </section>
 
-        <section id="moje-sprawy" className="mt-12 scroll-mt-6">
-          <h2 className="font-display text-lg font-semibold tracking-tight">Twoje sprawy</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
+        <section id="moje-sprawy" className="mt-14 scroll-mt-24">
+          <h2 className="font-display text-2xl font-semibold tracking-tight">Twoje sprawy</h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
             Statusy aktualizuje zespół — Ty tylko śledzisz postęp.
           </p>
-          <ul className="mt-5 space-y-3">
+          <ul className="mt-6 space-y-3">
             {reports.length === 0 && (
               <li className="surface px-5 py-6 text-sm leading-relaxed text-[var(--muted)]">
                 Na razie cisza. Gdy opiekun lub system otworzy sprawę w Twoim imieniu, zobaczysz

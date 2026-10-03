@@ -1,10 +1,10 @@
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 
-import type { Project } from "@/lib/api";
+import type { ChatProject } from "@/lib/api";
 
 type ProjectPreviewModalProps = {
-  project: Project;
+  project: ChatProject;
   onClose: () => void;
 };
 

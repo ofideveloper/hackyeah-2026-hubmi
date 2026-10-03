@@ -1,8 +1,8 @@
-import type { Project } from "@/lib/api";
+import type { ChatProject } from "@/lib/api";
 
 type ProjectSuggestionCardsProps = {
-  projects: Project[];
-  onOpen: (project: Project) => void;
+  projects: ChatProject[];
+  onOpen: (project: ChatProject) => void;
 };
 
 export function ProjectSuggestionCards({ projects, onOpen }: ProjectSuggestionCardsProps) {

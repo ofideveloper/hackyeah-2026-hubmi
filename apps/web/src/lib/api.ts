@@ -387,10 +387,21 @@ export type LocationRequestKind = "area" | "gps";
 
 export type ChatMode = "clarify" | "report" | "catalog" | "intake";
 
+/** Projekt z katalogu polecony w czacie — `unit_name` niesie nazwę kategorii. */
+export type ChatProject = Pick<Project, "id" | "name" | "description" | "unit_name">;
+
+export type NewProjectDraft = {
+  name: string;
+  description: string;
+};
+
 export type ChatReply = {
   reply: string;
+  chat_id: string | null;
   mode: ChatMode;
-  suggested_projects: Project[];
+  suggested_projects: ChatProject[];
+  /** Brak dopasowania w bazie — UI otwiera okno zgłoszenia nowego projektu. */
+  new_project_draft: NewProjectDraft | null;
   project_proposal: ProjectProposal | null;
   created_report: Report | null;
   report_offer: boolean;
@@ -402,6 +413,7 @@ export async function sendChatMessage(
   message: string,
   history: ChatHistoryMessage[] = [],
   mode?: ChatMode | null,
+  chatId?: string | null,
 ): Promise<ChatReply> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -414,6 +426,7 @@ export async function sendChatMessage(
       message,
       history,
       ...(mode ? { mode } : {}),
+      ...(chatId ? { chat_id: chatId } : {}),
     }),
   });
 
@@ -431,6 +444,8 @@ export async function sendChatMessage(
       : "clarify";
   return {
     reply: data.reply,
+    chat_id: data.chat_id ?? null,
+    new_project_draft: data.new_project_draft ?? null,
     mode: resolvedMode,
     suggested_projects: data.suggested_projects ?? [],
     project_proposal: data.project_proposal ?? null,
@@ -441,6 +456,21 @@ export async function sendChatMessage(
         ? data.location_request
         : null,
   };
+}
+
+export async function createProjectProposal(
+  token: string,
+  payload: NewProjectDraft,
+): Promise<ProjectProposal> {
+  const res = await fetch(`${API_BASE}/project-proposals`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+  return res.json() as Promise<ProjectProposal>;
 }
 
 export async function fetchProjectProposals(token: string): Promise<ProjectProposal[]> {
@@ -485,4 +515,128 @@ export async function rejectProjectProposal(
     throw new Error(await parseError(res));
   }
   return res.json() as Promise<ProjectProposal>;
+}
+
+// —— Zasobnik wiedzy ——
+
+export type KnowledgeArea = {
+  id: string;
+  name: string;
+  innovations: number;
+};
+
+export type InnovationSummary = {
+  id: string;
+  name: string;
+  category_id: string;
+  /** Sekcja „Na czym polega rozwiązanie?” */
+  solution: string;
+  /** Sekcja „Jakich problemów dotyczy innowacja?” */
+  problem: string;
+  has_video: boolean;
+};
+
+export type InnovationDetail = {
+  id: string;
+  name: string;
+  category_id: string;
+  category_name: string;
+  sections: { title: string; body: string }[];
+  source_url: string | null;
+  video_url: string | null;
+  folder_url: string | null;
+};
+
+export type KnowledgeResourceKind = "wyzwanie" | "material";
+
+export type KnowledgeResource = {
+  id: string;
+  kind: KnowledgeResourceKind;
+  title: string;
+  summary: string;
+  /** Etykieta formy, np. „Raport”, „Film” */
+  format: string;
+  url: string | null;
+  category_id: string | null;
+  updated_at: string;
+};
+
+export type KnowledgeResourceInput = Omit<KnowledgeResource, "id" | "updated_at">;
+
+export type KnowledgeOverview = {
+  areas: KnowledgeArea[];
+  innovations: InnovationSummary[];
+  resources: KnowledgeResource[];
+};
+
+export type AreaTrend = {
+  /** null = potrzeby, na które baza nie miała odpowiedzi */
+  category_id: string | null;
+  name: string;
+  total: number;
+  last_30_days: number;
+  previous_30_days: number;
+  weekly: number[];
+};
+
+export type NeedTrends = {
+  weeks: string[];
+  areas: AreaTrend[];
+  unmet: { created_at: string; summary: string }[];
+  total: number;
+};
+
+async function jsonOrThrow<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+  return res.json() as Promise<T>;
+}
+
+export async function fetchKnowledge(): Promise<KnowledgeOverview> {
+  return jsonOrThrow(await fetch(`${API_BASE}/knowledge`, { cache: "no-store" }));
+}
+
+export async function fetchInnovation(id: string): Promise<InnovationDetail> {
+  return jsonOrThrow(await fetch(`${API_BASE}/knowledge/innovations/${id}`));
+}
+
+export async function saveKnowledgeResource(
+  token: string,
+  payload: KnowledgeResourceInput,
+  resourceId?: string | null,
+): Promise<KnowledgeResource> {
+  const base = `${API_BASE}/admin/knowledge/resources`;
+  return jsonOrThrow(
+    await fetch(resourceId ? `${base}/${resourceId}` : base, {
+      method: resourceId ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders(token) },
+      body: JSON.stringify(payload),
+    }),
+  );
+}
+
+export async function deleteKnowledgeResource(token: string, resourceId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin/knowledge/resources/${resourceId}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+}
+
+export async function refreshInnovationLibrary(token: string): Promise<{ added: number }> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/admin/knowledge/refresh`, {
+      method: "POST",
+      headers: authHeaders(token),
+    }),
+  );
+}
+
+export async function fetchNeedTrends(token: string): Promise<NeedTrends> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/admin/trends`, { headers: authHeaders(token), cache: "no-store" }),
+  );
 }

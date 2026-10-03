@@ -18,6 +18,9 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 | `/admin/proposals` | Propozycje projektów z czatu → jednostka |
 | `/admin/reports` | Sprawy / statusy |
 | `/admin/users` | Użytkownicy |
+| `/wiedza` | Zasobnik wiedzy (publiczny): wyzwania, Biblioteka Innowacji (`ActualProject`), materiały |
+| `/admin/knowledge` | Redakcja zasobów Zasobnika (`KnowledgeResource`) + dociąganie nowych innowacji |
+| `/admin/trends` | Trendy potrzeb z czatu wg obszarów (`NeedSignal`) — tylko admin |
 | `/admin/login` | Redirect → `/login` |
 | `/api/*` | BFF → FastAPI (nie UI) |
 

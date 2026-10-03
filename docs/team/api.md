@@ -58,6 +58,7 @@ Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProj
 - Router per domena w `app/routes/`
 - Modele tabel i schematy wejścia/wyjścia (SQLModel) razem w `app/models.py`
 - Zależności FastAPI w `app/dependencies/` (`SessionDep`, `CurrentUserDep`)
+- Logi: `logger = get_logger(__name__)` z `app/dependencies/logger.py` zamiast `print`; poziom przez `LOG_LEVEL` (domyślnie `INFO`). Loguj id, nie emaile / hasła / tokeny / treść czatu
 - [UZUPEŁNIJ — walidacja, paginacja, format błędów]
 
 ## Bezpieczeństwo

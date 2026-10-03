@@ -7,11 +7,15 @@ from sqlalchemy import create_engine, inspect, text
 from sqlmodel import Session, SQLModel
 
 from ..config import get_settings
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def resolve_database_url(url: str) -> str:
     """On Vercel the filesystem is ephemeral; keep SQLite under /tmp unless overridden."""
     if os.environ.get("VERCEL") and url.startswith("sqlite") and "/tmp/" not in url:
+        logger.warning("Vercel: SQLite w /tmp — dane nietrwałe, ustaw DATABASE_URL")
         return "sqlite:////tmp/hubmi.db"
     return url
 
@@ -75,12 +79,28 @@ def _rebuild_legacy_uuid_tables() -> None:
         for table in to_drop:
             count = conn.execute(text(f'SELECT COUNT(*) FROM "{table}"')).scalar() or 0
             conn.execute(text(f'DROP TABLE IF EXISTS "{table}"'))
-            print(f"[db] rebuilt table {table} (had {count} rows; schema sync)")
+            logger.warning(
+                "Przebudowano tabelę %s (schema sync) — usunięto %s wierszy", table, count
+            )
+
+
+def _add_missing_columns() -> None:
+    """`create_all` nie dodaje kolumn do istniejących tabel — dopisz nowe, opcjonalne."""
+    added = {"actualproject": ("source_url", "video_url", "folder_url")}
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        for table, columns in added.items():
+            existing = {col["name"] for col in insp.get_columns(table)}
+            for column in columns:
+                if column not in existing:
+                    conn.execute(text(f'ALTER TABLE "{table}" ADD COLUMN "{column}" VARCHAR'))
+                    logger.info("Dodano kolumnę %s.%s", table, column)
 
 
 def create_db_and_tables():
     _rebuild_legacy_uuid_tables()
     SQLModel.metadata.create_all(engine)
+    _add_missing_columns()
 
 
 def get_session():

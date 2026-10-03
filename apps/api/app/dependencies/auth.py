@@ -13,6 +13,9 @@ from sqlmodel import Session, select
 from ..config import get_settings
 from ..models import RoleEnum, User
 from .db import SessionDep
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
@@ -64,16 +67,19 @@ async def get_current_user(
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
     except InvalidTokenError as exc:
+        logger.warning("Odrzucono token JWT: %s", type(exc).__name__)
         raise credentials_exception from exc
     email = payload.get("sub")
     user = get_user(session, email) if isinstance(email, str) else None
     if user is None:
+        logger.warning("Poprawny token JWT bez istniejącego użytkownika")
         raise credentials_exception
     return user
 
 
 async def get_current_admin(current_user: Annotated[User, Depends(get_current_user)]) -> User:
     if current_user.role != RoleEnum.ADMIN:
+        logger.warning("Odmowa dostępu admina dla użytkownika %s", current_user.id)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",

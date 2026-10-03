@@ -54,7 +54,7 @@ cp apps/web/.env.local.example apps/web/.env.local
 
 W `.env` (wzór: [`.env.example`](.env.example)) ustaw m.in.:
 
-- `LLM_PROVIDER` + `LLM_API_KEY` + `LLM_MODEL` (albo `LLM_PROVIDER=fake`)
+- `LLM_API_KEY` + `LLM_MODEL` (+ opcjonalnie `LLM_BASE_URL`) na serwisie **api** — bez tego czat na produkcji zwraca błąd auth modelu
 - `ADMIN_EMAIL` / `ADMIN_PASSWORD` (domyślnie jak w tabeli powyżej)
 - `API_URL=http://localhost:8000` (także w `apps/web/.env.local`)
 

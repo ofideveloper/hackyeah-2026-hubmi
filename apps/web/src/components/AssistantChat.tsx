@@ -1,14 +1,20 @@
 /**
- * Czat mieszkańca — ciepły, prosty UX.
+ * Czat mieszkańca — ciepły UX + karty projektów z modalem.
  * Bez export / import / zapisu rozmowy.
  */
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import dynamic from "next/dynamic";
 
-import { sendChatMessage } from "@/lib/api";
+import { ChatMarkdown } from "@/components/ChatMarkdown";
+import { LocationRequestCard } from "@/components/LocationRequestCard";
+import { ProjectPreviewModal } from "@/components/ProjectPreviewModal";
+import { ProjectSuggestionCards } from "@/components/ProjectSuggestionCards";
+import {
+  sendChatMessage,
+  type LocationRequestKind,
+  type Project,
+  type ProjectProposal,
+} from "@/lib/api";
 import { getToken } from "@/lib/auth";
-
-const ChatMarkdown = dynamic(() => import("@/components/ChatMarkdown"), { ssr: false });
 
 export type ChatRole = "user" | "assistant" | "error";
 
@@ -17,28 +23,19 @@ export type ChatMessage = {
   role: ChatRole;
   content: string;
   timestamp: Date;
+  suggestedProjects?: Project[];
+  projectProposal?: ProjectProposal | null;
+  locationRequest?: LocationRequestKind | null;
+  locationResolved?: boolean;
 };
 
 const CARETAKER = "Twój społeczny opiekun";
 
 const SUGGESTIONS = [
-  "Moja mama ma początki demencji i mieszka sama",
-  "Szukam zajęć aktywizujących dla seniorów",
-  "Jak zadbać o bezpieczeństwo starszej osoby w domu?",
+  "Szukam pomocy w mojej dzielnicy",
+  "Nie wiem, od czego zacząć",
+  "Potrzebuję wsparcia",
 ];
-
-const WELCOME_ID = "welcome";
-
-function welcomeMessage(): ChatMessage {
-  return {
-    id: WELCOME_ID,
-    role: "assistant",
-    content:
-      "Miło Cię widzieć. Jestem Twoim społecznym opiekunem — opisz swoją sytuację, " +
-      "a wskażę projekty, które mogą pomóc. Możesz też zacząć od podpowiedzi poniżej.",
-    timestamp: new Date(),
-  };
-}
 
 function TypingIndicator() {
   return (
@@ -58,7 +55,6 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
       className={`chat-caretaker-avatar flex shrink-0 items-center justify-center rounded-full ${dim}`}
       aria-hidden
     >
-      {/* Symbol opieki: dwie sylwetki + serce */}
       <svg className={icon} viewBox="0 0 32 32" fill="none">
         <circle cx="11" cy="11" r="3.2" fill="currentColor" opacity="0.95" />
         <circle cx="21" cy="11" r="3.2" fill="currentColor" opacity="0.95" />
@@ -78,7 +74,7 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
         />
         <path
           d="M16 26.2c-.35-.28-2.2-1.55-2.9-3-.7-1.5-.3-2.7.8-3 .6-.15 1.15.1 1.55.55.4-.45.95-.7 1.55-.55 1.1.3 1.5 1.5.8 3-.7 1.45-2.55 2.72-2.9 3Z"
-          fill="#dff7f3"
+          fill="#e8f1fa"
         />
       </svg>
     </div>
@@ -87,45 +83,79 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
 
 type AssistantChatProps = {
   userName?: string | null;
+  /** Czat na landingu — działa bez logowania */
+  guestMode?: boolean;
 };
 
-export function AssistantChat({ userName }: AssistantChatProps) {
+function welcomeMessage(guestMode: boolean): ChatMessage {
+  return {
+    id: "welcome",
+    role: "assistant",
+    content: guestMode
+      ? `Miło Cię widzieć. Opowiedz krótko, co Cię zajmuje — albo wybierz podpowiedź poniżej. ` +
+        `Razem pomyślimy nad rozwiązaniem.`
+      : `Miło Cię widzieć. Jestem Twoim społecznym opiekunem — razem pomyślimy nad rozwiązaniem. ` +
+        `Napisz, co Cię zajmuje, albo wybierz podpowiedź poniżej.`,
+    timestamp: new Date(),
+  };
+}
+
+export function AssistantChat({ userName, guestMode = false }: AssistantChatProps) {
   const displayName = userName?.trim() || "mieszkańcu";
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage()]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage(guestMode)]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<Project | null>(null);
+  const [locatingId, setLocatingId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const lastMessageRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const onlyWelcome = messages.length === 1 && messages[0]?.id === WELCOME_ID;
-  const lastMessage = messages[messages.length - 1];
+  const onlyWelcome = messages.length === 1 && messages[0]?.id === "welcome";
 
-  // Długa odpowiedź opiekuna: pokaż jej początek, a nie koniec.
-  useEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
-    const reply = lastMessageRef.current;
-    if (!busy && reply && lastMessage?.role === "assistant" && lastMessage.id !== WELCOME_ID) {
-      reply.scrollIntoView({ block: "start", behavior: "smooth" });
-    } else {
-      list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
-    }
-  }, [messages, busy, lastMessage]);
+  function startNewChat() {
+    if (busy || onlyWelcome) return;
+    setMessages([welcomeMessage(guestMode)]);
+    setInput("");
+    setPreview(null);
+    setLocatingId(null);
+  }
 
   useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-  }, [input]);
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages, busy, locatingId]);
 
-  async function ask(text: string) {
+  async function submitMessage(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || busy) return;
+
     const token = getToken();
-    if (!token) return;
+    if (!guestMode && !token) return;
 
+    const history = messages
+      .filter(
+        (m) =>
+          m.id !== "welcome" &&
+          (m.role === "user" || m.role === "assistant") &&
+          m.content.trim(),
+      )
+      .slice(-24)
+      .map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
+
+    const userMsg: ChatMessage = {
+      id: `u-${Date.now()}`,
+      role: "user",
+      content: trimmed,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
     setBusy(true);
+
     try {
-      const reply = await sendChatMessage(token, text);
+      const { reply, suggested_projects, project_proposal, location_request } =
+        await sendChatMessage(token, trimmed, history);
       setMessages((prev) => [
         ...prev,
         {
@@ -133,6 +163,9 @@ export function AssistantChat({ userName }: AssistantChatProps) {
           role: "assistant",
           content: reply,
           timestamp: new Date(),
+          suggestedProjects: suggested_projects,
+          projectProposal: project_proposal,
+          locationRequest: location_request,
         },
       ]);
     } catch (err) {
@@ -147,50 +180,74 @@ export function AssistantChat({ userName }: AssistantChatProps) {
       ]);
     } finally {
       setBusy(false);
-      inputRef.current?.focus({ preventScroll: true });
     }
   }
 
-  function submitMessage(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || busy) return;
+  function markLocationResolved(messageId: string) {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, locationResolved: true } : m)),
+    );
+  }
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `u-${Date.now()}`,
-        role: "user",
-        content: trimmed,
-        timestamp: new Date(),
+  async function shareGps(messageId: string, kind: LocationRequestKind) {
+    if (busy || locatingId) return;
+    if (!navigator.geolocation) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `e-${Date.now()}`,
+          role: "error",
+          content: "To urządzenie nie obsługuje udostępniania lokalizacji — wpisz adres ręcznie.",
+          timestamp: new Date(),
+        },
+      ]);
+      return;
+    }
+
+    setLocatingId(messageId);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        const maps = `https://maps.google.com/?q=${latitude},${longitude}`;
+        const label =
+          kind === "gps"
+            ? "Moja aktualna lokalizacja"
+            : "Lokalizacja miejsca (z GPS urządzenia)";
+        const text =
+          `${label}: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}` +
+          ` (±${Math.round(accuracy)} m). Mapa: ${maps}`;
+        markLocationResolved(messageId);
+        setLocatingId(null);
+        void submitMessage(text);
       },
-    ]);
-    setInput("");
-    void ask(trimmed);
-  }
-
-  function retry() {
-    if (busy) return;
-    const lastQuestion = [...messages].reverse().find((m) => m.role === "user");
-    if (!lastQuestion) return;
-    setMessages((prev) => prev.filter((m) => m.role !== "error"));
-    void ask(lastQuestion.content);
-  }
-
-  function resetConversation() {
-    setMessages([welcomeMessage()]);
-    setInput("");
-    inputRef.current?.focus();
+      (err) => {
+        setLocatingId(null);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `e-${Date.now()}`,
+            role: "error",
+            content:
+              err.code === err.PERMISSION_DENIED
+                ? "Brak zgody na lokalizację — możesz wpisać ulicę lub dzielnicę ręcznie."
+                : "Nie udało się pobrać lokalizacji — spróbuj wpisać adres ręcznie.",
+            timestamp: new Date(),
+          },
+        ]);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    submitMessage(input);
+    void submitMessage(input);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      submitMessage(input);
+      void submitMessage(input);
     }
   }
 
@@ -199,87 +256,102 @@ export function AssistantChat({ userName }: AssistantChatProps) {
       <header className="chat-shell-header px-6 pb-5 pt-6 sm:px-8 sm:pt-7">
         <div className="flex items-start gap-4">
           <CaretakerMark />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0">
             <p className="font-display text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
               {CARETAKER}
             </p>
             <h2 className="font-display mt-1.5 text-2xl font-semibold tracking-tight text-[var(--text)] sm:text-3xl">
-              Witaj, {displayName}
+              {guestMode ? "Cześć — w czym mogę pomóc?" : `Witaj, ${displayName}`}
             </h2>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--muted)]">
-              Opowiedz, co Cię zajmuje — razem pomyślimy nad rozwiązaniem.
+              {guestMode
+                ? "Napisz, co się dzieje w Twojej okolicy — razem znajdziemy sensowny kierunek."
+                : "Opowiedz, co Cię zajmuje — razem pomyślimy nad rozwiązaniem."}
             </p>
           </div>
-          {!onlyWelcome && (
-            <button
-              type="button"
-              onClick={resetConversation}
-              disabled={busy}
-              className="btn-ghost shrink-0 text-sm"
-            >
-              Nowa rozmowa
-            </button>
-          )}
         </div>
       </header>
 
       <div
         ref={listRef}
-        aria-live="polite"
-        className="chat-thread relative h-[min(64vh,640px)] min-h-[320px] space-y-5 overflow-y-auto px-4 py-5 sm:px-6"
+        className="chat-thread max-h-[480px] min-h-[260px] space-y-5 overflow-y-auto px-4 py-5 sm:px-6"
       >
         {messages.map((message, index) => {
           const prev = messages[index - 1];
-          const isUser = message.role === "user";
-          const showMark = !isUser && (!prev || prev.role === "user");
-          const isLast = index === messages.length - 1;
+          const isCaretaker = message.role !== "user";
+          const showMark = isCaretaker && (!prev || prev.role === "user");
+          const hasProjects =
+            message.role === "assistant" && (message.suggestedProjects?.length ?? 0) > 0;
           return (
-            <div
-              key={message.id}
-              ref={isLast ? lastMessageRef : undefined}
-              data-role={message.role}
-              className="animate-soft-in scroll-mt-4"
-            >
-              <div className={`flex items-end gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}>
-                {!isUser &&
+            <div key={message.id} data-role={message.role} className="animate-soft-in">
+              <div
+                className={`flex items-end gap-2.5 ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                {isCaretaker &&
                   (showMark ? (
                     <CaretakerMark size="sm" />
                   ) : (
                     <div className="w-9 shrink-0" aria-hidden />
                   ))}
                 <div
-                  className={`flex min-w-0 flex-col ${
-                    isUser ? "max-w-[min(85%,28rem)] items-end" : "max-w-[40rem] flex-1 items-start"
-                  }`}
+                  className={`max-w-[min(100%,28rem)] ${
+                    message.role === "user" ? "items-end" : "items-start"
+                  } flex w-full flex-col`}
                 >
-                  <p className="sr-only">{isUser ? "Ty" : CARETAKER}</p>
                   <div
-                    className={`max-w-full px-4 py-3 text-[0.9375rem] leading-relaxed ${
-                      isUser
-                        ? "chat-bubble-user whitespace-pre-wrap break-words"
+                    className={`px-4 py-3 text-[0.9375rem] leading-relaxed ${
+                      message.role === "user"
+                        ? "chat-bubble-user"
                         : message.role === "error"
                           ? "chat-bubble-error"
                           : "chat-bubble-caretaker"
                     }`}
                   >
-                    {message.role === "assistant" ? (
-                      <ChatMarkdown content={message.content} />
-                    ) : (
-                      message.content
-                    )}
-                    {message.role === "error" && isLast && (
-                      <button
-                        type="button"
-                        onClick={retry}
-                        className="mt-2 block text-sm font-semibold underline underline-offset-2"
-                      >
-                        Spróbuj ponownie
-                      </button>
-                    )}
+                    <ChatMarkdown
+                      content={message.content}
+                      variant={
+                        message.role === "user"
+                          ? "user"
+                          : message.role === "error"
+                            ? "error"
+                            : "caretaker"
+                      }
+                    />
                   </div>
+
+                  {hasProjects && (
+                    <ProjectSuggestionCards
+                      projects={message.suggestedProjects!}
+                      onOpen={setPreview}
+                    />
+                  )}
+
+                  {message.projectProposal && (
+                    <div className="project-draft-note" role="status">
+                      <p className="project-draft-note-label">Propozycja dla zespołu</p>
+                      <p className="font-display project-draft-note-title">
+                        {message.projectProposal.name}
+                      </p>
+                      <p className="project-draft-note-text">
+                        Przekazałem materiał dalej — jednostka będzie mogła to przejąć i dopracować.
+                      </p>
+                    </div>
+                  )}
+
+                  {message.locationRequest && !message.locationResolved && (
+                    <LocationRequestCard
+                      kind={message.locationRequest}
+                      busy={locatingId === message.id || busy}
+                      onShareGps={() => void shareGps(message.id, message.locationRequest!)}
+                      onSkip={() => markLocationResolved(message.id)}
+                    />
+                  )}
+
                   <p
                     className={`mt-1.5 px-1 text-[11px] text-[var(--muted)] ${
-                      isUser ? "self-end" : "self-start"
+                      message.role === "user" ? "self-end" : "self-start"
                     }`}
                   >
                     {message.timestamp.toLocaleTimeString("pl-PL", {
@@ -296,23 +368,20 @@ export function AssistantChat({ userName }: AssistantChatProps) {
         {busy && (
           <div className="flex items-end gap-2.5">
             <CaretakerMark size="sm" />
-            <div className="chat-bubble-caretaker flex items-center gap-3 px-4 py-3">
+            <div className="chat-bubble-caretaker px-4 py-3">
               <TypingIndicator />
-              <span className="text-sm text-[var(--muted)]">
-                Przeglądam projekty — to może potrwać kilkanaście sekund…
-              </span>
             </div>
           </div>
         )}
       </div>
 
       {onlyWelcome && !busy && (
-        <div className="flex flex-wrap gap-2 px-4 pb-3 sm:px-6">
+        <div className="flex flex-wrap gap-2 px-4 py-3 sm:px-6">
           {SUGGESTIONS.map((suggestion) => (
             <button
               key={suggestion}
               type="button"
-              onClick={() => submitMessage(suggestion)}
+              onClick={() => void submitMessage(suggestion)}
               className="chat-chip"
             >
               {suggestion}
@@ -322,15 +391,15 @@ export function AssistantChat({ userName }: AssistantChatProps) {
       )}
 
       <form onSubmit={onSubmit} className="chat-composer border-t border-[var(--border)] px-4 py-4 sm:px-6">
-        <div className="flex items-end gap-3">
-          <label className="relative min-w-0 flex-1">
+        <div className="flex items-start gap-2">
+          <label className="min-w-0 flex-1">
             <span className="sr-only">Twoja wiadomość</span>
             <textarea
-              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
-              rows={1}
+              rows={2}
+              disabled={busy}
               placeholder="Napisz, czego potrzebujesz…"
               className="chat-input"
             />
@@ -338,26 +407,58 @@ export function AssistantChat({ userName }: AssistantChatProps) {
           <button
             type="submit"
             disabled={busy || !input.trim()}
-            className="btn-primary chat-send"
+            className="chat-send"
             aria-label="Wyślij wiadomość"
+            title="Wyślij"
           >
-            <span className="hidden sm:inline">Wyślij</span>
             <svg
-              className="h-5 w-5 sm:hidden"
+              className="h-4 w-4"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               aria-hidden
             >
-              <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="m22 2-7 20-4-9-9-4Z" />
+              <path d="M22 2 11 13" />
             </svg>
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-[var(--muted)]">
-          Enter wysyła · Shift+Enter nowa linia
-        </p>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-[11px] text-[var(--muted)]">
+            Enter wysyła · Shift+Enter nowa linia
+          </p>
+          <button
+            type="button"
+            onClick={startNewChat}
+            disabled={busy || onlyWelcome}
+            className="btn-ghost inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-2 py-0 text-[11px] font-medium leading-none"
+            title="Zacznij nową sprawę — wyczyść rozmowę"
+          >
+            <svg
+              className="h-3 w-3"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+              <path d="m9.5 8.5 5 5" />
+              <path d="m14.5 8.5-5 5" />
+            </svg>
+            Nowa sprawa
+          </button>
+        </div>
       </form>
+
+      {preview && (
+        <ProjectPreviewModal project={preview} onClose={() => setPreview(null)} />
+      )}
     </section>
   );
 }

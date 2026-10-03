@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 
-import { loginUser } from "@/lib/api";
+import { fetchMe, loginUser } from "@/lib/api";
 import { setToken } from "@/lib/auth";
 
 export function LoginForm() {
@@ -20,7 +20,8 @@ export function LoginForm() {
     try {
       const token = await loginUser(email, password);
       setToken(token);
-      await router.push("/app");
+      const me = await fetchMe(token);
+      await router.push(me.role === "admin" ? "/admin" : "/app");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Logowanie nie powiodło się");
     } finally {

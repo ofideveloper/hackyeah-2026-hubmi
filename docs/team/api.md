@@ -21,6 +21,9 @@ Stack: FastAPI w `apps/api` (`app/main.py`, `app/routers/`, `app/models.py`, …
 | POST | `/admin/units` | Admin — utwórz jednostkę |
 | DELETE | `/admin/units/{id}` | Admin — usuń jednostkę (+ zgłoszenia + projekty) |
 | POST | `/admin/projects` | Admin — utwórz projekt i przydziel do jednostki |
+| GET | `/admin/project-proposals` | Admin — propozycje z czatu (intake AI) |
+| POST | `/admin/project-proposals/{id}/accept` | Admin — utwórz projekt z propozycji (+ `unit_id`) |
+| POST | `/admin/project-proposals/{id}/reject` | Admin — odrzuć propozycję |
 | PATCH | `/admin/projects/{id}` | Admin — zmiana jednostki / nazwy / opisu |
 | DELETE | `/admin/projects/{id}` | Admin — usuń projekt |
 | GET | `/units` | Lista jednostek (zalogowany) |
@@ -29,12 +32,12 @@ Stack: FastAPI w `apps/api` (`app/main.py`, `app/routers/`, `app/models.py`, …
 | POST | `/reports` | Tworzenie sprawy (API / AI — nie UI mieszkańca) |
 | GET | `/admin/reports` | Wszystkie sprawy |
 | PATCH | `/admin/reports/{id}` | Zmiana statusu (`nowe` \| `w_toku` \| `zakonczone`) |
-| POST | `/chat` | Asystent UI → buduje kontekst projektów → woła bypass LLM |
+| POST | `/chat` | JWT opcjonalny. Body: `{ message, history[] }` → `{ reply, suggested_projects[], … }`. Gość: sugestie OK; `project_proposals` tylko gdy zalogowany |
 | POST | `/llm/chat` | Bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
-| GET | `/llm/health` | Provider aktualnego klienta (`fake` / `http`) |
+| GET | `/llm/health` | Provider aktualnego klienta (`fake` / `gemini`) |
 | GET | `/health` | Healthcheck |
 
-**LLM bypass:** `app/llm/client.py` — domyślnie `LLM_PROVIDER=fake`. `/chat` nie woła modelu bezpośrednio; zawsze przez ten klient. Potem podmiana na prawdziwy HTTP bez zmiany frontu.
+**LLM:** `app/llm/client.py` — `LLM_PROVIDER=fake|openai|gemini`. `/chat` ładuje `caretaker_system.md` + historię. Markery: `[[hubmi-project:ID]]` → karty; `[[hubmi-new-project]]…` → propozycje; `[[hubmi-need-location:area|gps]]` → `location_request`. Env: `LLM_API_KEY` + `LLM_MODEL` (np. `gpt-4o-mini`).
 
 Modele: `OrganizationalUnit`, `Project`, `Report`, kontrakt `LLMChatRequest/Response`.
 

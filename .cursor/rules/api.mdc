@@ -10,7 +10,10 @@ alwaysApply: false
 
 - Wejście: `app/main.py`
 - Routery: `app/routers/` (prefixy `/auth`, `/admin`, `/chat`, `/llm`, …)
-- LLM: tylko przez `app/llm/client.py` (bypass `fake` → później real HTTP)- Modele / schematy: `models.py`, `schemas.py`
+- LLM: tylko przez `app/llm/client.py` (`fake` | `gemini` + `LLM_API_KEY`)
+- Zalecenia odpowiedzi AI: `app/llm/prompts/caretaker_system.md` (Markdown pod UI)
+- Modele / schematy: `models.py`, `schemas.py`
+
 - Auth JWT: `app/auth.py`
 
 ## Ścieżki

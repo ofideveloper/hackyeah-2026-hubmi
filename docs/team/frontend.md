@@ -8,16 +8,25 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 
 | Ścieżka | Rola |
 |---------|------|
-| `/` | Landing (produkt / social) |
-| `/login` | Logowanie użytkownika → `/app` |
+| `/` | Landing — w hero ten sam `AssistantChat` co w `/app` (`guestMode`, `#opiekun`) |
+| `/login` | Logowanie → admin: `/admin`, user: `/app` |
 | `/register` | Rejestracja → `/login` |
 | `/app` | Dom mieszkańca: czat + statusy spraw (bez formularzy) |
-| `/admin` | Jednostki, projekty, statusy spraw, użytkownicy |
+| `/admin` | Panel admin — przegląd (tylko `role=admin`) |
+| `/admin/units` | Jednostki |
+| `/admin/projects` | Projekty |
+| `/admin/proposals` | Propozycje projektów z czatu → jednostka |
+| `/admin/reports` | Sprawy / statusy |
+| `/admin/users` | Użytkownicy |
 | `/admin/login` | Redirect → `/login` |
 | `/api/*` | BFF → FastAPI (nie UI) |
 
 Flow usera: rozmowa ze społecznym opiekunem + podgląd statusów.
 Projekty / tworzenie spraw: under the hood (AI / API), nie UI mieszkańca.
+
+**Czat / Markdown:** `AssistantChat` → `ChatMarkdown` (`react-markdown` + GFM). AI ma odpowiadać wg `apps/api/app/llm/prompts/caretaker_system.md` (bold, listy, `###`, linki — bez tabel/kodu). Landing: `<AssistantChat guestMode />` w `#opiekun` (bez JWT). App: z `userName`.
+
+**Sugestie / propozycje / lokalizacja:** `suggested_projects[]` → karty; `project_proposal` → notka; `location_request` (`area`|`gps`) → `LocationRequestCard` + geolocation. Admin: `/admin/proposals`. Historia w `POST /chat` (JWT opcjonalny).
 
 ## Architektura wywołań API
 
@@ -46,21 +55,23 @@ src/
   styles/       # globals
 ```
 
-- Pakiety ESM-only (np. `react-markdown`) importuj w osobnym komponencie ładowanym przez `next/dynamic` z `ssr: false` — bezpośredni import w stronie daje 500 na SSR (wzór: `components/ChatMarkdown.tsx`)
-- [UZUPEŁNIJ — konwencja nazw plików / folderów]
-- [UZUPEŁNIJ — kiedy wydzielać komponent vs zostawić w page]
+- Wspólny header: `SiteHeader`
+- Admin: `AdminShell` + `useRequireAdmin` (JWT + role); podwidoki w `pages/admin/*`
+- PWA: `public/manifest.webmanifest`, `public/icons/`, `public/sw.js`
 
 ## Design / UI (aktualny baseline)
 
-Motyw: **light**, lekki, dużo powietrza. Tokeny: `apps/web/src/styles/globals.css`.
+Motyw: **light**, szaro–czarny + niebieski brand. Tokeny: `apps/web/src/styles/globals.css`.
 
 | Token | Rola |
 |-------|------|
-| `--bg` `#f6f8fa` | tło |
+| `--bg` `#f3f5f8` | tło |
 | `--bg-elevated` `#ffffff` | surface formularzy / tabeli |
-| `--text` `#1a2330` | tekst |
-| `--muted` `#5c6b7a` | opis |
-| `--accent` `#0d8f82` | CTA / brand accent |
+| `--text` `#12131a` | tekst (blisko czerni) |
+| `--muted` `#5c6474` | opis |
+| `--accent` `#3661a8` | CTA / brand |
+| `--accent-hover` `#27227d` | hover / głęboki brand |
+| `--accent-light` `#94c0e5` | miękkie highlighty / gradienty |
 | `.btn-primary` / `.btn-ghost` / `.field` / `.surface` | wspólne klasy UI |
 
 - Typografia: **Sora** (display / brand), **Manrope** (body) — `pages/_app.tsx`

@@ -36,6 +36,21 @@ export type Project = {
   created_at: string;
 };
 
+export type ProjectProposalStatus = "nowe" | "zaakceptowane" | "odrzucone";
+
+export type ProjectProposal = {
+  id: number;
+  author_id: number;
+  author_email: string | null;
+  author_name: string | null;
+  suggested_unit_id: number | null;
+  suggested_unit_name: string | null;
+  name: string;
+  description: string;
+  status: ProjectProposalStatus | string;
+  created_at: string;
+};
+
 export type ReportKind = "problem" | "wydarzenie" | "informacja";
 export type ReportStatus = "nowe" | "w_toku" | "zakonczone";
 
@@ -317,20 +332,91 @@ export async function updateReportStatus(
   return res.json() as Promise<Report>;
 }
 
-export async function sendChatMessage(token: string, message: string): Promise<string> {
+export type ChatHistoryMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type LocationRequestKind = "area" | "gps";
+
+export type ChatReply = {
+  reply: string;
+  suggested_projects: Project[];
+  project_proposal: ProjectProposal | null;
+  location_request: LocationRequestKind | null;
+};
+
+export async function sendChatMessage(
+  token: string | null,
+  message: string,
+  history: ChatHistoryMessage[] = [],
+): Promise<ChatReply> {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(token ? authHeaders(token) : {}),
+  };
   const res = await fetch(`${API_BASE}/chat`, {
     method: "POST",
-    headers: {
-      ...authHeaders(token),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ message }),
+    headers,
+    body: JSON.stringify({ message, history }),
   });
 
   if (!res.ok) {
     throw new Error(await parseError(res));
   }
 
-  const data = (await res.json()) as { reply: string };
-  return data.reply;
+  const data = (await res.json()) as ChatReply;
+  return {
+    reply: data.reply,
+    suggested_projects: data.suggested_projects ?? [],
+    project_proposal: data.project_proposal ?? null,
+    location_request:
+      data.location_request === "area" || data.location_request === "gps"
+        ? data.location_request
+        : null,
+  };
+}
+
+export async function fetchProjectProposals(token: string): Promise<ProjectProposal[]> {
+  const res = await fetch(`${API_BASE}/admin/project-proposals`, {
+    headers: authHeaders(token),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+  return res.json() as Promise<ProjectProposal[]>;
+}
+
+export async function acceptProjectProposal(
+  token: string,
+  proposalId: number,
+  payload: { unit_id: number; name?: string; description?: string },
+): Promise<Project> {
+  const res = await fetch(`${API_BASE}/admin/project-proposals/${proposalId}/accept`, {
+    method: "POST",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+  return res.json() as Promise<Project>;
+}
+
+export async function rejectProjectProposal(
+  token: string,
+  proposalId: number,
+): Promise<ProjectProposal> {
+  const res = await fetch(`${API_BASE}/admin/project-proposals/${proposalId}/reject`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+  return res.json() as Promise<ProjectProposal>;
 }

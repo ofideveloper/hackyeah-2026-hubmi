@@ -19,7 +19,8 @@ Aplikacja webowa (PWA) z dwoma perspektywami:
 |-------|---------|--------|
 | Landing | Brand | HubMI |
 | Landing | Headline | Zgłaszaj problemy i wydarzenia w swojej jednostce. |
-| Landing | CTA | Zaloguj się → `/login`, Załóż konto → `/register` |
+| Landing | CTA | Porozmawiaj z opiekunem → `#opiekun`, Załóż konto → `/register` |
+| Landing | Hero — czat | Ten sam `AssistantChat` co w `/app` (`guestMode`); pełny zapis spraw po koncie |
 | Login | Tytuł | Zaloguj się |
 | Login | Support | Wróć do zgłoszeń i pomysłów w swojej jednostce. |
 | Register | Tytuł | Załóż konto |
@@ -36,13 +37,13 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 |---------|-----|---------|
 | Mieszkaniec (`user`) | Rozmowa + podgląd statusów spraw | `/login` → `/app` (bez CRUD zgłoszeń/projektów) |
 | Admin | Jednostki, projekty, zmiana statusów | `/admin` |
-| AI / czat | Prowadzi rozmowę; może sugerować projekty / tworzyć sprawy | `AssistantChat` + bypass `/llm` |
+| AI / czat | Osobisty opiekun: istniejące projekty lub intake nowego projektu dla admina | prompt + `project_proposals` → `/admin/proposals` |
 
 ## Zakres HackYeah (in / out)
 
 **In scope**
 
-- PWA (web)
+- PWA (web) — installable: manifest + ikony + service worker
 - Auth / authz (`admin` / `user`)
 - Jednostki + projekty (admin)
 - Czat mieszkańca (bez export/save)
@@ -53,7 +54,7 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 
 - Publiczne wystawianie FastAPI na Vercel
 - Export / import / zapis rozmowy
-- Pełny LLM — fake bypass; prawdziwy agent do podmiany
+- Historia rozmowy / zapis czatu (tylko pojedyncze wiadomości + kontekst DB)
 - Mapa GIS
 
 ## Słownik domenowy
@@ -63,6 +64,7 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | Społeczny opiekun | Persona czatu dla mieszkańca |
 | Jednostka | Org unit z terenem i kompetencjami (admin) |
 | Projekt | Inicjatywa jednostki — under the hood / sugerowana przez AI |
+| Propozycja projektu | Draft z czatu (AI zbiera dane); admin + jednostka zatwierdzają |
 | Sprawa | Zapis potrzeby; status widoczny dla mieszkańca |
 | BFF | Next.js `/api/*` proxy do internal FastAPI |
 
@@ -74,3 +76,8 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | 2026-10 | Login = mieszkaniec, nie panel admina | Produkt dla mieszkańca |
 | 2026-10 | User bez formularza zgłoszeń i listy projektów | Fajna platforma rozmowy; AI/admin under the hood |
 | 2026-10 | Admin zmienia statusy spraw | User tylko je widzi |
+| 2026-10 | Gemini jako provider czatu | Odpowiedzi z kontekstu jednostek/projektów z DB |
+| 2026-10 | Prompt opiekuna w `caretaker_system.md` | Jedno źródło zaleceń formatu (Markdown) pod UI czatu |
+| 2026-10 | Intake nowego projektu z czatu | Gdy brak dopasowania — AI zbiera dane, admin tworzy projekt w jednostce |
+| 2026-10 | Czat opiekuna na landingu (gość) | Demo bez bariery rejestracji; propozycje do admina tylko po zalogowaniu |
+| 2026-10 | Paleta szaro–czarna + `#27227d` / `#3661a8` / `#94c0e5` | Brand zamiast teal |

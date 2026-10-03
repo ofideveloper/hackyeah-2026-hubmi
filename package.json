@@ -7,10 +7,10 @@
   "scripts": {
     "dev": "concurrently -n web,api -c cyan,magenta \"npm run dev -w @hubmi/web\" \"npm run dev:api\"",
     "dev:web": "npm run dev -w @hubmi/web",
-    "dev:api": "cd apps/api && uv run fastapi dev main.py --port 8000",
+    "dev:api": "cd apps/api && .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
     "build": "npm run build -w @hubmi/web",
     "lint": "npm run lint -w @hubmi/web",
-    "setup:api": "cd apps/api && uv sync"
+    "setup:api": "cd apps/api && (test -d .venv || python3 -m venv .venv) && .venv/bin/pip install -r requirements.txt"
   },
   "devDependencies": {
     "concurrently": "^9.2.4"

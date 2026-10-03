@@ -28,6 +28,7 @@ BFF: `src/pages/api/[...path].ts` → `process.env.API_URL`.
 
 - Auth token: `@/lib/auth.ts`
 - Formularze / panele: `src/components/`
+- Admin: `AdminShell` + `useRequireAdmin` na `/admin/*` (role=admin); podwidoki w `components/admin/`
 - Szczegóły designu i checklisty: `docs/team/frontend.md` (uzupełniaj `[UZUPEŁNIJ]`)
 
 ## UI

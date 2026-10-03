@@ -1,5 +1,5 @@
 /**
- * Czat mieszkańca — ciepły UX + karty projektów z modalem.
+ * Czat mieszkańca - ciepły UX + karty projektów z modalem.
  * Bez export / import / zapisu rozmowy.
  */
 import Link from "next/link";
@@ -42,7 +42,7 @@ const CARETAKER = "Twój społeczny opiekun";
 const MODE_CHIPS: { mode: ChatMode; label: string }[] = [
   { mode: "catalog", label: "Szukam gotowego rozwiązania dla mojej gminy" },
   { mode: "report", label: "Chcę zgłosić problem w okolicy" },
-  { mode: "intake", label: "Mam pomysł oddolny — od czego zacząć?" },
+  { mode: "intake", label: "Mam pomysł oddolny - od czego zacząć?" },
 ];
 
 const MODE_LABEL: Record<ChatMode, string> = {
@@ -53,9 +53,9 @@ const MODE_LABEL: Record<ChatMode, string> = {
 };
 
 const REPORT_CONFIRM_MESSAGE =
-  "Tak, zapisz to proszę jako zgłoszenie w MaloHUB — chcę śledzić status.";
+  "Tak, zapisz to proszę jako zgłoszenie w MaloHUB - chcę śledzić status.";
 
-/** Deterministic HH:MM — avoids Node vs browser `toLocaleTimeString` mismatches. */
+/** Deterministic HH:MM - avoids Node vs browser `toLocaleTimeString` mismatches. */
 function formatClock(date: Date): string {
   const h = date.getHours().toString().padStart(2, "0");
   const m = date.getMinutes().toString().padStart(2, "0");
@@ -108,9 +108,9 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
 
 type AssistantChatProps = {
   userName?: string | null;
-  /** Czat na landingu — działa bez logowania */
+  /** Czat na landingu - działa bez logowania */
   guestMode?: boolean;
-  /** Po zapisaniu sprawy z czatu — odśwież listę na `/app` */
+  /** Po zapisaniu sprawy z czatu - odśwież listę na `/app` */
   onReportCreated?: (report: Report) => void;
   /** Ustaw focus na polu wiadomości (np. po nawigacji do `#opiekun`) */
   autoFocus?: boolean;
@@ -121,10 +121,10 @@ function welcomeMessage(guestMode: boolean): ChatMessage {
     id: "welcome",
     role: "assistant",
     content: guestMode
-      ? `Miło Cię widzieć. Wybierz ścieżkę poniżej — albo napisz własnymi słowami: ` +
+      ? `Miło Cię widzieć. Wybierz ścieżkę poniżej - albo napisz własnymi słowami: ` +
         `zgłoszenie problemu, katalog gotowych rozwiązań, albo nowy pomysł.`
       : `Miło Cię widzieć. Jestem Twoim społecznym opiekunem. ` +
-        `Wybierz ścieżkę: **zgłoszenie**, **katalog rozwiązań** albo **nowa inicjatywa** — albo opisz sprawę własnymi słowami.`,
+        `Wybierz ścieżkę: **zgłoszenie**, **katalog rozwiązań** albo **nowa inicjatywa** - albo opisz sprawę własnymi słowami.`,
     timestamp: new Date(),
   };
 }
@@ -142,7 +142,7 @@ export function AssistantChat({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [preview, setPreview] = useState<ChatProject | null>(null);
   const [chatId, setChatId] = useState<string | null>(null);
-  /** Otwarte okno nowego projektu — `messageId` wskazuje wiadomość ze szkicem. */
+  /** Otwarte okno nowego projektu - `messageId` wskazuje wiadomość ze szkicem. */
   const [draftDialog, setDraftDialog] = useState<{
     messageId: string;
     draft: NewProjectDraft;
@@ -284,7 +284,7 @@ export function AssistantChat({
         {
           id: `e-${Date.now()}`,
           role: "error",
-          content: "To urządzenie nie obsługuje udostępniania lokalizacji — wpisz adres ręcznie.",
+          content: "To urządzenie nie obsługuje udostępniania lokalizacji - wpisz adres ręcznie.",
           timestamp: new Date(),
         },
       ]);
@@ -316,8 +316,8 @@ export function AssistantChat({
             role: "error",
             content:
               err.code === err.PERMISSION_DENIED
-                ? "Brak zgody na lokalizację — możesz wpisać ulicę lub dzielnicę ręcznie."
-                : "Nie udało się pobrać lokalizacji — spróbuj wpisać adres ręcznie.",
+                ? "Brak zgody na lokalizację - możesz wpisać ulicę lub dzielnicę ręcznie."
+                : "Nie udało się pobrać lokalizacji - spróbuj wpisać adres ręcznie.",
             timestamp: new Date(),
           },
         ]);
@@ -348,12 +348,12 @@ export function AssistantChat({
               {CARETAKER}
             </p>
             <h2 className="font-display mt-1.5 text-2xl font-semibold tracking-tight text-[var(--text)] sm:text-3xl">
-              {guestMode ? "Cześć — w czym mogę pomóc?" : `Witaj, ${displayName}`}
+              {guestMode ? "Cześć - w czym mogę pomóc?" : `Witaj, ${displayName}`}
             </h2>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--muted)]">
               {guestMode
-                ? "Napisz, co się dzieje w Twojej okolicy — razem znajdziemy sensowny kierunek."
-                : "Opowiedz, co Cię zajmuje — razem pomyślimy nad rozwiązaniem."}
+                ? "Napisz, co się dzieje w Twojej okolicy - razem znajdziemy sensowny kierunek."
+                : "Opowiedz, co Cię zajmuje - razem pomyślimy nad rozwiązaniem."}
             </p>
             {mode !== "clarify" && (
               <p className="chat-mode-pill" aria-live="polite">
@@ -423,7 +423,7 @@ export function AssistantChat({
                   {message.newProjectDraft && !message.projectProposal && (
                     <div className="report-offer-card" role="group" aria-label="Nowy projekt">
                       <p className="report-offer-text">
-                        Nie znalazłem tego w bazie — możesz zgłosić propozycję nowego projektu.
+                        Nie znalazłem tego w bazie - możesz zgłosić propozycję nowego projektu.
                       </p>
                       <button
                         type="button"
@@ -447,7 +447,7 @@ export function AssistantChat({
                         {message.projectProposal.name}
                       </p>
                       <p className="project-draft-note-text">
-                        Przekazałem materiał dalej — jednostka będzie mogła to przejąć i dopracować.
+                        Przekazałem materiał dalej - jednostka będzie mogła to przejąć i dopracować.
                       </p>
                     </div>
                   )}
@@ -473,7 +473,7 @@ export function AssistantChat({
                       <p className="report-offer-text">
                         {guestMode
                           ? "Żeby zapisać zgłoszenie i śledzić status, potrzebne jest konto."
-                          : "Mogę zapisać to jako zgłoszenie — wtedy zobaczysz status sprawy."}
+                          : "Mogę zapisać to jako zgłoszenie - wtedy zobaczysz status sprawy."}
                       </p>
                       {guestMode ? (
                         <Link href="/register" className="btn-primary">
@@ -586,7 +586,7 @@ export function AssistantChat({
             onClick={startNewChat}
             disabled={busy || onlyWelcome}
             className="btn-ghost inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-2 py-0 text-[11px] font-medium leading-none"
-            title="Zacznij nową sprawę — wyczyść rozmowę"
+            title="Zacznij nową sprawę - wyczyść rozmowę"
           >
             <svg
               className="h-3 w-3"

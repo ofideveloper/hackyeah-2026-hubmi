@@ -62,7 +62,7 @@ export default function RegisterPage() {
           <form onSubmit={onSubmit} className="surface animate-fade-up w-full max-w-md p-8">
             <h1 className="font-display text-2xl font-semibold tracking-tight">Załóż konto</h1>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              Dołącz i zacznij rozmowę ze społecznym opiekunem.
+              Załóż konto, żeby korzystać z opiekuna, zasobnika wiedzy i kreatora pomysłów.
             </p>
 
             <div className="mt-7 space-y-4">

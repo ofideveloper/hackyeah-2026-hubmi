@@ -1,6 +1,13 @@
 /* MaloHUB — lekki service worker (offline shell + cache assetów). */
-const CACHE = "hubmi-v1";
-const PRECACHE = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
+const CACHE = "hubmi-v2";
+const PRECACHE = [
+  "/",
+  "/manifest.json",
+  "/browserconfig.xml",
+  "/favicons/android-icon-192x192.png",
+  "/favicons/favicon-32x32.png",
+  "/icons/icon-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

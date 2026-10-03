@@ -9,10 +9,14 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 | Ścieżka | Rola |
 |---------|------|
 | `/` | Landing (produkt / social) |
-| `/login` | Logowanie użytkownika → `/app` |
+| `/login` | Logowanie → admin: `/admin`, user: `/app` |
 | `/register` | Rejestracja → `/login` |
 | `/app` | Dom mieszkańca: czat + statusy spraw (bez formularzy) |
-| `/admin` | Jednostki, projekty, statusy spraw, użytkownicy |
+| `/admin` | Panel admin — przegląd (tylko `role=admin`) |
+| `/admin/units` | Jednostki |
+| `/admin/projects` | Projekty |
+| `/admin/reports` | Sprawy / statusy |
+| `/admin/users` | Użytkownicy |
 | `/admin/login` | Redirect → `/login` |
 | `/api/*` | BFF → FastAPI (nie UI) |
 
@@ -46,8 +50,9 @@ src/
   styles/       # globals
 ```
 
-- [UZUPEŁNIJ — konwencja nazw plików / folderów]
-- [UZUPEŁNIJ — kiedy wydzielać komponent vs zostawić w page]
+- Wspólny header: `SiteHeader`
+- Admin: `AdminShell` + `useRequireAdmin` (JWT + role); podwidoki w `pages/admin/*`
+- PWA: `public/manifest.webmanifest`, `public/icons/`, `public/sw.js`
 
 ## Design / UI (aktualny baseline)
 

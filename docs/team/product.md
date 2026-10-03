@@ -36,13 +36,13 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 |---------|-----|---------|
 | Mieszkaniec (`user`) | Rozmowa + podgląd statusów spraw | `/login` → `/app` (bez CRUD zgłoszeń/projektów) |
 | Admin | Jednostki, projekty, zmiana statusów | `/admin` |
-| AI / czat | Prowadzi rozmowę; może sugerować projekty / tworzyć sprawy | `AssistantChat` + bypass `/llm` |
+| AI / czat | Prowadzi rozmowę na bazie jednostek/projektów; może sugerować sprawy | `AssistantChat` → `/chat` → Gemini (`LLM_PROVIDER=gemini`) lub `fake` |
 
 ## Zakres HackYeah (in / out)
 
 **In scope**
 
-- PWA (web)
+- PWA (web) — installable: manifest + ikony + service worker
 - Auth / authz (`admin` / `user`)
 - Jednostki + projekty (admin)
 - Czat mieszkańca (bez export/save)
@@ -53,7 +53,7 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 
 - Publiczne wystawianie FastAPI na Vercel
 - Export / import / zapis rozmowy
-- Pełny LLM — fake bypass; prawdziwy agent do podmiany
+- Historia rozmowy / zapis czatu (tylko pojedyncze wiadomości + kontekst DB)
 - Mapa GIS
 
 ## Słownik domenowy
@@ -74,3 +74,4 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | 2026-10 | Login = mieszkaniec, nie panel admina | Produkt dla mieszkańca |
 | 2026-10 | User bez formularza zgłoszeń i listy projektów | Fajna platforma rozmowy; AI/admin under the hood |
 | 2026-10 | Admin zmienia statusy spraw | User tylko je widzi |
+| 2026-10 | Gemini jako provider czatu | Odpowiedzi z kontekstu jednostek/projektów z DB |

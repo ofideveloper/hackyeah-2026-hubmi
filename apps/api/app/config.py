@@ -19,10 +19,10 @@ class Settings(BaseSettings):
     admin_password: str = "admin12345"
     admin_full_name: str = "HubMI Admin"
 
-    # LLM bypass: `fake` (domyślnie) | `http` (stub pod prawdziwy endpoint)
+    # LLM: `fake` (lokalny stub) | `gemini` (Google AI)
     llm_provider: str = "fake"
-    llm_base_url: str = "http://localhost:11434/v1"
     llm_api_key: str = ""
+    llm_model: str = "gemini-2.5-flash"
 
     @property
     def cors_origin_list(self) -> list[str]:

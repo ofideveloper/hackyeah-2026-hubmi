@@ -250,7 +250,7 @@ export function AssistantChat({ userName }: AssistantChatProps) {
       </div>
 
       {onlyWelcome && !busy && (
-        <div className="flex flex-wrap gap-2 px-4 pb-3 sm:px-6">
+        <div className="flex flex-wrap gap-2 px-4 py-3 sm:px-6">
           {SUGGESTIONS.map((suggestion) => (
             <button
               key={suggestion}

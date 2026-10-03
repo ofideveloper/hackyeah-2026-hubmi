@@ -1,14 +1,16 @@
 """
-Bypass LLM — jeden interfejs, na razie provider `fake`.
+Bypass LLM — jeden interfejs dla `/llm` i `/chat`.
 
-Później podmień FakeLLMClient na prawdziwy HTTP do OpenAI/Azure/itp.
-bez zmiany routerów `/llm` i `/chat`.
+Providery: `fake` (lokalny stub) | `gemini` (Google Generative Language API).
 """
 
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
+import urllib.error
+import urllib.request
 import uuid
 from abc import ABC, abstractmethod
 from functools import lru_cache
@@ -42,6 +44,8 @@ _STOPWORDS = {
     "o",
 }
 
+_GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+
 
 class LLMClient(ABC):
     provider: str
@@ -70,30 +74,115 @@ class FakeLLMClient(LLMClient):
         )
 
 
-class HttpLLMClient(LLMClient):
-    """
-    Placeholder pod prawdziwy LLM.
+class GeminiLLMClient(LLMClient):
+    """Google Gemini — odpowiedzi na podstawie system promptu (projekty / jednostki)."""
 
-    Gdy `LLM_PROVIDER=http` i ustawisz `LLM_BASE_URL`, tu pójdzie HTTP.
-    Na razie zwraca komunikat o braku konfiguracji — bez crasha.
-    """
+    provider = "gemini"
 
-    provider = "http"
-
-    def __init__(self, base_url: str, api_key: str | None = None) -> None:
-        self.base_url = base_url.rstrip("/")
-        self.api_key = api_key
+    def __init__(self, api_key: str, model: str) -> None:
+        self.api_key = api_key.strip()
+        self.model = model.strip() or "gemini-2.5-flash"
 
     def chat(self, request: LLMChatRequest) -> LLMChatResponse:
-        return LLMChatResponse(
-            id=f"http-stub-{uuid.uuid4().hex[:12]}",
-            model=request.model or "unset",
-            provider=self.provider,
-            content=(
-                "[LLM http stub] Ustaw prawdziwy klient w `app/llm/client.py` "
-                f"(LLM_BASE_URL={self.base_url}). Na razie działa provider `fake`."
-            ),
+        model = (request.model or self.model).strip()
+        if not self.api_key:
+            return LLMChatResponse(
+                id=f"gemini-missing-key-{uuid.uuid4().hex[:8]}",
+                model=model,
+                provider=self.provider,
+                content=(
+                    "Brak klucza Gemini. Ustaw `LLM_API_KEY` (Google AI Studio) "
+                    "oraz `LLM_PROVIDER=gemini` w `.env`, potem zrestartuj API."
+                ),
+            )
+
+        system_text = _system_content(request.messages)
+        contents = _to_gemini_contents(request.messages)
+        if not contents:
+            contents = [{"role": "user", "parts": [{"text": "Cześć"}]}]
+
+        body: dict = {
+            "contents": contents,
+            "generationConfig": {
+                "temperature": 0.4,
+                "maxOutputTokens": 1024,
+            },
+        }
+        if system_text:
+            body["system_instruction"] = {"parts": [{"text": system_text}]}
+
+        url = f"{_GEMINI_BASE}/{model}:generateContent"
+        payload = json.dumps(body).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": self.api_key,
+            },
         )
+
+        try:
+            with urllib.request.urlopen(req, timeout=45) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            err_body = exc.read().decode("utf-8", errors="replace")[:500]
+            return LLMChatResponse(
+                id=f"gemini-err-{uuid.uuid4().hex[:8]}",
+                model=model,
+                provider=self.provider,
+                content=(
+                    f"Gemini zwrócił błąd HTTP {exc.code}. "
+                    "Sprawdź klucz API i nazwę modelu (`LLM_MODEL`). "
+                    f"Szczegóły: {err_body}"
+                ),
+            )
+        except urllib.error.URLError as exc:
+            return LLMChatResponse(
+                id=f"gemini-net-{uuid.uuid4().hex[:8]}",
+                model=model,
+                provider=self.provider,
+                content=f"Nie udało się połączyć z Gemini: {exc.reason}",
+            )
+
+        content = _extract_gemini_text(data)
+        if not content:
+            content = "Gemini nie zwrócił treści — spróbuj przeformułować wiadomość."
+
+        return LLMChatResponse(
+            id=data.get("responseId") or f"gemini-{uuid.uuid4().hex[:12]}",
+            model=model,
+            provider=self.provider,
+            content=content,
+        )
+
+
+def _to_gemini_contents(messages: list[LLMMessage]) -> list[dict]:
+    """Mapuje role OpenAI-like → Gemini (`user` / `model`); system idzie osobno."""
+    contents: list[dict] = []
+    for message in messages:
+        if message.role == "system":
+            continue
+        role = "model" if message.role == "assistant" else "user"
+        text = message.content.strip()
+        if not text:
+            continue
+        # Gemini wymaga naprzemiennych ról — scal kolejne z tą samą rolą
+        if contents and contents[-1]["role"] == role:
+            contents[-1]["parts"][0]["text"] += "\n" + text
+        else:
+            contents.append({"role": role, "parts": [{"text": text}]})
+    return contents
+
+
+def _extract_gemini_text(data: dict) -> str:
+    candidates = data.get("candidates") or []
+    if not candidates:
+        return ""
+    parts = (candidates[0].get("content") or {}).get("parts") or []
+    texts = [p.get("text", "") for p in parts if isinstance(p, dict) and p.get("text")]
+    return "\n".join(texts).strip()
 
 
 def _last_user_content(messages: list[LLMMessage]) -> str:
@@ -134,13 +223,11 @@ def _score_project(user_text: str, project: dict[str, str]) -> int:
 
     score = 0
 
-    # Pełna nazwa / fragment nazwy w wiadomości użytkownika
     if name_norm and name_norm in user_norm:
         score += 120
     elif user_norm and len(user_norm) >= 3 and user_norm in name_norm:
         score += 100
 
-    # Poszczególne słowa z nazwy projektu (np. „chodników”, „remont”)
     for word in name_norm.split():
         if len(word) < 3 or word in _STOPWORDS:
             continue
@@ -149,14 +236,12 @@ def _score_project(user_text: str, project: dict[str, str]) -> int:
         ):
             score += 45
 
-    # Opis / jednostka — słabsze sygnały
     user_tokens = _tokens(user_text)
     desc_tokens = _tokens(desc_norm)
     unit_tokens = _tokens(unit_norm)
     score += 12 * len(user_tokens & desc_tokens)
     score += 8 * len(user_tokens & unit_tokens)
 
-    # Prefiksowe dopasowanie PL (chodnik/chodniku/chodników)
     for ut in user_tokens:
         for pt in _tokens(f"{name_norm} {desc_norm}"):
             if len(ut) >= 4 and len(pt) >= 4 and (ut.startswith(pt[:4]) or pt.startswith(ut[:4])):
@@ -255,9 +340,9 @@ def _parse_projects_from_system(system_text: str) -> list[dict[str, str]]:
 def get_llm_client() -> LLMClient:
     settings = get_settings()
     provider = settings.llm_provider.lower().strip()
-    if provider == "http":
-        return HttpLLMClient(
-            base_url=settings.llm_base_url,
-            api_key=settings.llm_api_key or None,
+    if provider == "gemini":
+        return GeminiLLMClient(
+            api_key=settings.llm_api_key,
+            model=settings.llm_model,
         )
     return FakeLLMClient()

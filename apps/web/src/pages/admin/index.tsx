@@ -1,14 +1,13 @@
-import Head from "next/head";
+import { AdminOverview } from "@/components/admin/AdminOverview";
+import { AdminShell } from "@/components/admin/AdminShell";
 
-import { AdminPanel } from "@/components/AdminPanel";
-
-export default function AdminPage() {
+export default function AdminHomePage() {
   return (
-    <>
-      <Head>
-        <title>Admin · HubMI</title>
-      </Head>
-      <AdminPanel />
-    </>
+    <AdminShell
+      title="Przegląd"
+      description="Skrót panelu — wybierz sekcję, żeby zarządzać jednostkami, projektami i sprawami."
+    >
+      <AdminOverview />
+    </AdminShell>
   );
 }

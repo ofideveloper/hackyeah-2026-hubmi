@@ -31,10 +31,10 @@ Stack: FastAPI w `apps/api` (`app/main.py`, `app/routers/`, `app/models.py`, …
 | PATCH | `/admin/reports/{id}` | Zmiana statusu (`nowe` \| `w_toku` \| `zakonczone`) |
 | POST | `/chat` | Asystent UI → buduje kontekst projektów → woła bypass LLM |
 | POST | `/llm/chat` | Bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
-| GET | `/llm/health` | Provider aktualnego klienta (`fake` / `http`) |
+| GET | `/llm/health` | Provider aktualnego klienta (`fake` / `gemini`) |
 | GET | `/health` | Healthcheck |
 
-**LLM bypass:** `app/llm/client.py` — domyślnie `LLM_PROVIDER=fake`. `/chat` nie woła modelu bezpośrednio; zawsze przez ten klient. Potem podmiana na prawdziwy HTTP bez zmiany frontu.
+**LLM:** `app/llm/client.py` — `LLM_PROVIDER=fake|gemini`. `/chat` buduje kontekst (jednostki + projekty) jako system prompt i woła klienta. Gemini: `LLM_API_KEY` + opcjonalnie `LLM_MODEL` (domyślnie `gemini-2.5-flash`).
 
 Modele: `OrganizationalUnit`, `Project`, `Report`, kontrakt `LLMChatRequest/Response`.
 

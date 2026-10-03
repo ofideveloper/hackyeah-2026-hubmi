@@ -8,13 +8,14 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 
 | Ścieżka | Rola |
 |---------|------|
-| `/` | Landing (produkt / social) |
+| `/` | Landing — w hero ten sam `AssistantChat` co w `/app` (`guestMode`, `#opiekun`) |
 | `/login` | Logowanie → admin: `/admin`, user: `/app` |
 | `/register` | Rejestracja → `/login` |
 | `/app` | Dom mieszkańca: czat + statusy spraw (bez formularzy) |
 | `/admin` | Panel admin — przegląd (tylko `role=admin`) |
 | `/admin/units` | Jednostki |
 | `/admin/projects` | Projekty |
+| `/admin/proposals` | Propozycje projektów z czatu → jednostka |
 | `/admin/reports` | Sprawy / statusy |
 | `/admin/users` | Użytkownicy |
 | `/admin/login` | Redirect → `/login` |
@@ -23,9 +24,9 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 Flow usera: rozmowa ze społecznym opiekunem + podgląd statusów.
 Projekty / tworzenie spraw: under the hood (AI / API), nie UI mieszkańca.
 
-**Czat / Markdown:** `AssistantChat` → `ChatMarkdown` (`react-markdown` + GFM). AI ma odpowiadać wg `apps/api/app/llm/prompts/caretaker_system.md` (bold, listy, `###`, linki — bez tabel/kodu).
+**Czat / Markdown:** `AssistantChat` → `ChatMarkdown` (`react-markdown` + GFM). AI ma odpowiadać wg `apps/api/app/llm/prompts/caretaker_system.md` (bold, listy, `###`, linki — bez tabel/kodu). Landing: `<AssistantChat guestMode />` w `#opiekun` (bez JWT). App: z `userName`.
 
-**Sugestie projektów:** API zwraca `suggested_projects[]`; pod dymkiem `ProjectSuggestionCards`, klik → `ProjectPreviewModal`. Markery `[[hubmi-project:ID]]` z odpowiedzi AI są zdejmowane po stronie API.
+**Sugestie / propozycje / lokalizacja:** `suggested_projects[]` → karty; `project_proposal` → notka; `location_request` (`area`|`gps`) → `LocationRequestCard` + geolocation. Admin: `/admin/proposals`. Historia w `POST /chat` (JWT opcjonalny).
 
 ## Architektura wywołań API
 

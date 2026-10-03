@@ -82,13 +82,46 @@ class ProjectPublic(BaseModel):
     created_at: datetime
 
 
+class ChatHistoryMessage(BaseModel):
+    role: str = Field(pattern="^(user|assistant)$")
+    content: str = Field(min_length=1, max_length=4000)
+
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
+    history: list[ChatHistoryMessage] = Field(default_factory=list, max_length=40)
+
+
+class ProjectProposalPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    author_id: int
+    author_email: str | None = None
+    author_name: str | None = None
+    suggested_unit_id: int | None = None
+    suggested_unit_name: str | None = None
+    name: str
+    description: str
+    status: str
+    created_at: datetime
+
+
+class ProjectProposalAccept(BaseModel):
+    unit_id: int
+    name: str | None = Field(default=None, min_length=2, max_length=255)
+    description: str | None = Field(default=None, min_length=2, max_length=5000)
 
 
 class ChatResponse(BaseModel):
     reply: str
     suggested_projects: list[ProjectPublic] = []
+    project_proposal: ProjectProposalPublic | None = None
+    location_request: str | None = Field(
+        default=None,
+        pattern="^(area|gps)$",
+        description="Prośba o lokalizację: area = miejsce zdarzenia, gps = aktualna pozycja",
+    )
 
 
 class LLMMessage(BaseModel):

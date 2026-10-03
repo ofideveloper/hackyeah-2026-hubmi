@@ -24,6 +24,12 @@ class ReportStatus(str, Enum):
     DONE = "zakonczone"
 
 
+class ProjectProposalStatus(str, Enum):
+    NEW = "nowe"
+    ACCEPTED = "zaakceptowane"
+    REJECTED = "odrzucone"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -39,6 +45,9 @@ class User(Base):
     )
 
     reports: Mapped[list["Report"]] = relationship(back_populates="author")
+    project_proposals: Mapped[list["ProjectProposal"]] = relationship(
+        back_populates="author"
+    )
 
     @property
     def is_admin(self) -> bool:
@@ -61,6 +70,9 @@ class OrganizationalUnit(Base):
 
     reports: Mapped[list["Report"]] = relationship(back_populates="unit")
     projects: Mapped[list["Project"]] = relationship(back_populates="unit")
+    project_proposals: Mapped[list["ProjectProposal"]] = relationship(
+        back_populates="suggested_unit"
+    )
 
 
 class Project(Base):
@@ -78,6 +90,36 @@ class Project(Base):
     )
 
     unit: Mapped[OrganizationalUnit] = relationship(back_populates="projects")
+
+
+class ProjectProposal(Base):
+    """Propozycja nowego projektu zebrana przez opiekuna AI — przetwarza admin."""
+
+    __tablename__ = "project_proposals"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    suggested_unit_id: Mapped[int | None] = mapped_column(
+        ForeignKey("organizational_units.id"),
+        nullable=True,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(255), index=True)
+    description: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default=ProjectProposalStatus.NEW.value,
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    author: Mapped[User] = relationship(back_populates="project_proposals")
+    suggested_unit: Mapped[OrganizationalUnit | None] = relationship(
+        back_populates="project_proposals"
+    )
 
 
 class Report(Base):

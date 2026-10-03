@@ -5,9 +5,15 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import { ChatMarkdown } from "@/components/ChatMarkdown";
+import { LocationRequestCard } from "@/components/LocationRequestCard";
 import { ProjectPreviewModal } from "@/components/ProjectPreviewModal";
 import { ProjectSuggestionCards } from "@/components/ProjectSuggestionCards";
-import { sendChatMessage, type Project } from "@/lib/api";
+import {
+  sendChatMessage,
+  type LocationRequestKind,
+  type Project,
+  type ProjectProposal,
+} from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
 export type ChatRole = "user" | "assistant" | "error";
@@ -18,6 +24,9 @@ export type ChatMessage = {
   content: string;
   timestamp: Date;
   suggestedProjects?: Project[];
+  projectProposal?: ProjectProposal | null;
+  locationRequest?: LocationRequestKind | null;
+  locationResolved?: boolean;
 };
 
 const CARETAKER = "Twój społeczny opiekun";
@@ -74,37 +83,55 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
 
 type AssistantChatProps = {
   userName?: string | null;
+  /** Czat na landingu — działa bez logowania */
+  guestMode?: boolean;
 };
 
-export function AssistantChat({ userName }: AssistantChatProps) {
+export function AssistantChat({ userName, guestMode = false }: AssistantChatProps) {
   const displayName = userName?.trim() || "mieszkańcu";
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       id: "welcome",
       role: "assistant",
-      content:
-        `Miło Cię widzieć. Jestem Twoim społecznym opiekunem — razem pomyślimy nad rozwiązaniem. ` +
-        `Napisz, co Cię zajmuje, albo wybierz podpowiedź poniżej.`,
+      content: guestMode
+        ? `Miło Cię widzieć. Opowiedz krótko, co Cię zajmuje — albo wybierz podpowiedź poniżej. ` +
+          `Razem pomyślimy nad rozwiązaniem.`
+        : `Miło Cię widzieć. Jestem Twoim społecznym opiekunem — razem pomyślimy nad rozwiązaniem. ` +
+          `Napisz, co Cię zajmuje, albo wybierz podpowiedź poniżej.`,
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Project | null>(null);
+  const [locatingId, setLocatingId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const onlyWelcome = messages.length === 1 && messages[0]?.id === "welcome";
 
   useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, busy]);
+  }, [messages, busy, locatingId]);
 
   async function submitMessage(text: string) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
 
     const token = getToken();
-    if (!token) return;
+    if (!guestMode && !token) return;
+
+    const history = messages
+      .filter(
+        (m) =>
+          m.id !== "welcome" &&
+          (m.role === "user" || m.role === "assistant") &&
+          m.content.trim(),
+      )
+      .slice(-24)
+      .map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
 
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
@@ -117,7 +144,8 @@ export function AssistantChat({ userName }: AssistantChatProps) {
     setBusy(true);
 
     try {
-      const { reply, suggested_projects } = await sendChatMessage(token, trimmed);
+      const { reply, suggested_projects, project_proposal, location_request } =
+        await sendChatMessage(token, trimmed, history);
       setMessages((prev) => [
         ...prev,
         {
@@ -126,6 +154,8 @@ export function AssistantChat({ userName }: AssistantChatProps) {
           content: reply,
           timestamp: new Date(),
           suggestedProjects: suggested_projects,
+          projectProposal: project_proposal,
+          locationRequest: location_request,
         },
       ]);
     } catch (err) {
@@ -141,6 +171,62 @@ export function AssistantChat({ userName }: AssistantChatProps) {
     } finally {
       setBusy(false);
     }
+  }
+
+  function markLocationResolved(messageId: string) {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, locationResolved: true } : m)),
+    );
+  }
+
+  async function shareGps(messageId: string, kind: LocationRequestKind) {
+    if (busy || locatingId) return;
+    if (!navigator.geolocation) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `e-${Date.now()}`,
+          role: "error",
+          content: "To urządzenie nie obsługuje udostępniania lokalizacji — wpisz adres ręcznie.",
+          timestamp: new Date(),
+        },
+      ]);
+      return;
+    }
+
+    setLocatingId(messageId);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        const maps = `https://maps.google.com/?q=${latitude},${longitude}`;
+        const label =
+          kind === "gps"
+            ? "Moja aktualna lokalizacja"
+            : "Lokalizacja miejsca (z GPS urządzenia)";
+        const text =
+          `${label}: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}` +
+          ` (±${Math.round(accuracy)} m). Mapa: ${maps}`;
+        markLocationResolved(messageId);
+        setLocatingId(null);
+        void submitMessage(text);
+      },
+      (err) => {
+        setLocatingId(null);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `e-${Date.now()}`,
+            role: "error",
+            content:
+              err.code === err.PERMISSION_DENIED
+                ? "Brak zgody na lokalizację — możesz wpisać ulicę lub dzielnicę ręcznie."
+                : "Nie udało się pobrać lokalizacji — spróbuj wpisać adres ręcznie.",
+            timestamp: new Date(),
+          },
+        ]);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -165,10 +251,12 @@ export function AssistantChat({ userName }: AssistantChatProps) {
               {CARETAKER}
             </p>
             <h2 className="font-display mt-1.5 text-2xl font-semibold tracking-tight text-[var(--text)] sm:text-3xl">
-              Witaj, {displayName}
+              {guestMode ? "Cześć — w czym mogę pomóc?" : `Witaj, ${displayName}`}
             </h2>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--muted)]">
-              Opowiedz, co Cię zajmuje — razem pomyślimy nad rozwiązaniem.
+              {guestMode
+                ? "Napisz, co się dzieje w Twojej okolicy — razem znajdziemy sensowny kierunek."
+                : "Opowiedz, co Cię zajmuje — razem pomyślimy nad rozwiązaniem."}
             </p>
           </div>
         </div>
@@ -227,6 +315,27 @@ export function AssistantChat({ userName }: AssistantChatProps) {
                     <ProjectSuggestionCards
                       projects={message.suggestedProjects!}
                       onOpen={setPreview}
+                    />
+                  )}
+
+                  {message.projectProposal && (
+                    <div className="project-draft-note" role="status">
+                      <p className="project-draft-note-label">Propozycja dla zespołu</p>
+                      <p className="font-display project-draft-note-title">
+                        {message.projectProposal.name}
+                      </p>
+                      <p className="project-draft-note-text">
+                        Przekazałem materiał dalej — jednostka będzie mogła to przejąć i dopracować.
+                      </p>
+                    </div>
+                  )}
+
+                  {message.locationRequest && !message.locationResolved && (
+                    <LocationRequestCard
+                      kind={message.locationRequest}
+                      busy={locatingId === message.id || busy}
+                      onShareGps={() => void shareGps(message.id, message.locationRequest!)}
+                      onSkip={() => markLocationResolved(message.id)}
                     />
                   )}
 

@@ -357,6 +357,82 @@ body {
   color: var(--muted);
 }
 
+.project-draft-note {
+  margin-top: 0.65rem;
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px dashed rgba(13, 143, 130, 0.35);
+  background: rgba(236, 248, 246, 0.85);
+  padding: 0.85rem 0.95rem;
+}
+
+.project-draft-note-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-hover);
+}
+
+.project-draft-note-title {
+  margin: 0.35rem 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.project-draft-note-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.location-request-card {
+  margin-top: 0.65rem;
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid rgba(13, 143, 130, 0.28);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(236, 248, 246, 0.96));
+  padding: 0.9rem 1rem;
+  box-shadow: 0 4px 14px rgba(13, 143, 130, 0.08);
+}
+
+.location-request-card-urgent {
+  border-color: rgba(194, 59, 59, 0.35);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(255, 244, 244, 0.95));
+  box-shadow: 0 4px 14px rgba(194, 59, 59, 0.08);
+}
+
+.location-request-kicker {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-hover);
+}
+
+.location-request-card-urgent .location-request-kicker {
+  color: var(--danger);
+}
+
+.location-request-text {
+  margin: 0.4rem 0 0.85rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.location-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 /* Modal podglądu projektu */
 .project-modal-root {
   position: fixed;

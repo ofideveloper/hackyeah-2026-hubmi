@@ -1,24 +1,26 @@
 import Head from "next/head";
 import Link from "next/link";
 
+import { AssistantChat } from "@/components/AssistantChat";
+
 const steps = [
   {
     number: "01",
-    title: "Wybierz właściwą jednostkę",
+    title: "Napisz do opiekuna",
     description:
-      "Sprawdź, kto odpowiada za Twój teren i rodzaj sprawy. Wszystko znajdziesz w jednym miejscu.",
+      "Opisz sprawę własnymi słowami — nawet bez konta. Opiekun podpowie sensowny kierunek.",
   },
   {
     number: "02",
-    title: "Opisz, co się dzieje",
+    title: "Dobierzemy ścieżkę",
     description:
-      "Zgłoś problem, wydarzenie albo ważną informację. Wystarczy krótki tytuł i kilka zdań.",
+      "Gdy temat jest jasny, wskażemy pasujący projekt albo zbierzemy materiał dla jednostki.",
   },
   {
     number: "03",
-    title: "Wróć do swoich zgłoszeń",
+    title: "Śledź postęp",
     description:
-      "Zaloguj się, aby zobaczyć swoje zgłoszenia i projekty lokalnych jednostek.",
+      "Po założeniu konta zobaczysz statusy spraw w swojej przestrzeni HubMI.",
   },
 ];
 
@@ -75,123 +77,46 @@ export default function HomePage() {
                 Twój teren, i przekaż jej sprawę bez szukania właściwego kontaktu.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link href="/register" className="btn-primary gap-2 px-5 py-3 text-base">
-                  Zacznij zgłaszać
+                <a href="#opiekun" className="btn-primary gap-2 px-5 py-3 text-base">
+                  Porozmawiaj z opiekunem
                   <span aria-hidden="true">→</span>
-                </Link>
-                <Link href="/login" className="btn-ghost px-5 py-3 text-base">
-                  Mam już konto
+                </a>
+                <Link href="/register" className="btn-ghost px-5 py-3 text-base">
+                  Załóż konto
                 </Link>
               </div>
               <p className="mt-4 text-sm text-[var(--muted)]">
-                Założenie konta zajmuje tylko chwilę.
+                Możesz zacząć bez logowania — konto przyda się później.
               </p>
             </div>
 
-            <div className="animate-fade-up-delay relative mx-auto w-full max-w-xl lg:ml-auto">
+            <div
+              id="opiekun"
+              className="animate-fade-up-delay relative mx-auto w-full max-w-xl lg:ml-auto"
+            >
               <div
                 aria-hidden="true"
                 className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[var(--accent-soft)] blur-3xl"
               />
-              <div className="relative rounded-[1.75rem] border border-[var(--border)] bg-white p-4 shadow-[0_24px_80px_rgba(26,35,48,0.12)] sm:p-6">
-                <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="h-5 w-5"
-                      >
-                        <path
-                          d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                        />
-                        <circle
-                          cx="12"
-                          cy="9"
-                          r="2.3"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                        />
-                      </svg>
-                    </span>
-                    <div>
-                      <p className="font-display text-sm font-semibold">Twoja okolica</p>
-                      <p className="mt-0.5 text-xs text-[var(--muted)]">
-                        Zgłoszenia i lokalne sprawy
-                      </p>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)]">
-                    HubMI
-                  </span>
-                </div>
-
-                <div className="py-5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold">Przykład zgłoszenia</p>
-                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
-                      Problem
-                    </span>
-                  </div>
-                  <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-4 sm:p-5">
-                    <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                      Tytuł
-                    </p>
-                    <p className="mt-1.5 font-semibold leading-snug">
-                      Nie działa oświetlenie na skwerze
-                    </p>
-                    <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-                      Wybierasz jednostkę odpowiedzialną za dany teren i opisujesz,
-                      czego dotyczy sprawa.
-                    </p>
-                  </div>
-                  <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--border)] p-3.5">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="h-4 w-4"
-                      >
-                        <path
-                          d="M5 12h14M13 6l6 6-6 6"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold">Właściwy adresat</p>
-                      <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
-                        Zakres terenu i kompetencje pomagają wybrać odpowiednią
-                        jednostkę.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="h-4 w-4 text-[var(--accent)]"
+              <div className="relative">
+                <AssistantChat guestMode />
+                <p className="mt-3 text-center text-sm text-[var(--muted)]">
+                  Chcesz przekazać sprawę dalej?{" "}
+                  <Link
+                    href="/register"
+                    className="font-medium text-[var(--accent)] hover:underline"
                   >
-                    <path
-                      d="m5 12 4 4L19 6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  Prosto, lokalnie i bez zgadywania, gdzie napisać
-                </div>
+                    Załóż konto
+                  </Link>{" "}
+                  albo{" "}
+                  <Link
+                    href="/login"
+                    className="font-medium text-[var(--accent)] hover:underline"
+                  >
+                    zaloguj się
+                  </Link>
+                  .
+                </p>
               </div>
             </div>
           </section>

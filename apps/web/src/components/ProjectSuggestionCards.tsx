@@ -10,7 +10,7 @@ export function ProjectSuggestionCards({ projects, onOpen }: ProjectSuggestionCa
 
   return (
     <div className="project-suggest-rail" aria-label="Sugerowane projekty">
-      <p className="project-suggest-label">Podgląd propozycji</p>
+      <p className="project-suggest-label">Zasugerowane projekty</p>
       <ul className="project-suggest-list">
         {projects.map((project, index) => (
           <li key={project.id} style={{ animationDelay: `${index * 60}ms` }}>

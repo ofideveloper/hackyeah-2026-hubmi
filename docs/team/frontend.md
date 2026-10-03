@@ -75,7 +75,7 @@ src/
 
 - Wspólny header: `SiteHeader`
 - Admin: `AdminShell` + `useRequireAdmin` (JWT + role); podwidoki w `pages/admin/*`
-- PWA: `public/manifest.webmanifest`, `public/icons/`, `public/sw.js`
+- PWA: `public/manifest.json`, `public/favicons/`, `public/browserconfig.xml`, `public/sw.js`
 
 ## Design / UI (aktualny baseline)
 

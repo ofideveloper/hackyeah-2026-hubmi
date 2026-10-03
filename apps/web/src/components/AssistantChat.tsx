@@ -12,7 +12,6 @@ import { ProjectPreviewModal } from "@/components/ProjectPreviewModal";
 import { ProjectSuggestionCards } from "@/components/ProjectSuggestionCards";
 import {
   sendChatMessage,
-  type ChatMode,
   type ChatProject,
   type LocationRequestKind,
   type NewProjectDraft,
@@ -38,19 +37,6 @@ export type ChatMessage = {
 };
 
 const CARETAKER = "Twój społeczny opiekun";
-
-const MODE_CHIPS: { mode: ChatMode; label: string }[] = [
-  { mode: "catalog", label: "Szukam gotowego rozwiązania dla mojej gminy" },
-  { mode: "report", label: "Chcę zgłosić problem w okolicy" },
-  { mode: "intake", label: "Mam pomysł oddolny - od czego zacząć?" },
-];
-
-const MODE_LABEL: Record<ChatMode, string> = {
-  clarify: "Wybierz ścieżkę",
-  report: "Zgłoszenie sprawy",
-  catalog: "Katalog rozwiązań",
-  intake: "Nowa inicjatywa",
-};
 
 const REPORT_CONFIRM_MESSAGE =
   "Tak, zapisz to proszę jako zgłoszenie w MaloHUB - chcę śledzić status.";
@@ -121,10 +107,8 @@ function welcomeMessage(guestMode: boolean): ChatMessage {
     id: "welcome",
     role: "assistant",
     content: guestMode
-      ? `Miło Cię widzieć. Wybierz ścieżkę poniżej - albo napisz własnymi słowami: ` +
-        `zgłoszenie problemu, katalog gotowych rozwiązań, albo nowy pomysł.`
-      : `Miło Cię widzieć. Jestem Twoim społecznym opiekunem. ` +
-        `Wybierz ścieżkę: **zgłoszenie**, **katalog rozwiązań** albo **nowa inicjatywa** - albo opisz sprawę własnymi słowami.`,
+      ? `Miło Cię widzieć. Opisz sprawę własnymi słowami — pomogę znaleźć kierunek albo gotowe rozwiązanie.`
+      : `Miło Cię widzieć. Jestem Twoim społecznym opiekunem. Opisz, co się dzieje — razem pomyślimy nad rozwiązaniem.`,
     timestamp: new Date(),
   };
 }
@@ -148,7 +132,6 @@ export function AssistantChat({
     draft: NewProjectDraft;
   } | null>(null);
   const [locatingId, setLocatingId] = useState<string | null>(null);
-  const [mode, setMode] = useState<ChatMode>("clarify");
   /** Gate locale/clock UI until after hydration (SSR `new Date()` ≠ client). */
   const [clockReady, setClockReady] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -162,7 +145,6 @@ export function AssistantChat({
     setChatId(null);
     setDraftDialog(null);
     setLocatingId(null);
-    setMode("clarify");
   }
 
   useEffect(() => {
@@ -180,15 +162,12 @@ export function AssistantChat({
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, busy, locatingId]);
 
-  async function submitMessage(text: string, modeHint?: ChatMode | null) {
+  async function submitMessage(text: string) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
 
     const token = getToken();
     if (!guestMode && !token) return;
-
-    const nextModeHint = modeHint ?? (mode !== "clarify" ? mode : null);
-    if (modeHint) setMode(modeHint);
 
     const history = messages
       .filter(
@@ -216,7 +195,6 @@ export function AssistantChat({
     try {
       const {
         reply,
-        mode: resolvedMode,
         suggested_projects,
         project_proposal,
         created_report,
@@ -224,8 +202,7 @@ export function AssistantChat({
         location_request,
         chat_id,
         new_project_draft,
-      } = await sendChatMessage(token, trimmed, history, nextModeHint, chatId);
-      setMode(resolvedMode);
+      } = await sendChatMessage(token, trimmed, history, null, chatId);
       setChatId(chat_id);
       const replyId = `a-${Date.now()}`;
       if (new_project_draft) {
@@ -355,11 +332,6 @@ export function AssistantChat({
                 ? "Napisz, co się dzieje w Twojej okolicy - razem znajdziemy sensowny kierunek."
                 : "Opowiedz, co Cię zajmuje - razem pomyślimy nad rozwiązaniem."}
             </p>
-            {mode !== "clarify" && (
-              <p className="chat-mode-pill" aria-live="polite">
-                Tryb: {MODE_LABEL[mode]}
-              </p>
-            )}
           </div>
         </div>
       </header>
@@ -484,7 +456,7 @@ export function AssistantChat({
                           type="button"
                           className="btn-primary"
                           disabled={busy}
-                          onClick={() => void submitMessage(REPORT_CONFIRM_MESSAGE, "report")}
+                          onClick={() => void submitMessage(REPORT_CONFIRM_MESSAGE)}
                         >
                           Zapisz zgłoszenie
                         </button>
@@ -524,21 +496,6 @@ export function AssistantChat({
           </div>
         )}
       </div>
-
-      {onlyWelcome && !busy && (
-        <div className="flex flex-wrap gap-2 px-4 py-3 sm:px-6">
-          {MODE_CHIPS.map((chip) => (
-            <button
-              key={chip.mode}
-              type="button"
-              onClick={() => void submitMessage(chip.label, chip.mode)}
-              className="chat-chip"
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       <form onSubmit={onSubmit} className="chat-composer border-t border-[var(--border)] px-4 py-4 sm:px-6">
         <div className="flex items-start gap-2">

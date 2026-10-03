@@ -257,8 +257,8 @@ def _build_system_context(
     match_text = f"{history_blob}\n{user_message}".strip()
     current_ok = _message_has_substance(user_message)
     history_ok = _message_has_substance(history_blob)
-    # Katalog projektów tylko w trybie catalog (+ substancja)
-    allow_projects = mode == "catalog" and (current_ok or history_ok)
+    # W trybie catalog lista PROJECT| jest zawsze widoczna (scoring i tak filtruje karty)
+    allow_projects = mode == "catalog"
 
     lines = [
         load_prompt("caretaker_system"),
@@ -624,6 +624,16 @@ async def _chat_handler(
         preferred = "report"
     mode = detect_chat_mode(user_message, history_blob, preferred)
 
+    match_text = f"{history_blob}\n{user_message}".strip()
+    allow_match = _message_has_substance(user_message) or _message_has_substance(history_blob)
+    strong_preview = (
+        _strong_project_matches(projects, units_by_id, match_text) if projects else []
+    )
+    # Naturalny opis / nazwa projektu (bez chipa) → katalog przy twardym trafieniu scoringu
+    if mode == "clarify" and strong_preview:
+        mode = "catalog"
+        allow_match = True
+
     system = _build_system_context(
         units, projects, units_by_id, user, user_message, history_blob, mode
     )
@@ -648,9 +658,6 @@ async def _chat_handler(
     reply, location_request = extract_location_request(reply)
     reply, ids = extract_project_ids(reply)
 
-    match_text = f"{history_blob}\n{user_message}".strip()
-    allow_match = _message_has_substance(user_message) or _message_has_substance(history_blob)
-
     # Twarde bramki wg trybu — model / scoring nie mogą „przeskoczyć”
     if mode != "catalog":
         ids = []
@@ -671,7 +678,9 @@ async def _chat_handler(
             )
 
     if mode == "catalog" and allow_match:
-        strong = _strong_project_matches(projects, units_by_id, match_text)
+        strong = strong_preview or _strong_project_matches(
+            projects, units_by_id, match_text
+        )
         if not location_request:
             reply, ids = _ensure_project_suggestion(reply, ids, strong, units_by_id)
 

@@ -162,6 +162,9 @@ export default function KnowledgePage() {
             <Link href="/tester" className="btn-ghost">
               Tester innowacji
             </Link>
+            <Link href="/kontakt" className="btn-ghost">
+              Kontakt
+            </Link>
             <Link href="/login" className="btn-primary">
               Zaloguj się
             </Link>

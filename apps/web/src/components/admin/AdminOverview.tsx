@@ -12,8 +12,9 @@ const LINKS = [
   { href: "/admin/reports", label: "Sprawy", hint: "Statusy dla mieszkańców" },
   { href: "/admin/knowledge", label: "Zasobnik wiedzy", hint: "Raporty, materiały, biblioteka" },
   { href: "/admin/testing", label: "Zgłoszenia testerów", hint: "Przyjmij / odrzuć testerów, opinie" },
+  { href: "/admin/messages", label: "Wiadomości", hint: "Pytania do zespołu ROPS" },
   { href: "/admin/trends", label: "Trendy potrzeb", hint: "Potrzeby według obszarów" },
-  { href: "/admin/users", label: "Użytkownicy", hint: "Konta w systemie" },
+  { href: "/admin/users", label: "Użytkownicy", hint: "Konta i rola mentora" },
 ] as const;
 
 export function AdminOverview() {

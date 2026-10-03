@@ -16,6 +16,7 @@ const NAV: { href: string; label: string; exact?: boolean }[] = [
   { href: "/admin/ideas", label: "Fiszki pomysłów" },
   { href: "/admin/grants", label: "Nabory grantowe" },
   { href: "/admin/testing", label: "Zgłoszenia testerów" },
+  { href: "/admin/messages", label: "Wiadomości" },
   { href: "/admin/trends", label: "Trendy potrzeb" },
   { href: "/admin/users", label: "Użytkownicy" },
 ];

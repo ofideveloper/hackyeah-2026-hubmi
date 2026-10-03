@@ -1,6 +1,8 @@
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel
 from sqlmodel import col, func, select
 
 from ..dependencies.auth import CurrentAdminDep
@@ -114,6 +116,35 @@ async def stats(_: CurrentAdminDep, session: SessionDep) -> AdminStats:
 @router.get("/users", response_model=list[UserPublic])
 async def list_users(_: CurrentAdminDep, session: SessionDep) -> list[User]:
     return list(session.exec(select(User).order_by(col(User.email))).all())
+
+
+class UserRoleUpdate(BaseModel):
+    # rola admina nie jest nadawana z panelu — tylko seed
+    role: Literal["user", "specialist"]
+
+
+@router.patch("/users/{user_id}", response_model=UserPublic)
+async def set_user_role(
+    user_id: uuid.UUID,
+    payload: UserRoleUpdate,
+    admin: CurrentAdminDep,
+    session: SessionDep,
+) -> User:
+    """Nadanie lub odebranie roli mentora (`specialist`)."""
+    user = session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Brak użytkownika")
+    if user.role == RoleEnum.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nie można zmienić roli administratora",
+        )
+    user.role = RoleEnum(payload.role)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    logger.info("Admin %s ustawił rolę %s użytkownikowi %s", admin.id, user.role.value, user.id)
+    return user
 
 
 @router.post(

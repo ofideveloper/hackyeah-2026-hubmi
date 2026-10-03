@@ -67,6 +67,12 @@ export default function HomePage() {
               Tester innowacji
             </Link>
             <Link
+              href="/kontakt"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
+            >
+              Kontakt
+            </Link>
+            <Link
               href="/login"
               className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
             >

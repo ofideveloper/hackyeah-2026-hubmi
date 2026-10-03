@@ -19,6 +19,7 @@ Pełny opis: `docs/team/security.md`.
 - Endpointy z `CurrentUserDep` / sprawdzeniem roli; admin także po stronie API
 - Waliduj input (SQLModel/Pydantic); SQL tylko przez ORM / parametry
 - Błędy zewnętrzne: bez stack trace / sekretów
+- Rozmowy (`routes/communication.py`): dostęp tylko dla uczestników (obcy → 404); admin widzi wyłącznie pytania do ROPS; publicznie autor jako „Imię N.”, e-mail i telefon nigdy; treści wiadomości nie loguj
 
 ## Front / LLM
 

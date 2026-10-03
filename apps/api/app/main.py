@@ -11,6 +11,7 @@ from .routes import (
     auth,
     categories,
     chat,
+    communication,
     ideas,
     knowledge,
     llm,
@@ -63,6 +64,7 @@ app.include_router(chat.router)
 app.include_router(knowledge.router)
 app.include_router(ideas.router)
 app.include_router(testing.router)
+app.include_router(communication.router)
 app.include_router(projects.router)
 app.include_router(reports.router)
 app.include_router(users.router)

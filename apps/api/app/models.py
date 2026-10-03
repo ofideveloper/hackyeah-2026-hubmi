@@ -48,10 +48,25 @@ class UserBase(SQLModel):
     phone_number: str | None = None
 
 
+class SectorEnum(str, enum.Enum):
+    NGO = "ngo"
+    JST = "jst"
+    BUSINESS = "biznes"
+    SCIENCE = "nauka"
+
+
+ORGANIZATION_MAX = 160
+MENTOR_BIO_MAX = 1000
+
+
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     role: RoleEnum = Field(default=RoleEnum.USER)
+    # Profil platformy komunikacji — poza UserBase, żeby rejestracja ich nie przyjmowała.
+    sector: SectorEnum | None = None
+    organization: str | None = None
+    mentor_bio: str | None = None  # opis specjalizacji mentora (rola `specialist`)
 
 
 class UserCreate(UserBase):
@@ -73,6 +88,9 @@ class UserCreate(UserBase):
 class UserPublic(UserBase):
     id: uuid.UUID
     role: RoleEnum
+    sector: SectorEnum | None = None
+    organization: str | None = None
+    mentor_bio: str | None = None
 
     @computed_field
     @property
@@ -514,3 +532,78 @@ class SolutionReview(SQLModel, table=True):
     improvement: str = Field(default="", sa_type=Text)
     created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+
+
+class ConversationKind(str, enum.Enum):
+    QUESTION = "pytanie"  # użytkownik → zespół ROPS (wspólna skrzynka adminów)
+    MENTORING = "mentoring"  # użytkownik → mentor
+    PARTNERSHIP = "partnerstwo"  # odpowiedź na ogłoszenie partnerskie
+
+
+class ConversationStatus(str, enum.Enum):
+    OPEN = "otwarta"
+    CLOSED = "zamknieta"
+
+
+class ListingKind(str, enum.Enum):
+    SEEKING = "szukam"
+    OFFERING = "oferuje"
+
+
+THREAD_SUBJECT_MAX = 160
+MESSAGE_BODY_MAX = 2000
+
+
+class PartnershipListing(SQLModel, table=True):
+    """Ogłoszenie partnerskie — „szukam / oferuję” na tablicy współpracy międzysektorowej."""
+
+    __tablename__: str = "partnership_listings"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    author_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    kind: ListingKind = Field(index=True)
+    title: str = Field(max_length=THREAD_SUBJECT_MAX)
+    description: str = Field(sa_type=Text)
+    sought_sector: SectorEnum | None = None  # z jakiego sektora autor szuka partnera
+    created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+
+
+class Conversation(SQLModel, table=True):
+    """Rozmowa (wątek) między dwiema stronami.
+
+    `recipient_id` jest puste dla pytania do ROPS — odbiorcą jest wtedy każdy admin,
+    a `recipient_read_at` to wspólny znacznik odczytu zespołu.
+    """
+
+    __tablename__: str = "conversations"
+    # jedna rozmowa na osobę i ogłoszenie; wiersze bez ogłoszenia (NULL) nie są ograniczane
+    __table_args__ = (UniqueConstraint("listing_id", "author_id"),)
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    kind: ConversationKind = Field(index=True)
+    subject: str = Field(max_length=THREAD_SUBJECT_MAX)
+    author_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    recipient_id: uuid.UUID | None = Field(default=None, foreign_key="user.id", index=True)
+    listing_id: uuid.UUID | None = Field(
+        default=None, foreign_key="partnership_listings.id", index=True
+    )
+    status: ConversationStatus = Field(default=ConversationStatus.OPEN, index=True)
+    created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    last_message_at: str = Field(
+        default_factory=lambda: datetime.now().isoformat(), index=True
+    )
+    last_author_id: uuid.UUID | None = Field(default=None, foreign_key="user.id")
+    author_read_at: str | None = None
+    recipient_read_at: str | None = None
+
+
+class Message(SQLModel, table=True):
+    __tablename__: str = "messages"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    conversation_id: uuid.UUID = Field(foreign_key="conversations.id", index=True)
+    author_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    body: str = Field(sa_type=Text)
+    created_at: str = Field(
+        default_factory=lambda: datetime.now().isoformat(), index=True
+    )

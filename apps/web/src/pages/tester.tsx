@@ -118,6 +118,9 @@ export default function TesterPage() {
             <Link href="/kreator" className="btn-ghost">
               Kreator pomysłów
             </Link>
+            <Link href="/kontakt" className="btn-ghost">
+              Kontakt
+            </Link>
             {user ? (
               <Link href="/app" className="btn-primary">
                 Moja przestrzeń

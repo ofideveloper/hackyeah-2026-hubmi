@@ -1152,6 +1152,34 @@ body {
   fill: var(--accent-hover);
 }
 
+/* —— Platforma komunikacji (/kontakt, /admin/messages) —— */
+.thread-item[aria-current="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.thread-unread {
+  border-radius: 999px;
+  background: var(--accent);
+  padding: 0.15rem 0.6rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.thread-log {
+  max-height: min(60vh, 32rem);
+  min-height: 12rem;
+  overflow-y: auto;
+}
+
+.thread-log:focus-visible {
+  outline: 2px solid var(--accent-hover);
+  outline-offset: -2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

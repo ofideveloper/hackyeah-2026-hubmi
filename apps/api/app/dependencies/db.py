@@ -89,6 +89,7 @@ def _add_missing_columns() -> None:
     added = {
         "actualproject": ("source_url", "video_url", "folder_url"),
         "proposalofnewproject": ("essence", "audience", "stage", "canvas"),
+        "user": ("sector", "organization", "mentor_bio"),
     }
     insp = inspect(engine)
     with engine.begin() as conn:

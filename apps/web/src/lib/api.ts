@@ -10,6 +10,10 @@ export type User = {
   phone_number: string | null;
   full_name?: string | null;
   role: "user" | "admin" | "specialist" | string;
+  sector?: Sector | null;
+  organization?: string | null;
+  /** Opis specjalizacji mentora (rola `specialist`) */
+  mentor_bio?: string | null;
 };
 
 export type AdminStats = {
@@ -997,4 +1001,184 @@ export async function fetchAdminSolutionReviews(token: string): Promise<AdminSol
 
 export async function deleteAdminSolutionReview(token: string, reviewId: string): Promise<void> {
   return deleteOrThrow(token, `${API_BASE}/admin/testing/reviews/${reviewId}`);
+}
+
+// --- Platforma komunikacji (apps/api/app/routes/communication.py) ---
+
+export type Sector = "ngo" | "jst" | "biznes" | "nauka";
+export type ConversationKind = "pytanie" | "mentoring" | "partnerstwo";
+export type ConversationStatus = "otwarta" | "zamknieta";
+export type ListingKind = "szukam" | "oferuje";
+
+export type Mentor = {
+  id: string;
+  name: string | null;
+  organization: string | null;
+  sector: Sector | null;
+  bio: string | null;
+};
+
+export type ListingInput = {
+  kind: ListingKind;
+  title: string;
+  description: string;
+  sought_sector: Sector | null;
+};
+
+export type Listing = ListingInput & {
+  id: string;
+  author_name: string | null;
+  author_organization: string | null;
+  author_sector: Sector | null;
+  created_at: string;
+  is_mine: boolean;
+};
+
+export type ThreadMessage = {
+  id: string;
+  author_name: string | null;
+  is_mine: boolean;
+  body: string;
+  created_at: string;
+};
+
+export type Conversation = {
+  id: string;
+  kind: ConversationKind;
+  subject: string;
+  status: ConversationStatus;
+  counterpart_name: string | null;
+  /** Tylko dla admina w pytaniach do ROPS */
+  counterpart_email: string | null;
+  unread: boolean;
+  created_at: string;
+  last_message_at: string;
+};
+
+export type ConversationDetail = Conversation & { messages: ThreadMessage[] };
+
+export type ConversationInput = {
+  kind: "pytanie" | "mentoring";
+  subject: string;
+  body: string;
+  mentor_id?: string;
+};
+
+export type ProfileInput = {
+  sector: Sector | null;
+  organization: string;
+  mentor_bio: string;
+};
+
+/** Błąd z kodem HTTP — odpytywanie rozmowy musi odróżnić 401/404 od chwilowej awarii. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
+export async function fetchMentors(): Promise<Mentor[]> {
+  return jsonOrThrow(await fetch(`${API_BASE}/mentors`, { cache: "no-store" }));
+}
+
+/** Token opcjonalny — z nim API oznacza własne ogłoszenia (`is_mine`). */
+export async function fetchListings(token: string | null): Promise<Listing[]> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/partnerships`, {
+      headers: token ? authHeaders(token) : undefined,
+      cache: "no-store",
+    }),
+  );
+}
+
+export async function createListing(token: string, payload: ListingInput): Promise<Listing> {
+  return jsonOrThrow(await fetch(`${API_BASE}/partnerships`, jsonRequest(token, "POST", payload)));
+}
+
+export async function deleteListing(token: string, listingId: string): Promise<void> {
+  return deleteOrThrow(token, `${API_BASE}/partnerships/${listingId}`);
+}
+
+export async function contactListingAuthor(
+  token: string,
+  listingId: string,
+  body: string,
+): Promise<ConversationDetail> {
+  return jsonOrThrow(
+    await fetch(
+      `${API_BASE}/partnerships/${listingId}/contact`,
+      jsonRequest(token, "POST", { body }),
+    ),
+  );
+}
+
+export async function fetchConversations(token: string): Promise<Conversation[]> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/conversations`, { headers: authHeaders(token), cache: "no-store" }),
+  );
+}
+
+export async function createConversation(
+  token: string,
+  payload: ConversationInput,
+): Promise<ConversationDetail> {
+  return jsonOrThrow(await fetch(`${API_BASE}/conversations`, jsonRequest(token, "POST", payload)));
+}
+
+export async function fetchConversation(
+  token: string,
+  conversationId: string,
+): Promise<ConversationDetail> {
+  const res = await fetch(`${API_BASE}/conversations/${conversationId}`, {
+    headers: authHeaders(token),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new ApiError(await parseError(res), res.status);
+  }
+  return res.json() as Promise<ConversationDetail>;
+}
+
+export async function setConversationStatus(
+  token: string,
+  conversationId: string,
+  status: ConversationStatus,
+): Promise<ConversationDetail> {
+  return jsonOrThrow(
+    await fetch(
+      `${API_BASE}/conversations/${conversationId}`,
+      jsonRequest(token, "PATCH", { status }),
+    ),
+  );
+}
+
+export async function sendThreadMessage(
+  token: string,
+  conversationId: string,
+  body: string,
+): Promise<ConversationDetail> {
+  return jsonOrThrow(
+    await fetch(
+      `${API_BASE}/conversations/${conversationId}/messages`,
+      jsonRequest(token, "POST", { body }),
+    ),
+  );
+}
+
+export async function updateMyProfile(token: string, payload: ProfileInput): Promise<User> {
+  return jsonOrThrow(await fetch(`${API_BASE}/users/me`, jsonRequest(token, "PATCH", payload)));
+}
+
+/** Nadanie lub odebranie roli mentora. */
+export async function setUserRole(
+  token: string,
+  userId: string,
+  role: "user" | "specialist",
+): Promise<User> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/admin/users/${userId}`, jsonRequest(token, "PATCH", { role })),
+  );
 }

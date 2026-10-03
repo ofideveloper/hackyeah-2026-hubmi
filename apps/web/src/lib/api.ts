@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+/** Browser talks to Next.js BFF at /api/*; the BFF proxies to the internal FastAPI service. */
+const API_BASE = "/api";
 
 export type User = {
   id: number;
@@ -43,7 +44,7 @@ export async function registerUser(payload: {
   password: string;
   full_name?: string;
 }): Promise<User> {
-  const res = await fetch(`${API_URL}/auth/register`, {
+  const res = await fetch(`${API_BASE}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -62,7 +63,7 @@ export async function loginUser(email: string, password: string): Promise<string
     password,
   });
 
-  const res = await fetch(`${API_URL}/auth/login`, {
+  const res = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -77,7 +78,7 @@ export async function loginUser(email: string, password: string): Promise<string
 }
 
 export async function fetchMe(token: string): Promise<User> {
-  const res = await fetch(`${API_URL}/auth/me`, {
+  const res = await fetch(`${API_BASE}/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
@@ -90,7 +91,7 @@ export async function fetchMe(token: string): Promise<User> {
 }
 
 export async function fetchAdminStats(token: string): Promise<AdminStats> {
-  const res = await fetch(`${API_URL}/admin/stats`, {
+  const res = await fetch(`${API_BASE}/admin/stats`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
@@ -103,7 +104,7 @@ export async function fetchAdminStats(token: string): Promise<AdminStats> {
 }
 
 export async function fetchAdminUsers(token: string): Promise<User[]> {
-  const res = await fetch(`${API_URL}/admin/users`, {
+  const res = await fetch(`${API_BASE}/admin/users`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });

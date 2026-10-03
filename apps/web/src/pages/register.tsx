@@ -6,6 +6,9 @@ import { useState, type FormEvent } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { registerUser } from "@/lib/api";
 
+const PHONE_NUMBER_PATTERN = "\\+?\\d(?:[ \\-]?\\d){8,14}";
+const PHONE_NUMBER_RE = new RegExp(`^${PHONE_NUMBER_PATTERN}$`);
+
 export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -20,10 +23,16 @@ export default function RegisterPage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    const phone = phoneNumber.trim();
+    if (phone && !PHONE_NUMBER_RE.test(phone)) {
+      setError("Nieprawidłowy numer telefonu");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const phone = phoneNumber.trim();
       await registerUser({
         email,
         password,
@@ -93,6 +102,8 @@ export default function RegisterPage() {
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="field"
                   autoComplete="tel"
+                  pattern={PHONE_NUMBER_PATTERN}
+                  title="9–15 cyfr, opcjonalnie z + na początku, spacjami lub myślnikami"
                   placeholder="np. +48 500 000 000"
                 />
               </label>

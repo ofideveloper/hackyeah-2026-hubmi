@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     admin_email: str = "admin@malohub.dev"
     admin_password: str = "admin12345"
     admin_full_name: str = "MaloHUB Admin"
+    log_level: str = "INFO"
 
     # LLM: `fake` | `openai` | `gemini`
     llm_provider: str = "fake"

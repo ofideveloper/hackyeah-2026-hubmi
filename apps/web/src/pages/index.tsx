@@ -49,6 +49,30 @@ export default function HomePage() {
           </Link>
           <nav className="flex items-center gap-3" aria-label="Nawigacja główna">
             <Link
+              href="/wiedza"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
+            >
+              Zasobnik wiedzy
+            </Link>
+            <Link
+              href="/kreator"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
+            >
+              Kreator pomysłów
+            </Link>
+            <Link
+              href="/tester"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
+            >
+              Tester innowacji
+            </Link>
+            <Link
+              href="/kontakt"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
+            >
+              Kontakt
+            </Link>
+            <Link
               href="/login"
               className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
             >
@@ -81,8 +105,8 @@ export default function HomePage() {
                   Porozmawiaj z opiekunem
                   <span aria-hidden="true">→</span>
                 </a>
-                <Link href="/register" className="btn-ghost px-5 py-3 text-base">
-                  Załóż konto
+                <Link href="/wiedza" className="btn-ghost px-5 py-3 text-base">
+                  Zasobnik wiedzy
                 </Link>
               </div>
               <p className="mt-4 text-sm text-[var(--muted)]">

@@ -4,8 +4,15 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 import { AssistantChat } from "@/components/AssistantChat";
-import { fetchMe, fetchMyReports, type Report, type User } from "@/lib/api";
+import {
+  fetchConversations,
+  fetchMe,
+  fetchMyReports,
+  type Report,
+  type User,
+} from "@/lib/api";
 import { clearToken, getToken } from "@/lib/auth";
+import { unreadCount } from "@/lib/communication";
 
 const STATUS_LABEL: Record<string, string> = {
   nowe: "Przyjęte",
@@ -24,6 +31,7 @@ export default function AppHomePage() {
   const [user, setUser] = useState<User | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     const token = getToken();
@@ -37,6 +45,9 @@ export default function AppHomePage() {
         setUser(me);
         const nextReports = await fetchMyReports(token).catch(() => [] as Report[]);
         setReports(nextReports);
+        // licznik przy linku „Kontakt” — brak danych nie blokuje strony
+        const threads = await fetchConversations(token).catch(() => []);
+        setUnread(unreadCount(threads));
       })
       .catch(() => {
         clearToken();
@@ -76,6 +87,18 @@ export default function AppHomePage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link href="/kreator" className="btn-ghost">
+              Kreator pomysłów
+            </Link>
+            <Link href="/tester" className="btn-ghost">
+              Tester innowacji
+            </Link>
+            <Link href="/wiedza" className="btn-ghost">
+              Zasobnik wiedzy
+            </Link>
+            <Link href="/kontakt" className="btn-ghost">
+              Kontakt{unread > 0 && ` (nowe: ${unread})`}
+            </Link>
             {user.role === "admin" && (
               <Link href="/admin" className="btn-ghost">
                 Admin

@@ -2,10 +2,11 @@
 
 Uruchomienie (z `apps/api`):
 
-    .venv/bin/python -m app.scripts.scrape_rops [URL_KATEGORII] [--dry-run]
+    .venv/bin/python -m app.scripts.scrape_rops [URL_KATEGORII ...] [--dry-run]
 
-Kategoria (`CategoriesOfProjects`) bierze nazwę z nagłówka strony i jest tworzona,
-jeśli jej nie ma. Ponowne uruchomienie aktualizuje opisy zamiast dublować projekty.
+Bez argumentów pobiera wszystkie kategorie z `CATEGORY_SLUGS`. Kategoria
+(`CategoriesOfProjects`) bierze nazwę z nagłówka strony i jest tworzona, jeśli jej
+nie ma. Ponowne uruchomienie aktualizuje opisy zamiast dublować projekty.
 """
 
 import argparse
@@ -19,16 +20,31 @@ from urllib.parse import urljoin
 from sqlmodel import Session, select
 
 from ..dependencies.db import create_db_and_tables, engine
+from ..dependencies.logger import get_logger
 from ..models import ActualProject, CategoriesOfProjects
 
-DEFAULT_URL = (
-    "https://rops.krakow.pl/innowacje-spoleczne/"
-    "biblioteka-innowacji-spolecznych/dla-seniorow"
+logger = get_logger(__name__)
+
+BASE_URL = (
+    "https://rops.krakow.pl/innowacje-spoleczne/biblioteka-innowacji-spolecznych/"
 )
+CATEGORY_SLUGS = (
+    "dla-seniorow",
+    "dla-dzieci-mlodziezy-i-rodziny",
+    "dla-osob-z-niepelnosprawnoscia-intelektualna",
+    "dla-osob-z-niepelnosprawnoscia-sensoryczna",
+    "dla-osob-o-ograniczonej-mobilnosci",
+    "dla-osob-w-kryzysie-bezdomnosci",
+    "dla-cudzoziemcow",
+    "dla-rynku-pracy",
+    "dla-zdrowia-i-medycyny",
+)
+DEFAULT_URLS = [urljoin(BASE_URL, slug) for slug in CATEGORY_SLUGS]
 USER_AGENT = "MaloHUB-scraper/0.1 (HackYeah 2026)"
 REQUEST_DELAY_S = 0.3
 
 BLOCK_TAGS = {"h4", "p", "li"}
+VIDEO_RE = re.compile(r"youtube\.com/watch\?|youtu\.be/", re.IGNORECASE)
 
 
 @dataclass
@@ -36,6 +52,8 @@ class ScrapedProject:
     name: str
     description: str
     url: str
+    video_url: str | None = None
+    folder_url: str | None = None
 
 
 def fetch(url: str) -> str:
@@ -91,6 +109,8 @@ class DetailParser(HTMLParser):
         super().__init__()
         self.title = ""
         self.blocks: list[str] = []
+        self.video_url: str | None = None  # pierwszy film o innowacji (YouTube)
+        self.folder_url: str | None = None  # pierwszy folder PDF
         self._in_title = False
         self._div_depth = 0  # > 0 wewnątrz div.text-content
         self._started = False  # po pierwszym <h4> (pomija baner i tabelę z ikonami)
@@ -108,6 +128,8 @@ class DetailParser(HTMLParser):
             elif "text-content" in classes and not self.blocks:
                 self._div_depth = 1
         elif self._div_depth:
+            if tag == "a":
+                self._collect_link(dict(attrs).get("href") or "")
             if tag == "h4":
                 self._started = True
             if tag in BLOCK_TAGS and self._started:
@@ -132,6 +154,12 @@ class DetailParser(HTMLParser):
         elif tag == self._block:
             self._flush()
 
+    def _collect_link(self, href: str) -> None:
+        if self.video_url is None and VIDEO_RE.search(href):
+            self.video_url = href
+        elif self.folder_url is None and href.lower().split("?")[0].endswith(".pdf"):
+            self.folder_url = href
+
     def _flush(self) -> None:
         if self._block is not None:
             text = clean("".join(self._text))
@@ -141,14 +169,20 @@ class DetailParser(HTMLParser):
         self._text = []
 
 
-def scrape(listing_url: str) -> tuple[str, list[ScrapedProject]]:
+def scrape(
+    listing_url: str, known: dict[str, set[str]] | None = None
+) -> tuple[str, list[ScrapedProject]]:
+    """`known` (kategoria → nazwy już zapisane) pomija pobieranie stron tych innowacji."""
     listing = ListingParser()
     listing.feed(fetch(listing_url))
     if not listing.category or not listing.items:
         raise RuntimeError(f"Nie znaleziono listy innowacji na {listing_url}")
 
+    skip = (known or {}).get(listing.category, set())
     projects: list[ScrapedProject] = []
     for name, href in listing.items:
+        if name in skip:
+            continue
         url = urljoin(listing_url, href)
         time.sleep(REQUEST_DELAY_S)
         detail = DetailParser()
@@ -157,7 +191,20 @@ def scrape(listing_url: str) -> tuple[str, list[ScrapedProject]]:
         if not description:
             print(f"  ! pominięto (brak opisu): {name} — {url}")
             continue
-        projects.append(ScrapedProject(detail.title or name, description, url))
+        title = detail.title or name
+        # zapis rozpoznaje projekt po nazwie — duplikat nadpisywałby poprzedni wpis
+        if any(project.name == title for project in projects):
+            print(f"  ! pominięto (powtórzona nazwa): {title} — {url}")
+            continue
+        projects.append(
+            ScrapedProject(
+                title,
+                description,
+                url,
+                video_url=detail.video_url,
+                folder_url=urljoin(url, detail.folder_url) if detail.folder_url else None,
+            )
+        )
         print(f"  pobrano: {projects[-1].name} ({len(description)} znaków)")
     return listing.category, projects
 
@@ -168,7 +215,9 @@ def save(category_name: str, projects: list[ScrapedProject]) -> tuple[int, int]:
     created = updated = 0
     with Session(engine) as session:
         category = session.exec(
-            select(CategoriesOfProjects).where(CategoriesOfProjects.name == category_name)
+            select(CategoriesOfProjects).where(
+                CategoriesOfProjects.name == category_name
+            )
         ).first()
         if category is None:
             category = CategoriesOfProjects(name=category_name)
@@ -182,37 +231,85 @@ def save(category_name: str, projects: list[ScrapedProject]) -> tuple[int, int]:
                     ActualProject.name == scraped.name,
                 )
             ).first()
+            fields = {
+                "description": scraped.description,
+                "source_url": scraped.url,
+                "video_url": scraped.video_url,
+                "folder_url": scraped.folder_url,
+            }
             if project is None:
                 session.add(
-                    ActualProject(
-                        category_id=category.id,
-                        name=scraped.name,
-                        description=scraped.description,
-                    )
+                    ActualProject(category_id=category.id, name=scraped.name, **fields)
                 )
                 created += 1
-            elif project.description != scraped.description:
-                project.description = scraped.description
+            elif any(getattr(project, key) != value for key, value in fields.items()):
+                for key, value in fields.items():
+                    setattr(project, key, value)
                 session.add(project)
                 updated += 1
         session.commit()
     return created, updated
 
 
+def refresh_new_projects() -> int:
+    """Dociąga innowacje, których nie ma jeszcze w bazie. Zwraca liczbę dodanych.
+
+    Istniejących wpisów nie pobiera ponownie (tylko strony kategorii), więc nadaje
+    się do wywołania w trakcie żądania — pełna aktualizacja opisów to `main()`.
+    """
+    create_db_and_tables()
+    known: dict[str, set[str]] = {}
+    with Session(engine) as session:
+        rows = session.exec(
+            select(CategoriesOfProjects.name, ActualProject.name).join(
+                ActualProject, ActualProject.category_id == CategoriesOfProjects.id
+            )
+        ).all()
+    for category_name, project_name in rows:
+        known.setdefault(category_name, set()).add(project_name)
+
+    added = 0
+    for url in DEFAULT_URLS:
+        try:
+            category, projects = scrape(url, known)
+        except (OSError, RuntimeError) as error:
+            logger.warning("Pominięto kategorię %s: %s", url, error)
+            continue
+        if projects:
+            created, _updated = save(category, projects)
+            logger.info("Kategoria „%s”: dodano %s nowych projektów", category, created)
+            added += created
+    return added
+
+
 def main() -> None:
+    assert __doc__ is not None
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("url", nargs="?", default=DEFAULT_URL)
-    parser.add_argument("--dry-run", action="store_true", help="pobierz, ale nie zapisuj")
+    parser.add_argument(
+        "urls", nargs="*", default=DEFAULT_URLS, help="domyślnie wszystkie kategorie"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="pobierz, ale nie zapisuj"
+    )
     args = parser.parse_args()
 
-    category, projects = scrape(args.url)
-    print(f"Kategoria „{category}”: {len(projects)} projektów")
-    if args.dry_run:
-        for project in projects[:1]:
-            print(f"\n--- {project.name}\n{project.description}")
-        return
-    created, updated = save(category, projects)
-    print(f"Zapisano: {created} nowych, {updated} zaktualizowanych")
+    failed: list[str] = []
+    for url in args.urls:
+        try:
+            category, projects = scrape(url)
+        except (OSError, RuntimeError) as error:
+            print(f"! pominięto kategorię {url}: {error}")
+            failed.append(url)
+            continue
+        print(f"Kategoria „{category}”: {len(projects)} projektów")
+        if args.dry_run:
+            for project in projects[:1]:
+                print(f"\n--- {project.name}\n{project.description}")
+            continue
+        created, updated = save(category, projects)
+        print(f"Zapisano: {created} nowych, {updated} zaktualizowanych")
+    if failed:
+        raise SystemExit(f"Nie pobrano {len(failed)} z {len(args.urls)} kategorii")
 
 
 if __name__ == "__main__":

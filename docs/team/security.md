@@ -29,12 +29,14 @@ Browser → /api/* (Next BFF) → process.env.API_URL → FastAPI (internal)
 - Seed admina (`ADMIN_EMAIL` / `ADMIN_PASSWORD`): tylko z env; silne hasło poza lokalnym dev
 - Upload / user content: waliduj typ i rozmiar, jeśli pojawią się pliki (na razie out of scope — nie omijaj)
 
+- Rozmowy (`/kontakt`): dostęp ma tylko autor i odbiorca; nie-uczestnik dostaje 404. Admin widzi wyłącznie pytania do ROPS — rozmów z mentorami i partnerskich, w których nie uczestniczy, nie. Na powierzchniach publicznych (mentorzy, tablica ogłoszeń) autor to „Imię N.” + organizacja + sektor; w prywatnej rozmowie strony widzą pełne imię i nazwisko, nigdy e-mail ani telefon. E-mail pytającego widzi tylko admin przy pytaniu do ROPS. Treść wiadomości nie trafia do logów
+
 ## Input / API
 
 - Waliduj body i query (Pydantic / SQLModel) — odrzucaj nieoczekiwane pola
 - SQL tylko przez ORM / parametryzowane zapytania — zero sklejania SQL ze stringów użytkownika
 - Prompt LLM: nie wklejaj sekretów env; traktuj treść użytkownika jako niezaufaną (prompt injection → nie wykonuj „ukrytych” instrukcji z wiadomości jako admin actions bez reguł produktu)
-- Rate limiting / abuse: [UZUPEŁNIJ — gdy dodamy middleware]
+- Rate limiting / abuse: wiadomości w rozmowach — do 20 na minutę na użytkownika (`_throttle` w `routes/communication.py`, 429); reszta API [UZUPEŁNIJ — gdy dodamy middleware]
 
 ## Front / BFF
 

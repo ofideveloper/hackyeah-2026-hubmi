@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 
+import { ExternalLinkIcon } from "@/components/ExternalLinkIcon";
 import { VideoEmbed } from "@/components/knowledge/VideoEmbed";
 import { fetchInnovation, type InnovationDetail } from "@/lib/api";
 
@@ -105,7 +106,9 @@ export function InnovationDialog({ innovationId, name, onClose }: InnovationDial
                       rel="noopener noreferrer"
                       className="btn-primary"
                     >
-                      Folder innowacji (PDF, nowa karta)
+                      Folder innowacji (PDF)
+                      <ExternalLinkIcon />
+                      <span className="sr-only"> (otwiera się w nowej karcie)</span>
                     </a>
                   </li>
                 )}
@@ -117,7 +120,9 @@ export function InnovationDialog({ innovationId, name, onClose }: InnovationDial
                       rel="noopener noreferrer"
                       className="btn-ghost"
                     >
-                      Strona w Bibliotece ROPS (nowa karta)
+                      Strona w Bibliotece ROPS
+                      <ExternalLinkIcon />
+                      <span className="sr-only"> (otwiera się w nowej karcie)</span>
                     </a>
                   </li>
                 )}

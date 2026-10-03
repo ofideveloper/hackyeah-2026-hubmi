@@ -9,7 +9,7 @@ import { useCallback, useEffect, useId, useMemo, useState, type FormEvent } from
 import { ComposeDialog } from "@/components/communication/ComposeDialog";
 import { ThreadList } from "@/components/communication/ThreadList";
 import { ThreadView } from "@/components/communication/ThreadView";
-import { SiteHeader } from "@/components/SiteHeader";
+import { AppNav, SiteHeader } from "@/components/SiteHeader";
 import { Toast } from "@/components/Toast";
 import { useThreads } from "@/hooks/useThreads";
 import {
@@ -325,33 +325,9 @@ export default function ContactPage() {
       <a href="#tresc" className="skip-link">
         Przejdź do treści
       </a>
-      <SiteHeader
-        wide
-        actions={
-          <>
-            <Link href="/wiedza" className="btn-ghost">
-              Zasobnik wiedzy
-            </Link>
-            <Link href="/kreator" className="btn-ghost">
-              Kreator pomysłów
-            </Link>
-            <Link href="/tester" className="btn-ghost">
-              Tester innowacji
-            </Link>
-            {user ? (
-              <Link href="/app" className="btn-primary">
-                Moja przestrzeń
-              </Link>
-            ) : (
-              <Link href="/login" className="btn-primary">
-                Zaloguj się
-              </Link>
-            )}
-          </>
-        }
-      />
+      <SiteHeader width="full" actions={<AppNav current="kontakt" />} />
 
-      <main id="tresc" className="kb-page mx-auto max-w-5xl px-6 pb-20 pt-10 sm:pt-14">
+      <main id="tresc" className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
         <header className="animate-fade-up">
           <p className="kb-meta">Kontakt i współpraca</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">

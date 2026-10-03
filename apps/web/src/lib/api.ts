@@ -1172,6 +1172,23 @@ export async function updateMyProfile(token: string, payload: ProfileInput): Pro
   return jsonOrThrow(await fetch(`${API_BASE}/users/me`, jsonRequest(token, "PATCH", payload)));
 }
 
+export async function changeMyPassword(
+  token: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/users/me/password`,
+    jsonRequest(token, "POST", {
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  );
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+}
+
 /** Nadanie lub odebranie roli mentora. */
 export async function setUserRole(
   token: string,

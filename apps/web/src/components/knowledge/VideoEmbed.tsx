@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { ExternalLinkIcon } from "@/components/ExternalLinkIcon";
 import { youtubeId } from "@/lib/video";
 
 type VideoEmbedProps = {
@@ -19,7 +20,9 @@ export function VideoEmbed({ url, title }: VideoEmbedProps) {
   if (!id) {
     return (
       <a href={url} target="_blank" rel="noopener noreferrer" className="kb-link">
-        Obejrzyj film: {title} (otwiera się w nowej karcie)
+        Obejrzyj film: {title}
+        <ExternalLinkIcon />
+        <span className="sr-only"> (otwiera się w nowej karcie)</span>
       </a>
     );
   }

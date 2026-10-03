@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 
-import { SiteHeader } from "@/components/SiteHeader";
+import { GuestHeaderActions, SiteHeader } from "@/components/SiteHeader";
 import { registerUser } from "@/lib/api";
 
 const PHONE_NUMBER_PATTERN = "\\+?\\d(?:[ \\-]?\\d){8,14}";
@@ -57,13 +57,7 @@ export default function RegisterPage() {
         <title>Załóż konto · MaloHUB</title>
       </Head>
       <div className="flex min-h-screen flex-col">
-        <SiteHeader
-          actions={
-            <Link href="/login" className="btn-ghost">
-              Zaloguj się
-            </Link>
-          }
-        />
+        <SiteHeader width="full" logoSize="lg" actions={<GuestHeaderActions />} />
         <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center px-6 py-12">
           <form onSubmit={onSubmit} className="surface animate-fade-up w-full max-w-md p-8">
             <h1 className="font-display text-2xl font-semibold tracking-tight">Załóż konto</h1>

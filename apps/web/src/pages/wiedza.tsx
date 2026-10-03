@@ -6,15 +6,17 @@ import Head from "next/head";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useState } from "react";
 
+import { ExternalLinkIcon } from "@/components/ExternalLinkIcon";
 import { InnovationDialog } from "@/components/knowledge/InnovationDialog";
 import { VideoEmbed } from "@/components/knowledge/VideoEmbed";
-import { SiteHeader } from "@/components/SiteHeader";
+import { AppNav, caretakerHref, SiteHeader } from "@/components/SiteHeader";
 import {
   fetchKnowledge,
   type InnovationSummary,
   type KnowledgeOverview,
   type KnowledgeResource,
 } from "@/lib/api";
+import { getToken } from "@/lib/auth";
 import { youtubeId } from "@/lib/video";
 
 const PAGE_SIZE = 12;
@@ -73,7 +75,9 @@ function ResourceCard({
             rel="noopener noreferrer"
             className="kb-link mt-auto pt-1"
           >
-            Otwórz<span className="sr-only">: {resource.title}</span> (nowa karta)
+            Otwórz: {resource.title}
+            <ExternalLinkIcon />
+            <span className="sr-only"> (otwiera się w nowej karcie)</span>
           </a>
         ))}
     </li>
@@ -89,6 +93,11 @@ export default function KnowledgePage() {
   const [onlyVideo, setOnlyVideo] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [opened, setOpened] = useState<InnovationSummary | null>(null);
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setLoggedIn(Boolean(getToken()));
+  }, []);
 
   useEffect(() => {
     fetchKnowledge()
@@ -149,30 +158,9 @@ export default function KnowledgePage() {
       <a href="#tresc" className="skip-link">
         Przejdź do treści
       </a>
-      <SiteHeader
-        wide
-        actions={
-          <>
-            <Link href="/#opiekun" className="btn-ghost">
-              Zapytaj opiekuna
-            </Link>
-            <Link href="/kreator" className="btn-ghost">
-              Kreator pomysłów
-            </Link>
-            <Link href="/tester" className="btn-ghost">
-              Tester innowacji
-            </Link>
-            <Link href="/kontakt" className="btn-ghost">
-              Kontakt
-            </Link>
-            <Link href="/login" className="btn-primary">
-              Zaloguj się
-            </Link>
-          </>
-        }
-      />
+      <SiteHeader width="full" actions={<AppNav current="wiedza" />} />
 
-      <main id="tresc" className="kb-page mx-auto max-w-5xl px-6 pb-20 pt-10 sm:pt-14">
+      <main id="tresc" className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
         <header className="animate-fade-up">
           <p className="kb-meta">Zasobnik wiedzy · ROPS Kraków</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
@@ -380,7 +368,7 @@ export default function KnowledgePage() {
               {innovations.length === 0 ? (
                 <p className="kb-card mt-6 text-sm text-[var(--muted)]">
                   Nic nie pasuje do tych filtrów. Zmień wyszukiwanie albo{" "}
-                  <Link href="/#opiekun" className="kb-link">
+                  <Link href={caretakerHref(loggedIn)} className="kb-link">
                     opisz potrzebę opiekunowi
                   </Link>
                   .
@@ -455,7 +443,7 @@ export default function KnowledgePage() {
                 </p>
               </div>
               <Link
-                href="/#opiekun"
+                href={caretakerHref(loggedIn)}
                 className="inline-flex shrink-0 items-center justify-center rounded-lg bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--accent-light)]"
               >
                 Porozmawiaj z opiekunem

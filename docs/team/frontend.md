@@ -28,6 +28,7 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 | `/tester` | Tester innowacji: publiczna lista rozwiązań z ocenami i opiniami; po zalogowaniu zgłoszenie do testów, a po jego przyjęciu opinia (ocena, feedback, usprawnienia) i „Moje testy i opinie” |
 | `/admin/testing` | Zgłoszenia testerów (przyjmij / odrzuć) i moderacja opinii |
 | `/kontakt` | Platforma komunikacji: zakładki Rozmowy (pytania do ROPS, wątki z mentorami i partnerami — po zalogowaniu), Mentorzy i Partnerstwa (tablica ogłoszeń — publiczne); profil z sektorem |
+| `/profil` | Konto zalogowanego: dane + zmiana hasła; wejście z dropdownu przy kółku użytkownika w `AppNav` |
 | `/admin/messages` | Wspólna skrzynka ROPS — pytania użytkowników, odpowiedź, zamknięcie rozmowy |
 | `/admin/login` | Redirect → `/login` |
 | `/api/*` | BFF → FastAPI (nie UI) |

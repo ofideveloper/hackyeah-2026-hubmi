@@ -14,15 +14,15 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
-from app.dependencies.db import SessionDep
-from app.dependencies.logger import get_logger
-from app.llm.suggestions import (
+from ..dependencies.db import SessionDep
+from ..dependencies.logger import get_logger
+from ..llm.suggestions import (
     NewProjectDraft,
     extract_new_project_draft,
     extract_project_ids,
 )
-from app.models import ActualProject, CategoriesOfProjects, ChatHistory, NeedSignal
-from app.scripts.scrape_rops import refresh_new_projects
+from ..models import ActualProject, CategoriesOfProjects, ChatHistory, NeedSignal
+from ..scripts.scrape_rops import refresh_new_projects
 
 load_dotenv(find_dotenv(usecwd=True))
 

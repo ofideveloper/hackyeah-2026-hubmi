@@ -112,6 +112,8 @@ type AssistantChatProps = {
   guestMode?: boolean;
   /** Po zapisaniu sprawy z czatu — odśwież listę na `/app` */
   onReportCreated?: (report: Report) => void;
+  /** Ustaw focus na polu wiadomości (np. po nawigacji do `#opiekun`) */
+  autoFocus?: boolean;
 };
 
 function welcomeMessage(guestMode: boolean): ChatMessage {
@@ -131,11 +133,13 @@ export function AssistantChat({
   userName,
   guestMode = false,
   onReportCreated,
+  autoFocus = false,
 }: AssistantChatProps) {
   const displayName = userName?.trim() || "mieszkańcu";
   const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage(guestMode)]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [preview, setPreview] = useState<ChatProject | null>(null);
   const [chatId, setChatId] = useState<string | null>(null);
   /** Otwarte okno nowego projektu — `messageId` wskazuje wiadomość ze szkicem. */
@@ -164,6 +168,12 @@ export function AssistantChat({
   useEffect(() => {
     setClockReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    const timer = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(timer);
+  }, [autoFocus]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -238,6 +248,12 @@ export function AssistantChat({
       ]);
       if (created_report) {
         onReportCreated?.(created_report);
+        // Po zapisie przewiń do listy spraw (sekcja pod czatem)
+        requestAnimationFrame(() => {
+          document
+            .getElementById("moje-sprawy")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
       }
     } catch (err) {
       setMessages((prev) => [
@@ -529,6 +545,7 @@ export function AssistantChat({
           <label className="min-w-0 flex-1">
             <span className="sr-only">Twoja wiadomość</span>
             <textarea
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}

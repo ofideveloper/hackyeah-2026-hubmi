@@ -6,12 +6,12 @@
   --border: #d5dae3;
   --text: #12131a;
   --muted: #5c6474;
-  --accent: #3661a8;
-  --accent-hover: #27227d;
-  --accent-light: #94c0e5;
-  --accent-soft: rgba(54, 97, 168, 0.12);
+  --accent: #847362;
+  --accent-hover: #6b5c4e;
+  --accent-light: #a8927e;
+  --accent-soft: rgba(132, 115, 98, 0.14);
   --danger: #c23b3b;
-  --ring: rgba(54, 97, 168, 0.28);
+  --ring: rgba(132, 115, 98, 0.3);
   --shadow: 0 1px 2px rgba(18, 19, 26, 0.05), 0 8px 24px rgba(18, 19, 26, 0.06);
 }
 
@@ -24,8 +24,8 @@
 
 body {
   background:
-    radial-gradient(ellipse 90% 55% at 0% -20%, rgba(39, 34, 125, 0.08), transparent 55%),
-    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(148, 192, 229, 0.22), transparent 50%),
+    radial-gradient(ellipse 90% 55% at 0% -20%, rgba(132, 115, 98, 0.1), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(119, 135, 123, 0.22), transparent 50%),
     var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -123,6 +123,140 @@ body {
   background: var(--accent-soft);
 }
 
+/* Header na ciemniejszym tle — tekstowy link (bez bordera) */
+.site-header-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #fff;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.site-header-link:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.site-header-link-active {
+  background: rgba(255, 255, 255, 0.22);
+  font-weight: 600;
+}
+
+.site-header-link-active:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* Wyróżnione CTA w headerze (Zapytaj opiekuna) */
+.site-header-cta {
+  margin-left: 0.25rem;
+}
+
+.site-header-cta-active {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+
+/* Kółko konta + dropdown */
+.user-menu {
+  position: relative;
+  margin-left: 0.15rem;
+}
+
+.user-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.user-menu-trigger:hover,
+.user-menu-trigger[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: #fff;
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  z-index: 40;
+  min-width: 12.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 0.4rem;
+  box-shadow: 0 12px 32px rgba(18, 19, 26, 0.14);
+}
+
+.user-menu-meta {
+  border-bottom: 1px solid var(--border);
+  padding: 0.55rem 0.7rem 0.65rem;
+  margin-bottom: 0.25rem;
+}
+
+.user-menu-name {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.user-menu-email {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.user-menu-item {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  transition: background 0.12s ease;
+}
+
+.user-menu-item:hover {
+  background: rgba(18, 19, 26, 0.06);
+}
+
+/* Header na ciemniejszym tle — outline biały */
+.btn-header-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  border: 1px solid #fff;
+  background: transparent;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-header-outline:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 .surface {
   border-radius: 1rem;
   border: 1px solid var(--border);
@@ -140,7 +274,7 @@ body {
 
 .chat-shell-header {
   background:
-    linear-gradient(135deg, rgba(54, 97, 168, 0.12), transparent 55%),
+    linear-gradient(135deg, rgba(132, 115, 98, 0.12), transparent 55%),
     linear-gradient(180deg, #ffffff, #f4f6fa);
   border-bottom: 1px solid var(--border);
 }
@@ -149,21 +283,21 @@ body {
   color: #ffffff;
   background:
     radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.35), transparent 42%),
-    linear-gradient(145deg, #94c0e5 0%, var(--accent) 52%, #27227d 100%);
+    linear-gradient(145deg, #a8927e 0%, var(--accent) 52%, #6b5c4e 100%);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.25) inset,
-    0 6px 16px rgba(54, 97, 168, 0.28);
+    0 6px 16px rgba(132, 115, 98, 0.28);
 }
 
 .chat-thread {
   background:
-    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(54, 97, 168, 0.06), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(132, 115, 98, 0.06), transparent 55%),
     linear-gradient(180deg, #eef2f8 0%, #e8edf4 100%);
 }
 
 .chat-bubble-caretaker {
   border-radius: 1.15rem 1.15rem 1.15rem 0.35rem;
-  border: 1px solid rgba(54, 97, 168, 0.14);
+  border: 1px solid rgba(132, 115, 98, 0.14);
   background: #ffffff;
   color: var(--text);
   box-shadow: 0 1px 2px rgba(26, 35, 48, 0.04);
@@ -171,9 +305,9 @@ body {
 
 .chat-bubble-user {
   border-radius: 1.15rem 1.15rem 0.35rem 1.15rem;
-  background: linear-gradient(145deg, #3661a8, var(--accent));
+  background: linear-gradient(145deg, #a8927e, var(--accent));
   color: #fff;
-  box-shadow: 0 4px 12px rgba(54, 97, 168, 0.22);
+  box-shadow: 0 4px 12px rgba(132, 115, 98, 0.22);
 }
 
 .chat-bubble-error {
@@ -296,13 +430,13 @@ body {
   flex-direction: column;
   gap: 0.35rem;
   border-radius: 1rem;
-  border: 1px solid rgba(54, 97, 168, 0.2);
+  border: 1px solid rgba(132, 115, 98, 0.2);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(236, 248, 246, 0.95)),
     #fff;
   padding: 0.85rem 0.95rem;
   text-align: left;
-  box-shadow: 0 4px 14px rgba(54, 97, 168, 0.08);
+  box-shadow: 0 4px 14px rgba(132, 115, 98, 0.08);
   transition:
     transform 0.18s ease,
     border-color 0.18s ease,
@@ -311,8 +445,8 @@ body {
 
 .project-suggest-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(54, 97, 168, 0.45);
-  box-shadow: 0 8px 22px rgba(54, 97, 168, 0.14);
+  border-color: rgba(132, 115, 98, 0.45);
+  box-shadow: 0 8px 22px rgba(132, 115, 98, 0.15);
 }
 
 .project-suggest-card:focus-visible {
@@ -362,7 +496,7 @@ body {
   margin-top: 0.65rem;
   width: 100%;
   border-radius: 1rem;
-  border: 1px dashed rgba(54, 97, 168, 0.35);
+  border: 1px dashed rgba(132, 115, 98, 0.35);
   background: rgba(236, 248, 246, 0.85);
   padding: 0.85rem 0.95rem;
 }
@@ -398,7 +532,7 @@ body {
   justify-content: space-between;
   gap: 0.75rem;
   border-radius: 1rem;
-  border: 1px solid rgba(54, 97, 168, 0.28);
+  border: 1px solid rgba(132, 115, 98, 0.28);
   background: rgba(255, 255, 255, 0.92);
   padding: 0.85rem 0.95rem;
 }
@@ -415,11 +549,11 @@ body {
   margin-top: 0.65rem;
   width: 100%;
   border-radius: 1rem;
-  border: 1px solid rgba(54, 97, 168, 0.28);
+  border: 1px solid rgba(132, 115, 98, 0.28);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(236, 248, 246, 0.96));
   padding: 0.9rem 1rem;
-  box-shadow: 0 4px 14px rgba(54, 97, 168, 0.08);
+  box-shadow: 0 4px 14px rgba(132, 115, 98, 0.08);
 }
 
 .location-request-card-urgent {
@@ -489,7 +623,7 @@ body {
   min-height: 7.5rem;
   background:
     radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.35), transparent 45%),
-    linear-gradient(145deg, #94c0e5 0%, var(--accent) 50%, #27227d 100%);
+    linear-gradient(145deg, #a8927e 0%, var(--accent) 50%, #6b5c4e 100%);
   padding: 1.25rem 1.35rem;
 }
 
@@ -570,8 +704,8 @@ body {
   display: inline-flex;
   margin-top: 0.65rem;
   border-radius: 999px;
-  border: 1px solid rgba(54, 97, 168, 0.28);
-  background: rgba(148, 192, 229, 0.22);
+  border: 1px solid rgba(132, 115, 98, 0.28);
+  background: rgba(119, 135, 123, 0.22);
   padding: 0.2rem 0.65rem;
   font-size: 0.6875rem;
   font-weight: 600;
@@ -582,7 +716,7 @@ body {
 
 .chat-chip {
   border-radius: 999px;
-  border: 1px solid rgba(54, 97, 168, 0.28);
+  border: 1px solid rgba(132, 115, 98, 0.28);
   background: rgba(255, 255, 255, 0.85);
   padding: 0.45rem 0.9rem;
   font-size: 0.8125rem;
@@ -686,7 +820,7 @@ body {
 }
 
 .status-pill-progress {
-  background: rgba(70, 120, 160, 0.12);
+  background: rgba(196, 154, 0, 0.122);
   color: #3a5f7a;
 }
 
@@ -705,9 +839,15 @@ body {
   position: sticky;
   top: 0;
   z-index: 20;
-  border-bottom: 1px solid rgba(216, 224, 232, 0.85);
-  background: rgba(246, 248, 250, 0.82);
+  border-bottom: 1px solid rgba(18, 19, 26, 0.08);
+  background: #ada399;
   backdrop-filter: blur(10px);
+}
+
+.brand-logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lp-hero {
@@ -721,8 +861,8 @@ body {
   inset: -20% -10% auto;
   height: 70%;
   background:
-    radial-gradient(ellipse 55% 60% at 15% 40%, rgba(54, 97, 168, 0.16), transparent 70%),
-    radial-gradient(ellipse 45% 50% at 85% 20%, rgba(70, 120, 160, 0.1), transparent 65%);
+    radial-gradient(ellipse 55% 60% at 15% 40%, rgba(132, 115, 98, 0.15), transparent 70%),
+    radial-gradient(ellipse 45% 50% at 85% 20%, rgba(168, 146, 126, 0.1), transparent 65%);
 }
 
 .lp-story {
@@ -741,7 +881,7 @@ body {
   .lp-story-rail {
     gap: 0;
     padding-left: 1.5rem;
-    border-left: 2px solid rgba(54, 97, 168, 0.2);
+    border-left: 2px solid rgba(132, 115, 98, 0.2);
   }
 
   .lp-story-beat {
@@ -762,7 +902,7 @@ body {
     height: 0.7rem;
     border-radius: 999px;
     background: var(--accent);
-    box-shadow: 0 0 0 4px rgba(54, 97, 168, 0.15);
+    box-shadow: 0 0 0 4px rgba(132, 115, 98, 0.15);
   }
 }
 
@@ -808,7 +948,8 @@ body {
 
 .admin-sidebar-brand {
   padding: 1.25rem 1.25rem 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(18, 19, 26, 0.08);
+  /* background: #ada399; */
 }
 
 .admin-nav {
@@ -1015,6 +1156,15 @@ body {
 
 .kb-link:hover {
   color: var(--accent-hover);
+}
+
+.external-link-icon {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-left: 0.28em;
+  vertical-align: -0.08em;
+  opacity: 0.8;
 }
 
 .kb-bar {

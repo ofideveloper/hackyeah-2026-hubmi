@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import type { ReactNode } from "react";
 
+import { BrandLogo } from "@/components/BrandLogo";
 import { useRequireAdmin } from "@/hooks/useRequireAdmin";
 
 const NAV: { href: string; label: string; exact?: boolean }[] = [
@@ -43,9 +44,12 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
       <div className="admin-shell min-h-screen">
         <aside className="admin-sidebar" aria-label="Panel admina">
           <div className="admin-sidebar-brand">
-            <Link href="/admin" className="font-display text-sm font-semibold text-[var(--accent)]">
-              MaloHUB Admin
-            </Link>
+            <div className="inline-flex flex-col gap-1">
+              <BrandLogo href="/admin" size="sm" label="MaloHUB Admin" />
+              <span className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                Admin
+              </span>
+            </div>
             <p className="mt-1 truncate text-xs text-[var(--muted)]">
               {gate.admin.full_name ||
                 `${gate.admin.name} ${gate.admin.surname}`.trim() ||

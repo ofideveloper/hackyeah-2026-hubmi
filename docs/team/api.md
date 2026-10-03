@@ -54,6 +54,7 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 | PATCH | `/conversations/{id}` | `{ status: otwarta\|zamknieta }` — każdy uczestnik |
 | POST | `/conversations/{id}/messages` | Wiadomość `{ body }` (do 2000 znaków); zamknięta rozmowa → 409; ponad 20 wiadomości na minutę → 429 |
 | PATCH | `/users/me` | Profil zalogowanego `{ sector?, organization, mentor_bio }` → `UserPublic` |
+| POST | `/users/me/password` | Zmiana hasła `{ current_password, new_password }` → 204; złe obecne → 400 |
 | PATCH | `/admin/users/{id}` | Nadanie / odebranie roli mentora (admin): `{ role: user\|specialist }`; konto admina → 400 |
 | POST | `/llm/chat` | **Legacy** — bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
 | GET | `/llm/health` | **Legacy** — provider klienta (`fake` / `openai` / `gemini`) |

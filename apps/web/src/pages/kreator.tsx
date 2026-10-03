@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 import { GrantApplicationForm } from "@/components/creator/GrantApplicationForm";
 import { IdeaAssistant } from "@/components/creator/IdeaAssistant";
-import { SiteHeader } from "@/components/SiteHeader";
+import { AppNav, SiteHeader } from "@/components/SiteHeader";
 import { Toast } from "@/components/Toast";
 import {
   deleteIdea,
@@ -193,33 +193,9 @@ export default function IdeaCreatorPage() {
       <a href="#tresc" className="skip-link">
         Przejdź do treści
       </a>
-      <SiteHeader
-        wide
-        actions={
-          <>
-            <Link href="/wiedza" className="btn-ghost">
-              Zasobnik wiedzy
-            </Link>
-            <Link href="/tester" className="btn-ghost">
-              Tester innowacji
-            </Link>
-            <Link href="/kontakt" className="btn-ghost">
-              Kontakt
-            </Link>
-            {user ? (
-              <Link href="/app" className="btn-primary">
-                Moja przestrzeń
-              </Link>
-            ) : (
-              <Link href="/login" className="btn-primary">
-                Zaloguj się
-              </Link>
-            )}
-          </>
-        }
-      />
+      <SiteHeader width="full" actions={<AppNav current="kreator" />} />
 
-      <main id="tresc" className="kb-page mx-auto max-w-5xl px-6 pb-20 pt-10 sm:pt-14">
+      <main id="tresc" className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
         <header className="animate-fade-up">
           <p className="kb-meta">Kreator pomysłów</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">

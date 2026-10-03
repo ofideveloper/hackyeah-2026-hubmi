@@ -61,15 +61,17 @@ src/
 
 ## Design / UI (aktualny baseline)
 
-Motyw: **light**, lekki, dużo powietrza. Tokeny: `apps/web/src/styles/globals.css`.
+Motyw: **light**, szaro–czarny + niebieski brand. Tokeny: `apps/web/src/styles/globals.css`.
 
 | Token | Rola |
 |-------|------|
-| `--bg` `#f6f8fa` | tło |
+| `--bg` `#f3f5f8` | tło |
 | `--bg-elevated` `#ffffff` | surface formularzy / tabeli |
-| `--text` `#1a2330` | tekst |
-| `--muted` `#5c6b7a` | opis |
-| `--accent` `#0d8f82` | CTA / brand accent |
+| `--text` `#12131a` | tekst (blisko czerni) |
+| `--muted` `#5c6474` | opis |
+| `--accent` `#3661a8` | CTA / brand |
+| `--accent-hover` `#27227d` | hover / głęboki brand |
+| `--accent-light` `#94c0e5` | miękkie highlighty / gradienty |
 | `.btn-primary` / `.btn-ghost` / `.field` / `.surface` | wspólne klasy UI |
 
 - Typografia: **Sora** (display / brand), **Manrope** (body) — `pages/_app.tsx`

@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f6f8fa;
+  --bg: #f3f5f8;
   --bg-elevated: #ffffff;
-  --border: #d8e0e8;
-  --text: #1a2330;
-  --muted: #5c6b7a;
-  --accent: #0d8f82;
-  --accent-hover: #0a7369;
-  --accent-soft: rgba(13, 143, 130, 0.1);
+  --border: #d5dae3;
+  --text: #12131a;
+  --muted: #5c6474;
+  --accent: #3661a8;
+  --accent-hover: #27227d;
+  --accent-light: #94c0e5;
+  --accent-soft: rgba(54, 97, 168, 0.12);
   --danger: #c23b3b;
-  --ring: rgba(13, 143, 130, 0.28);
-  --shadow: 0 1px 2px rgba(26, 35, 48, 0.04), 0 8px 24px rgba(26, 35, 48, 0.04);
+  --ring: rgba(54, 97, 168, 0.28);
+  --shadow: 0 1px 2px rgba(18, 19, 26, 0.05), 0 8px 24px rgba(18, 19, 26, 0.06);
 }
 
 @theme inline {
@@ -23,8 +24,8 @@
 
 body {
   background:
-    radial-gradient(ellipse 90% 55% at 0% -20%, rgba(13, 143, 130, 0.09), transparent 55%),
-    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(70, 120, 160, 0.07), transparent 50%),
+    radial-gradient(ellipse 90% 55% at 0% -20%, rgba(39, 34, 125, 0.08), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(148, 192, 229, 0.22), transparent 50%),
     var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -139,8 +140,8 @@ body {
 
 .chat-shell-header {
   background:
-    linear-gradient(135deg, rgba(13, 143, 130, 0.12), transparent 55%),
-    linear-gradient(180deg, #ffffff, #f7faf9);
+    linear-gradient(135deg, rgba(54, 97, 168, 0.12), transparent 55%),
+    linear-gradient(180deg, #ffffff, #f4f6fa);
   border-bottom: 1px solid var(--border);
 }
 
@@ -148,21 +149,21 @@ body {
   color: #ffffff;
   background:
     radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.35), transparent 42%),
-    linear-gradient(145deg, #2bb8a4 0%, var(--accent) 52%, #0a6e65 100%);
+    linear-gradient(145deg, #94c0e5 0%, var(--accent) 52%, #27227d 100%);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.25) inset,
-    0 6px 16px rgba(13, 143, 130, 0.28);
+    0 6px 16px rgba(54, 97, 168, 0.28);
 }
 
 .chat-thread {
   background:
-    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(13, 143, 130, 0.06), transparent 55%),
-    linear-gradient(180deg, #f3f7f6 0%, #eef3f5 100%);
+    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(54, 97, 168, 0.06), transparent 55%),
+    linear-gradient(180deg, #eef2f8 0%, #e8edf4 100%);
 }
 
 .chat-bubble-caretaker {
   border-radius: 1.15rem 1.15rem 1.15rem 0.35rem;
-  border: 1px solid rgba(13, 143, 130, 0.14);
+  border: 1px solid rgba(54, 97, 168, 0.14);
   background: #ffffff;
   color: var(--text);
   box-shadow: 0 1px 2px rgba(26, 35, 48, 0.04);
@@ -170,9 +171,9 @@ body {
 
 .chat-bubble-user {
   border-radius: 1.15rem 1.15rem 0.35rem 1.15rem;
-  background: linear-gradient(145deg, #12a090, var(--accent));
+  background: linear-gradient(145deg, #3661a8, var(--accent));
   color: #fff;
-  box-shadow: 0 4px 12px rgba(13, 143, 130, 0.22);
+  box-shadow: 0 4px 12px rgba(54, 97, 168, 0.22);
 }
 
 .chat-bubble-error {
@@ -295,13 +296,13 @@ body {
   flex-direction: column;
   gap: 0.35rem;
   border-radius: 1rem;
-  border: 1px solid rgba(13, 143, 130, 0.2);
+  border: 1px solid rgba(54, 97, 168, 0.2);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(236, 248, 246, 0.95)),
     #fff;
   padding: 0.85rem 0.95rem;
   text-align: left;
-  box-shadow: 0 4px 14px rgba(13, 143, 130, 0.08);
+  box-shadow: 0 4px 14px rgba(54, 97, 168, 0.08);
   transition:
     transform 0.18s ease,
     border-color 0.18s ease,
@@ -310,8 +311,8 @@ body {
 
 .project-suggest-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(13, 143, 130, 0.45);
-  box-shadow: 0 8px 22px rgba(13, 143, 130, 0.14);
+  border-color: rgba(54, 97, 168, 0.45);
+  box-shadow: 0 8px 22px rgba(54, 97, 168, 0.14);
 }
 
 .project-suggest-card:focus-visible {
@@ -361,7 +362,7 @@ body {
   margin-top: 0.65rem;
   width: 100%;
   border-radius: 1rem;
-  border: 1px dashed rgba(13, 143, 130, 0.35);
+  border: 1px dashed rgba(54, 97, 168, 0.35);
   background: rgba(236, 248, 246, 0.85);
   padding: 0.85rem 0.95rem;
 }
@@ -392,11 +393,11 @@ body {
   margin-top: 0.65rem;
   width: 100%;
   border-radius: 1rem;
-  border: 1px solid rgba(13, 143, 130, 0.28);
+  border: 1px solid rgba(54, 97, 168, 0.28);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(236, 248, 246, 0.96));
   padding: 0.9rem 1rem;
-  box-shadow: 0 4px 14px rgba(13, 143, 130, 0.08);
+  box-shadow: 0 4px 14px rgba(54, 97, 168, 0.08);
 }
 
 .location-request-card-urgent {
@@ -466,7 +467,7 @@ body {
   min-height: 7.5rem;
   background:
     radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.35), transparent 45%),
-    linear-gradient(145deg, #2bb8a4 0%, var(--accent) 50%, #0a6e65 100%);
+    linear-gradient(145deg, #94c0e5 0%, var(--accent) 50%, #27227d 100%);
   padding: 1.25rem 1.35rem;
 }
 
@@ -545,7 +546,7 @@ body {
 
 .chat-chip {
   border-radius: 999px;
-  border: 1px solid rgba(13, 143, 130, 0.28);
+  border: 1px solid rgba(54, 97, 168, 0.28);
   background: rgba(255, 255, 255, 0.85);
   padding: 0.45rem 0.9rem;
   font-size: 0.8125rem;
@@ -568,18 +569,13 @@ body {
   width: 100%;
   min-height: 3.25rem;
   resize: none;
-  border-radius: 1rem;
+  border-radius: 0.625rem;
   border: 1px solid var(--border);
   background: var(--bg);
-  padding: 0.85rem 1rem;
+  padding: 0.75rem 0.9rem;
   font-size: 0.9375rem;
   line-height: 1.45;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-}
-
-.chat-input-with-send {
-  padding-right: 2.6rem;
-  padding-top: 0.9rem;
 }
 
 .chat-input:focus {
@@ -593,32 +589,36 @@ body {
   opacity: 0.65;
 }
 
+/* Jak aivoxpop: size=icon obok textarea, wyrównany do góry */
 .chat-send {
-  position: absolute;
-  top: 0.45rem;
-  right: 0.45rem;
   display: inline-flex;
-  height: 1.85rem;
-  width: 1.85rem;
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  align-self: flex-start;
   border: none;
-  border-radius: 0.65rem;
+  border-radius: 0.5rem;
   padding: 0;
   color: #fff;
   background: var(--accent);
-  box-shadow: 0 1px 2px rgba(13, 143, 130, 0.25);
-  transition: background 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 1px 2px rgba(18, 19, 26, 0.08);
+  transition: background 0.15s ease, opacity 0.15s ease;
 }
 
 .chat-send:hover:not(:disabled) {
-  background: #0b7a6f;
-  transform: translateY(-0.5px);
+  background: var(--accent-hover);
 }
 
 .chat-send:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
+}
+
+.chat-send:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
 }
 
 .sr-only {
@@ -680,7 +680,7 @@ body {
   inset: -20% -10% auto;
   height: 70%;
   background:
-    radial-gradient(ellipse 55% 60% at 15% 40%, rgba(13, 143, 130, 0.16), transparent 70%),
+    radial-gradient(ellipse 55% 60% at 15% 40%, rgba(54, 97, 168, 0.16), transparent 70%),
     radial-gradient(ellipse 45% 50% at 85% 20%, rgba(70, 120, 160, 0.1), transparent 65%);
 }
 
@@ -700,7 +700,7 @@ body {
   .lp-story-rail {
     gap: 0;
     padding-left: 1.5rem;
-    border-left: 2px solid rgba(13, 143, 130, 0.2);
+    border-left: 2px solid rgba(54, 97, 168, 0.2);
   }
 
   .lp-story-beat {
@@ -721,7 +721,7 @@ body {
     height: 0.7rem;
     border-radius: 999px;
     background: var(--accent);
-    box-shadow: 0 0 0 4px rgba(13, 143, 130, 0.15);
+    box-shadow: 0 0 0 4px rgba(54, 97, 168, 0.15);
   }
 }
 

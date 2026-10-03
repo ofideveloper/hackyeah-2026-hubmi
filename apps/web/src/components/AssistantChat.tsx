@@ -74,7 +74,7 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
         />
         <path
           d="M16 26.2c-.35-.28-2.2-1.55-2.9-3-.7-1.5-.3-2.7.8-3 .6-.15 1.15.1 1.55.55.4-.45.95-.7 1.55-.55 1.1.3 1.5 1.5.8 3-.7 1.45-2.55 2.72-2.9 3Z"
-          fill="#dff7f3"
+          fill="#e8f1fa"
         />
       </svg>
     </div>
@@ -391,17 +391,19 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
       )}
 
       <form onSubmit={onSubmit} className="chat-composer border-t border-[var(--border)] px-4 py-4 sm:px-6">
-        <label className="relative block min-w-0">
-          <span className="sr-only">Twoja wiadomość</span>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            rows={2}
-            disabled={busy}
-            placeholder="Napisz, czego potrzebujesz…"
-            className="chat-input chat-input-with-send"
-          />
+        <div className="flex items-start gap-2">
+          <label className="min-w-0 flex-1">
+            <span className="sr-only">Twoja wiadomość</span>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              rows={2}
+              disabled={busy}
+              placeholder="Napisz, czego potrzebujesz…"
+              className="chat-input"
+            />
+          </label>
           <button
             type="submit"
             disabled={busy || !input.trim()}
@@ -410,11 +412,11 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
             title="Wyślij"
           >
             <svg
-              className="h-3.5 w-3.5"
+              className="h-4 w-4"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2.2"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden
@@ -423,7 +425,7 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
               <path d="M22 2 11 13" />
             </svg>
           </button>
-        </label>
+        </div>
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-[11px] text-[var(--muted)]">
             Enter wysyła · Shift+Enter nowa linia
@@ -432,10 +434,24 @@ export function AssistantChat({ userName, guestMode = false }: AssistantChatProp
             type="button"
             onClick={startNewChat}
             disabled={busy || onlyWelcome}
-            className="btn-ghost shrink-0 px-2.5 py-1.5 text-xs font-medium"
-            title="Wyczyść rozmowę i zacznij od nowa"
+            className="btn-ghost inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-2 py-0 text-[11px] font-medium leading-none"
+            title="Zacznij nową sprawę — wyczyść rozmowę"
           >
-            Nowy chat
+            <svg
+              className="h-3 w-3"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+              <path d="m9.5 8.5 5 5" />
+              <path d="m14.5 8.5-5 5" />
+            </svg>
+            Nowa sprawa
           </button>
         </div>
       </form>

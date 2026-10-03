@@ -4,7 +4,7 @@ export default function Document() {
   return (
     <Html lang="pl">
       <Head>
-        <meta name="theme-color" content="#0d8f82" />
+        <meta name="theme-color" content="#27227d" />
         <meta name="application-name" content="HubMI" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

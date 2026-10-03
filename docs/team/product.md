@@ -80,3 +80,4 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | 2026-10 | Prompt opiekuna w `caretaker_system.md` | Jedno źródło zaleceń formatu (Markdown) pod UI czatu |
 | 2026-10 | Intake nowego projektu z czatu | Gdy brak dopasowania — AI zbiera dane, admin tworzy projekt w jednostce |
 | 2026-10 | Czat opiekuna na landingu (gość) | Demo bez bariery rejestracji; propozycje do admina tylko po zalogowaniu |
+| 2026-10 | Paleta szaro–czarna + `#27227d` / `#3661a8` / `#94c0e5` | Brand zamiast teal |

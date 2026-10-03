@@ -167,7 +167,7 @@ export default function HomePage() {
                 </div>
                 <Link
                   href="/register"
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-emerald-50"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
                 >
                   Załóż konto
                   <span aria-hidden="true">→</span>

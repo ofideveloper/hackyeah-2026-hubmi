@@ -21,7 +21,7 @@ from .routes import (
     units,
     users,
 )
-from .seed import seed_admin_user, seed_knowledge_resources
+from .seed import seed_admin_user, seed_innovation_library, seed_knowledge_resources
 
 setup_logging()
 logger = get_logger(__name__)
@@ -81,6 +81,7 @@ async def on_startup():
     with Session(engine) as session:
         seed_admin_user(session)
         seed_knowledge_resources(session)
+        seed_innovation_library(session)
     logger.info("API gotowe")
 
 

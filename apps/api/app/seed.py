@@ -1,9 +1,12 @@
+import threading
+
 from sqlmodel import Session, select
 
 from .config import get_settings
 from .dependencies.auth import get_user, hash_password
 from .dependencies.logger import get_logger
-from .models import KnowledgeResource, KnowledgeResourceKind, RoleEnum, User
+from .models import ActualProject, KnowledgeResource, KnowledgeResourceKind, RoleEnum, User
+from .scripts.scrape_rops import refresh_new_projects
 
 logger = get_logger(__name__)
 
@@ -70,3 +73,28 @@ def seed_knowledge_resources(session: Session) -> None:
         )
     session.commit()
     logger.info("Zasobnik wiedzy: dodano %s zasobów startowych", len(KNOWLEDGE_SEED))
+
+
+def _scrape_innovation_library() -> None:
+    try:
+        added = refresh_new_projects()
+    except Exception:
+        logger.exception("Biblioteka Innowacji: pobieranie startowe nie powiodło się")
+        return
+    logger.info("Biblioteka Innowacji: pobrano %s projektów na starcie", added)
+
+
+def seed_innovation_library(session: Session) -> threading.Thread | None:
+    """Pusta Biblioteka Innowacji → scraper rops.krakow.pl w wątku w tle.
+
+    Pełne pobranie trwa kilka minut, więc nie blokuje startu API. Gdy projekty już są,
+    nic nie robi — nowe dociąga admin (`POST /knowledge/refresh`).
+    """
+    if not get_settings().scrape_on_startup:
+        return None
+    if session.exec(select(ActualProject)).first() is not None:
+        return None
+    logger.info("Biblioteka Innowacji jest pusta — pobieram z rops.krakow.pl w tle")
+    thread = threading.Thread(target=_scrape_innovation_library, name="scrape-rops", daemon=True)
+    thread.start()
+    return thread

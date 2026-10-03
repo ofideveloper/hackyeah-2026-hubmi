@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     admin_password: str = "admin12345"
     admin_full_name: str = "MaloHUB Admin"
     log_level: str = "INFO"
+    scrape_on_startup: bool = True
 
     # LLM: `fake` | `openai` | `gemini`
     llm_provider: str = "fake"

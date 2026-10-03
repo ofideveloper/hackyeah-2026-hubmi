@@ -355,54 +355,6 @@ async def chat(payload: ChatRequest, session: SessionDep):
                 detail="Rozmowa nie istnieje",
             )
 
-    units = list(
-        session.exec(select(OrganizationalUnit).order_by(col(OrganizationalUnit.name))).all()
-    )
-    units_by_id = {u.id: u for u in units}
-    projects = list(
-        session.exec(select(UnitProject).order_by(col(UnitProject.created_at).desc())).all()
-    )
-
-    history = _history_messages(payload)
-    # Fallback: jeśli front nie przysłał historii, weź z DB (chat_id)
-    if not history and chat is not None and chat.all_conversation:
-        try:
-            stored = json.loads(chat.all_conversation)
-            history = [
-                {"role": t["role"], "content": t["text"]}
-                for t in stored
-                if t.get("role") in {"user", "assistant"} and t.get("text")
-            ][-_MAX_HISTORY:]
-        except (json.JSONDecodeError, TypeError, KeyError):
-            history = []
-
-    history_blob = "\n".join(m["content"] for m in history if m["role"] == "user")
-    user_message = payload.message.strip()
-    preferred = payload.mode if payload.mode in VALID_MODES else None
-    # Potwierdzenie CTA zawsze trzyma / włącza tryb report
-    if is_report_confirm(user_message):
-        preferred = "report"
-    mode = detect_chat_mode(user_message, history_blob, preferred)
-
-    match_text = f"{history_blob}\n{user_message}".strip()
-    allow_match = _message_has_substance(user_message) or _message_has_substance(history_blob)
-    strong_preview = (
-        _strong_project_matches(projects, units_by_id, match_text) if projects else []
-    )
-    # Naturalny opis / nazwa projektu (bez chipa) → katalog przy twardym trafieniu scoringu
-    if mode == "clarify" and strong_preview:
-        mode = "catalog"
-        allow_match = True
-
-    system = _build_system_context(
-        units, projects, units_by_id, user, user_message, history_blob, mode
-    )
-    messages = (
-        [{"role": "system", "content": system}]
-        + history
-        + [{"role": "user", "content": user_message}]
-    )
-
     try:
         history, verdict, catalog = await continue_conversation(
             session, history, payload.message

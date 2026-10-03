@@ -90,7 +90,7 @@ export function AdminKnowledgeView() {
           a.title.localeCompare(b.title, "pl"),
         ),
       );
-      setNotice(editingId ? "Zapisano zmiany." : "Dodano zasób — jest już widoczny w Zasobniku.");
+      setNotice(editingId ? "Zapisano zmiany." : "Dodano zasób - jest już widoczny w Zasobniku.");
       resetForm();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się zapisać zasobu");
@@ -124,7 +124,7 @@ export function AdminKnowledgeView() {
       setNotice(
         added > 0
           ? `Dodano nowe innowacje z Biblioteki ROPS: ${added}.`
-          : "Biblioteka jest aktualna — brak nowych innowacji.",
+          : "Biblioteka jest aktualna - brak nowych innowacji.",
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się odświeżyć biblioteki");

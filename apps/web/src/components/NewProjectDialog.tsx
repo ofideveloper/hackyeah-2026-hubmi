@@ -1,5 +1,5 @@
 /**
- * Okno zgłoszenia nowego projektu — otwierane, gdy opiekun nie znalazł
+ * Okno zgłoszenia nowego projektu - otwierane, gdy opiekun nie znalazł
  * dopasowania w bazie. Szkic z czatu można poprawić przed wysłaniem.
  */
 import Link from "next/link";
@@ -11,7 +11,7 @@ import { getToken } from "@/lib/auth";
 
 type NewProjectDialogProps = {
   draft: NewProjectDraft;
-  /** Gość nie ma konta — zamiast formularza dostaje zachętę do rejestracji */
+  /** Gość nie ma konta - zamiast formularza dostaje zachętę do rejestracji */
   guestMode?: boolean;
   onClose: () => void;
   onCreated: (proposal: ProjectProposal) => void;
@@ -106,7 +106,7 @@ export function NewProjectDialog({
           ) : (
             <form onSubmit={onSubmit}>
               <p className="text-sm text-[var(--muted)]">
-                Przygotowałem szkic na podstawie rozmowy — popraw go, zanim trafi do zespołu.
+                Przygotowałem szkic na podstawie rozmowy - popraw go, zanim trafi do zespołu.
               </p>
               <div className="mt-4 space-y-4">
                 <label className="block text-sm">

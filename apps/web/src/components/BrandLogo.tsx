@@ -24,7 +24,7 @@ export function BrandLogo({
   href = "/",
   size = "md",
   className = "",
-  label = "MaloHUB — strona główna",
+  label = "MaloHUB - strona główna",
 }: BrandLogoProps) {
   const dim = SIZE[size];
   const mark = (

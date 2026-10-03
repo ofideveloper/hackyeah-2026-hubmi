@@ -254,7 +254,7 @@ export function AdminPanel() {
       <section className="mt-10">
         <h2 className="text-base font-semibold">Jednostki organizacyjne</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Dodaj jednostkę i określ teren oraz kompetencje — mieszkańcy będą do niej kierować
+          Dodaj jednostkę i określ teren oraz kompetencje - mieszkańcy będą do niej kierować
           zgłoszenia.
         </p>
 
@@ -301,7 +301,7 @@ export function AdminPanel() {
 
         <ul className="mt-6 space-y-3">
           {units.length === 0 && (
-            <li className="text-sm text-[var(--muted)]">Brak jednostek — dodaj pierwszą powyżej.</li>
+            <li className="text-sm text-[var(--muted)]">Brak jednostek - dodaj pierwszą powyżej.</li>
           )}
           {units.map((unit) => (
             <li key={unit.id} className="surface p-4">
@@ -392,7 +392,7 @@ export function AdminPanel() {
 
         <ul className="mt-6 space-y-3">
           {projects.length === 0 && (
-            <li className="text-sm text-[var(--muted)]">Brak projektów — dodaj pierwszy powyżej.</li>
+            <li className="text-sm text-[var(--muted)]">Brak projektów - dodaj pierwszy powyżej.</li>
           )}
           {projects.map((project) => (
             <li key={project.id} className="surface p-4">
@@ -434,7 +434,7 @@ export function AdminPanel() {
       <section className="mt-12">
         <h2 className="text-base font-semibold">Sprawy mieszkańców</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Sprawy otwiera AI / system — Ty ustawiasz status widoczny dla mieszkańca.
+          Sprawy otwiera AI / system - Ty ustawiasz status widoczny dla mieszkańca.
         </p>
         {reportError && (
           <p className="mt-3 text-sm text-[var(--danger)]" role="alert">

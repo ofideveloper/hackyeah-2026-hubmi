@@ -23,10 +23,20 @@
 }
 
 body {
-  background:
-    radial-gradient(ellipse 90% 55% at 0% -20%, rgba(132, 115, 98, 0.1), transparent 55%),
-    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(119, 135, 123, 0.22), transparent 50%),
-    var(--bg);
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(243, 245, 248, 0.55) 0%,
+      rgba(243, 245, 248, 0.72) 45%,
+      rgba(243, 245, 248, 0.82) 100%
+    ),
+    url("/background.png");
+  /* Kafelki od środka u góry; scrolluje wraz ze stroną */
+  background-size: auto, min(1600px, 140vw);
+  background-position: center top, center top;
+  background-repeat: no-repeat, repeat-y;
+  background-attachment: scroll;
   color: var(--text);
   min-height: 100vh;
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;

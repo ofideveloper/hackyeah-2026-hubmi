@@ -106,7 +106,7 @@ export default function HomePage() {
         <title>MaloHUB — Twoja sprawa ma znaczenie</title>
         <meta
           name="description"
-          content="Zgłaszaj problemy, wydarzenia i informacje do właściwych jednostek. Prosto, lokalnie i w jednym miejscu."
+          content="Opisz sprawę opiekunowi, przeglądaj wiedzę i innowacje społeczne. Prosto, lokalnie i w jednym miejscu."
         />
       </Head>
 
@@ -130,8 +130,8 @@ export default function HomePage() {
                 okolicy.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8">
-                Problem, wydarzenie, pomysł? Znajdź jednostkę, która odpowiada za
-                Twój teren, i przekaż jej sprawę bez szukania właściwego kontaktu.
+                Problem, wydarzenie albo pomysł? Opisz go opiekunowi albo zajrzyj do
+                zasobnika wiedzy i gotowych rozwiązań — bez zgadywania, od czego zacząć.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <a href="#opiekun" className="btn-primary gap-2 px-5 py-3 text-base">

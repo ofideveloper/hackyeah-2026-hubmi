@@ -7,6 +7,7 @@ import { getToken } from "@/lib/auth";
 const LINKS = [
   { href: "/admin/units", label: "Jednostki", hint: "Teren i kompetencje" },
   { href: "/admin/projects", label: "Projekty", hint: "Przydział do jednostek" },
+  { href: "/admin/catalog", label: "Katalog projektów", hint: "Przegląd projektów z bazy" },
   { href: "/admin/proposals", label: "Propozycje", hint: "Z czatu → do jednostki" },
   { href: "/admin/reports", label: "Sprawy", hint: "Statusy dla mieszkańców" },
   { href: "/admin/knowledge", label: "Zasobnik wiedzy", hint: "Raporty, materiały, biblioteka" },

@@ -640,3 +640,219 @@ export async function fetchNeedTrends(token: string): Promise<NeedTrends> {
     await fetch(`${API_BASE}/admin/trends`, { headers: authHeaders(token), cache: "no-store" }),
   );
 }
+
+// --- Kreator pomysłów (`apps/api/app/routes/ideas.py`) ---
+
+export type IdeaStage = "pomysl" | "prototyp" | "test_mikroskala" | "dobra_praktyka";
+
+/** Fiszka = `ProposalOfNewProject` w API: `name` to tytuł, `description` to krótki opis. */
+export type IdeaInput = {
+  name: string;
+  description: string;
+  essence: string;
+  audience: string;
+  stage: IdeaStage;
+  /** Obszar jest wymagany; `null` tylko w pustym formularzu */
+  category_id: string | null;
+  canvas: Record<string, string>;
+};
+
+export type Idea = Omit<IdeaInput, "canvas" | "category_id"> & {
+  id: string;
+  category_id: string;
+  author_name: string | null;
+  category_name: string | null;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  modified_at: string;
+};
+
+/** Fiszka autora — razem z roboczą canvą. */
+export type MyIdea = Idea & { canvas: Record<string, string> };
+
+export type IdeaStatus = Idea["status"];
+
+/** Fiszka w panelu admina — pełne dane autora i canva. */
+export type AdminIdea = MyIdea & {
+  author_full_name: string | null;
+  author_email: string | null;
+};
+
+export type IdeaAssistantAction = "develop" | "unconventional" | "canvas" | "visualize" | "ask";
+
+export type IdeaAssistantReply = {
+  reply: string;
+  svg: string | null;
+  /** Akcja „canvas”: propozycje rozbite na pola canvy */
+  canvas: Record<string, string> | null;
+};
+
+export type GrantQuestion = { key: string; label: string; hint: string };
+
+export type GrantCall = {
+  id: string;
+  title: string;
+  description: string;
+  opens_on: string;
+  closes_on: string;
+  questions: GrantQuestion[];
+  is_open: boolean;
+  applications_submitted: number | null;
+};
+
+export type GrantCallInput = Pick<
+  GrantCall,
+  "title" | "description" | "opens_on" | "closes_on" | "questions"
+>;
+
+export type GrantApplication = {
+  id: string;
+  call_id: string;
+  idea_id: string | null;
+  idea_title: string | null;
+  answers: Record<string, string>;
+  status: "szkic" | "zlozony";
+  updated_at: string;
+  submitted_at: string | null;
+  author_name: string | null;
+  author_email: string | null;
+};
+
+function jsonRequest(token: string, method: string, payload: unknown): RequestInit {
+  return {
+    method,
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    body: JSON.stringify(payload),
+  };
+}
+
+export async function fetchIdeas(): Promise<Idea[]> {
+  return jsonOrThrow(await fetch(`${API_BASE}/ideas`, { cache: "no-store" }));
+}
+
+export async function fetchMyIdeas(token: string): Promise<MyIdea[]> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/ideas/mine`, { headers: authHeaders(token), cache: "no-store" }),
+  );
+}
+
+export async function saveIdea(
+  token: string,
+  payload: IdeaInput,
+  ideaId?: string | null,
+): Promise<MyIdea> {
+  const base = `${API_BASE}/ideas`;
+  return jsonOrThrow(
+    await fetch(
+      ideaId ? `${base}/${ideaId}` : base,
+      jsonRequest(token, ideaId ? "PATCH" : "POST", payload),
+    ),
+  );
+}
+
+export async function deleteIdea(token: string, ideaId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/ideas/${ideaId}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+}
+
+export async function fetchAdminIdeas(token: string): Promise<AdminIdea[]> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/admin/ideas`, { headers: authHeaders(token), cache: "no-store" }),
+  );
+}
+
+export async function setIdeaStatus(
+  token: string,
+  ideaId: string,
+  status: IdeaStatus,
+): Promise<AdminIdea> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/admin/ideas/${ideaId}`, jsonRequest(token, "PATCH", { status })),
+  );
+}
+
+export async function askIdeaAssistant(
+  token: string,
+  action: IdeaAssistantAction,
+  draft: IdeaInput,
+  question = "",
+): Promise<IdeaAssistantReply> {
+  const { name, description, essence, audience, stage, canvas } = draft;
+  const idea = { name, description, essence, audience, stage, canvas };
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/ideas/assistant`, jsonRequest(token, "POST", { action, idea, question })),
+  );
+}
+
+export async function fetchOpenGrantCalls(): Promise<GrantCall[]> {
+  return jsonOrThrow(await fetch(`${API_BASE}/grant-calls`, { cache: "no-store" }));
+}
+
+export async function fetchMyGrantApplication(
+  token: string,
+  callId: string,
+): Promise<GrantApplication | null> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/grant-calls/${callId}/application`, {
+      headers: authHeaders(token),
+      cache: "no-store",
+    }),
+  );
+}
+
+export async function saveGrantApplication(
+  token: string,
+  callId: string,
+  payload: { idea_id: string | null; answers: Record<string, string>; submit: boolean },
+): Promise<GrantApplication> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/grant-calls/${callId}/application`, jsonRequest(token, "PUT", payload)),
+  );
+}
+
+export async function fetchAdminGrantCalls(token: string): Promise<GrantCall[]> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/admin/grant-calls`, { headers: authHeaders(token), cache: "no-store" }),
+  );
+}
+
+export async function saveGrantCall(
+  token: string,
+  payload: GrantCallInput,
+  callId?: string | null,
+): Promise<GrantCall> {
+  const base = `${API_BASE}/admin/grant-calls`;
+  return jsonOrThrow(
+    await fetch(
+      callId ? `${base}/${callId}` : base,
+      jsonRequest(token, callId ? "PATCH" : "POST", payload),
+    ),
+  );
+}
+
+export async function deleteGrantCall(token: string, callId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin/grant-calls/${callId}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+}
+
+export async function fetchGrantApplications(
+  token: string,
+  callId: string,
+): Promise<GrantApplication[]> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/admin/grant-calls/${callId}/applications`, {
+      headers: authHeaders(token),
+      cache: "no-store",
+    }),
+  );
+}

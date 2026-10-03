@@ -15,12 +15,16 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 | `/admin` | Panel admin — przegląd (tylko `role=admin`) |
 | `/admin/units` | Jednostki — create + edycja (`name`/`territory`/`competencies`) + delete |
 | `/admin/projects` | Projekty jednostek (`UnitProject`) — create + pełna edycja + delete |
+| `/admin/catalog` | Katalog projektów z bazy (`ActualProject`) — przegląd, szukanie, szczegóły (tylko odczyt, przez `/knowledge`) |
 | `/admin/proposals` | Propozycje projektów z czatu → jednostka |
 | `/admin/reports` | Sprawy / statusy |
 | `/admin/users` | Użytkownicy |
 | `/wiedza` | Zasobnik wiedzy (publiczny): wyzwania, Biblioteka Innowacji (`ActualProject`), materiały |
 | `/admin/knowledge` | Redakcja zasobów Zasobnika (`KnowledgeResource`) + dociąganie nowych innowacji |
 | `/admin/trends` | Trendy potrzeb z czatu wg obszarów (`NeedSignal`) — tylko admin |
+| `/kreator` | Kreator pomysłów: publiczna lista fiszek; po zalogowaniu fiszka + canva + asystent AI; generator wniosków tylko przy trwającym naborze |
+| `/admin/ideas` | Fiszki z Kreatora pomysłów — podgląd (autor, canva), zatwierdź / odrzuć / usuń |
+| `/admin/grants` | Nabory grantowe — terminy, pola wniosku, podgląd złożonych wniosków |
 | `/admin/login` | Redirect → `/login` |
 | `/api/*` | BFF → FastAPI (nie UI) |
 

@@ -55,6 +55,12 @@ export default function HomePage() {
               Zasobnik wiedzy
             </Link>
             <Link
+              href="/kreator"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
+            >
+              Kreator pomysłów
+            </Link>
+            <Link
               href="/login"
               className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
             >

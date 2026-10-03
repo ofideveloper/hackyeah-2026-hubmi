@@ -25,6 +25,16 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 | POST | `/chat` | Body: `{ message, history?, chat_id? }` → `{ reply, chat_id, suggested_projects[], report_offer, created_report?, project_proposal?, location_request? }` (JWT opcjonalny) |
 | PATCH | `/admin/units/{id}` | Edycja jednostki (`name` / `territory` / `competencies`) |
 | PATCH | `/admin/projects/{id}` | Edycja projektu jednostki (`unit_id` / `name` / `description`) |
+| GET | `/ideas` | Publiczna lista fiszek Kreatora pomysłów (bez canvy; autor jako „Imię N.”; bez `status=rejected`) |
+| GET | `/ideas/mine` | Fiszki zalogowanego — z canvą |
+| POST / PATCH / DELETE | `/ideas`, `/ideas/{id}` | Fiszka (`name`, `description`, `essence`, `audience`, `stage`, `category_id`, `canvas{}`) — edycja tylko autor; usuwa autor lub admin |
+| GET | `/admin/ideas` | Wszystkie fiszki (admin): pełny autor, e-mail, canva, także odrzucone |
+| PATCH | `/admin/ideas/{id}` | Zmiana statusu fiszki (admin): `{ status: pending\|approved\|rejected }`; `rejected` ukrywa ją publicznie |
+| POST | `/ideas/assistant` | Asystent kreatora (zalogowany): `{ action: develop\|unconventional\|canvas\|visualize\|ask, idea, question? }` → `{ reply, svg? }` |
+| GET | `/grant-calls` | Publicznie tylko **trwające** nabory (z pytaniami wniosku) |
+| GET / PUT | `/grant-calls/{id}/application` | Wniosek zalogowanego w naborze: szkic lub `submit: true`; po złożeniu / po terminie → 409 |
+| GET / POST / PATCH / DELETE | `/admin/grant-calls[/{id}]` | Nabory (admin): terminy + lista pytań; DELETE → 409, gdy są złożone wnioski |
+| GET | `/admin/grant-calls/{id}/applications` | Złożone wnioski naboru (admin; szkice są prywatne) |
 | POST | `/llm/chat` | **Legacy** — bypass LLM (`messages[]`, `model?`) → `{ id, model, provider, content }` |
 | GET | `/llm/health` | **Legacy** — provider klienta (`fake` / `openai` / `gemini`) |
 | GET | `/health` | Healthcheck (`{ status: "healthy" }`) |
@@ -33,7 +43,9 @@ Router `/users` jest zarejestrowany, ale nie ma jeszcze endpointów.
 
 **LLM:** `/chat/` woła Gemini bezpośrednio (`app/routes/chat.py`, env `GEMINI_API_KEY`). Pakiet `app/llm/` (klient `fake|openai|gemini`, prompt opiekuna) i router `app/routes/llm.py` to **legacy** — działają (`LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`), ale nie rozwijamy ich.
 
-Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProject`, `ProposalOfNewProject`, `Benefice`, `ProjectBenefices`, `ChatHistory`.
+Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProject`, `ProposalOfNewProject`, `Benefice`, `ProjectBenefices`, `ChatHistory`, `GrantCall`, `GrantApplication`.
+
+**Kreator pomysłów** (`app/routes/ideas.py`): fiszka to wiersz `ProposalOfNewProject` (`name` = tytuł, `description` = krótki opis) z dopisanymi kolumnami `essence`, `audience`, `stage`, `canvas` (dokładane przy starcie w `_add_missing_columns`); schematy wejścia/wyjścia są lokalne w routerze. Asystent używa `ask_llm` z `routes/chat.py` (te same `LLM_*`). Wizualizacja to SVG z modelu tekstowego — API przepuszcza tylko pojedynczy `<svg>` bez skryptów / linków / obrazów, FE renderuje go wyłącznie w `<img>` (data URI). Pola canvy: `IDEA_CANVAS_KEYS` w `models.py` (etykiety w `apps/web/src/lib/ideas.ts`).
 
 ## Auth i role
 

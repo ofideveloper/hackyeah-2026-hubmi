@@ -9,9 +9,12 @@ const NAV: { href: string; label: string; exact?: boolean }[] = [
   { href: "/admin", label: "Przegląd", exact: true },
   { href: "/admin/units", label: "Jednostki" },
   { href: "/admin/projects", label: "Projekty" },
+  { href: "/admin/catalog", label: "Katalog projektów" },
   { href: "/admin/proposals", label: "Propozycje" },
   { href: "/admin/reports", label: "Sprawy" },
   { href: "/admin/knowledge", label: "Zasobnik wiedzy" },
+  { href: "/admin/ideas", label: "Fiszki pomysłów" },
+  { href: "/admin/grants", label: "Nabory grantowe" },
   { href: "/admin/trends", label: "Trendy potrzeb" },
   { href: "/admin/users", label: "Użytkownicy" },
 ];

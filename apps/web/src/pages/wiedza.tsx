@@ -156,6 +156,9 @@ export default function KnowledgePage() {
             <Link href="/#opiekun" className="btn-ghost">
               Zapytaj opiekuna
             </Link>
+            <Link href="/kreator" className="btn-ghost">
+              Kreator pomysłów
+            </Link>
             <Link href="/login" className="btn-primary">
               Zaloguj się
             </Link>

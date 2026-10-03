@@ -76,6 +76,9 @@ export default function AppHomePage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link href="/kreator" className="btn-ghost">
+              Kreator pomysłów
+            </Link>
             <Link href="/wiedza" className="btn-ghost">
               Zasobnik wiedzy
             </Link>

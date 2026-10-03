@@ -1,10 +1,10 @@
 import enum
 import re
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import EmailStr, computed_field, field_validator
-from sqlalchemy import Text
+from pydantic import EmailStr, computed_field, field_validator, model_validator
+from sqlalchemy import Text, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -266,6 +266,27 @@ class ActualProjectCreate(ActualProjectBase):
     pass
 
 
+class IdeaStage(str, enum.Enum):
+    CONCEPT = "pomysl"
+    PROTOTYPE = "prototyp"
+    MICRO_TEST = "test_mikroskala"
+    GOOD_PRACTICE = "dobra_praktyka"
+
+
+# Pola Canvy innowacji społecznej — klucze stałe, etykiety i podpowiedzi trzyma FE.
+IDEA_CANVAS_KEYS = (
+    "problem",
+    "odbiorcy",
+    "rozwiazanie",
+    "wartosc",
+    "zasoby",
+    "partnerzy",
+    "ryzyka",
+    "efekty",
+)
+IDEA_CANVAS_FIELD_MAX = 1500
+
+
 class ProposalOfNewProject(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     category_id: uuid.UUID = Field(foreign_key="categoriesofprojects.id")
@@ -276,6 +297,10 @@ class ProposalOfNewProject(SQLModel, table=True):
     modified_at: str = Field(default_factory=lambda: datetime.now().isoformat())
     status: StatusEnum = Field(default=StatusEnum.PENDING)
     chat_id: uuid.UUID | None = Field(foreign_key="chathistory.id", default=None)
+    essence: str = Field(default="", sa_type=Text)  # istota pomysłu
+    audience: str = Field(default="", sa_type=Text)  # komu dedykowany
+    stage: IdeaStage = Field(default=IdeaStage.CONCEPT)
+    canvas: str = Field(default="{}", sa_type=Text)
 
 
 class ProjectBenefices(SQLModel, table=True):
@@ -339,9 +364,106 @@ class NeedSignal(SQLModel, table=True):
     """
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    created_at: str = Field(default_factory=lambda: datetime.now().isoformat(), index=True)
-    chat_id: uuid.UUID | None = Field(default=None, foreign_key="chathistory.id", index=True)
+    created_at: str = Field(
+        default_factory=lambda: datetime.now().isoformat(), index=True
+    )
+    chat_id: uuid.UUID | None = Field(
+        default=None, foreign_key="chathistory.id", index=True
+    )
     category_id: uuid.UUID | None = Field(
         default=None, foreign_key="categoriesofprojects.id", index=True
     )
     summary: str = Field(default="", sa_type=Text)
+
+
+class GrantQuestion(SQLModel):
+    key: str = Field(default="", max_length=20)
+    label: str = Field(min_length=2, max_length=300)
+    hint: str = Field(default="", max_length=500)
+
+
+GRANT_ANSWER_MAX = 4000
+
+
+class GrantCall(SQLModel, table=True):
+    """Nabór w konkursie grantowym — generator wniosków działa tylko w jego terminie."""
+
+    __tablename__: str = "grant_calls"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    title: str = Field(max_length=255, index=True)
+    description: str = Field(default="", sa_type=Text)
+    opens_on: date = Field(index=True)
+    closes_on: date = Field(index=True)
+    # Formularz wniosku tego naboru: JSON lista GrantQuestion.
+    questions: str = Field(default="[]", sa_type=Text)
+    created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+
+
+class GrantCallSave(SQLModel):
+    title: str = Field(min_length=2, max_length=255)
+    description: str = Field(default="", max_length=4000)
+    opens_on: date
+    closes_on: date
+    questions: list[GrantQuestion] = Field(min_length=1, max_length=20)
+
+    @model_validator(mode="after")
+    def _dates_in_order(self) -> "GrantCallSave":
+        if self.closes_on < self.opens_on:
+            raise ValueError("Koniec naboru nie może być przed jego początkiem")
+        return self
+
+
+class GrantCallPublic(SQLModel):
+    id: uuid.UUID
+    title: str
+    description: str
+    opens_on: date
+    closes_on: date
+    questions: list[GrantQuestion]
+    is_open: bool
+    applications_submitted: int | None = None  # tylko w widoku admina
+
+
+class GrantApplicationStatus(str, enum.Enum):
+    DRAFT = "szkic"
+    SUBMITTED = "zlozony"
+
+
+class GrantApplication(SQLModel, table=True):
+    """Wniosek użytkownika w naborze — jeden na osobę i nabór."""
+
+    __tablename__: str = "grant_applications"
+    __table_args__ = (UniqueConstraint("call_id", "author_id"),)
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    call_id: uuid.UUID = Field(foreign_key="grant_calls.id", index=True)
+    author_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    idea_id: uuid.UUID | None = Field(
+        default=None, foreign_key="proposalofnewproject.id"
+    )
+    answers: str = Field(default="{}", sa_type=Text)  # JSON {klucz pytania: odpowiedź}
+    status: GrantApplicationStatus = Field(
+        default=GrantApplicationStatus.DRAFT, index=True
+    )
+    updated_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    submitted_at: str | None = None
+
+
+class GrantApplicationSave(SQLModel):
+    idea_id: uuid.UUID | None = None
+    answers: dict[str, str] = Field(default_factory=dict)
+    submit: bool = False
+
+
+class GrantApplicationPublic(SQLModel):
+    id: uuid.UUID
+    call_id: uuid.UUID
+    idea_id: uuid.UUID | None = None
+    idea_title: str | None = None
+    answers: dict[str, str]
+    status: GrantApplicationStatus
+    updated_at: str
+    submitted_at: str | None = None
+    author_name: str | None = None  # tylko w widoku admina
+    author_email: str | None = None

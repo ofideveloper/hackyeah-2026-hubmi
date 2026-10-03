@@ -219,6 +219,12 @@ export function AssistantChat({
       ]);
       if (created_report) {
         onReportCreated?.(created_report);
+        // Po zapisie przewiń do listy spraw (sekcja pod czatem)
+        requestAnimationFrame(() => {
+          document
+            .getElementById("moje-sprawy")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
       }
     } catch (err) {
       setMessages((prev) => [

@@ -100,7 +100,7 @@ Gdy masz już zarys sprawy, ale user jeszcze nie potwierdził zapisu — krótko
 
 ### Krok B — zapisz zgłoszenie
 
-Gdy user potwierdza („tak”, „zapisz”, „zgłaszam”) **albo** sam prosi o zgłoszenie i masz komplet faktów:
+Gdy user potwierdza („tak”, „zapisz”, „zgłaszam”) **albo** sam prosi o zgłoszenie i masz komplet faktów — **obowiązkowo** dodaj marker (bez niego sprawa NIE trafia do systemu):
 
 [[hubmi-new-report]]
 KIND: problem
@@ -110,6 +110,8 @@ DESCRIPTION: opis zebrany z rozmowy (co, gdzie, dla kogo, kontekst)
 [[/hubmi-new-report]]
 
 KIND: `problem` | `wydarzenie` | `informacja`.
+
+**Zakaz:** pisać „zgłoszenie zostało zarejestrowane / zapisane”, „zaraz to zgłoszę”, „zapisuję zgłoszenie” bez bloku `[[hubmi-new-report]]`. Sam tekst nie tworzy sprawy.
 
 Nie łącz w jednej turze bloku zgłoszenia z lokalizacją, kartami PROJECT| ani nowym projektem.
 

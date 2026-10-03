@@ -232,9 +232,30 @@ _REPORT_CONFIRM_CUES = (
     "zapisz jako zgloszenie",
     "tak, zapisz",
     "tak zapisz",
+    "tak, zgłaszam",
+    "tak zglaszam",
     "chcę śledzić status",
     "chce sledzic status",
+    "potwierdzam",
+    "zgłaszam to",
+    "zglaszam to",
+    "proszę zapisać",
+    "prosze zapisac",
 )
+
+# Krótkie potwierdzenia — tylko gdy dokładnie (albo prawie) taka treść
+_REPORT_CONFIRM_EXACT = {
+    "tak",
+    "ok",
+    "okay",
+    "dobrze",
+    "jasne",
+    "zgoda",
+    "potwierdzam",
+    "zapisz",
+    "zgłaszam",
+    "zglaszam",
+}
 
 _STARTER_SKIP = {
     "chcę zgłosić problem w okolicy",
@@ -243,17 +264,114 @@ _STARTER_SKIP = {
     "chce zglosic problem",
 }
 
+# Model „udaje” zapis bez markera — trzeba złożyć sprawę po stronie API
+_REPORT_SAVED_CLAIMS = (
+    "zgłoszenie zostało",
+    "zgloszenie zostalo",
+    "zostało zarejestrowane",
+    "zostalo zarejestrowane",
+    "zostało przyjęte",
+    "zostalo przyjete",
+    "zarejestrowałem",
+    "zarejestrowalem",
+    "zarejestrowałam",
+    "zarejestrowalam",
+    "zapisałem zgłoszenie",
+    "zapisalem zgloszenie",
+    "zapisałam zgłoszenie",
+    "zgłoszenie zapisane",
+    "zgloszenie zapisane",
+    "sprawa została przyjęta",
+    "sprawa zostala przyjeta",
+    "przekazałem zgłoszenie",
+    "przekazalem zgloszenie",
+    "przekazałem sprawę",
+    "przekazalem sprawe",
+)
+
+_REPORT_SAVING_CLAIMS = (
+    "zapisuję zgłoszenie",
+    "zapisuje zgloszenie",
+    "zaraz to zgłoszę",
+    "zaraz to zglosze",
+    "zaraz zapiszę",
+    "zaraz zapisze",
+    "składam zgłoszenie",
+    "skladam zgloszenie",
+    "rejestruję zgłoszenie",
+    "rejestruje zgloszenie",
+)
+
+
+def _norm_msg(message: str) -> str:
+    return " ".join(message.casefold().split())
+
 
 def is_report_confirm(message: str) -> bool:
-    norm = " ".join(message.casefold().split())
+    norm = _norm_msg(message)
+    if not norm:
+        return False
+    if norm in _REPORT_CONFIRM_EXACT:
+        return True
     return any(cue in norm for cue in _REPORT_CONFIRM_CUES)
+
+
+def claims_report_saved(reply: str) -> bool:
+    norm = reply.casefold()
+    return any(cue in norm for cue in _REPORT_SAVED_CLAIMS)
+
+
+def claims_report_saving(reply: str) -> bool:
+    norm = reply.casefold()
+    return any(cue in norm for cue in _REPORT_SAVING_CLAIMS)
+
+
+def _draft_from_reply_summary(reply: str) -> NewReportDraft | None:
+    """Wyciągnij Problem:/Lokalizacja: z prozy modelu (bez markera)."""
+    if not reply.strip():
+        return None
+    problem = re.search(r"(?im)^\s*problem\s*:\s*(.+)$", reply)
+    location = re.search(r"(?im)^\s*lokalizacja\s*:\s*(.+)$", reply)
+    duration = re.search(
+        r"(?im)^\s*(czas trwania|od kiedy|pilność|pilnosc)\s*:\s*(.+)$", reply
+    )
+    title_match = re.search(r"(?im)^\s*(tytuł|tytul)\s*:\s*(.+)$", reply)
+
+    parts: list[str] = []
+    title = ""
+    if title_match:
+        title = title_match.group(2).strip()
+    if problem:
+        title = title or problem.group(1).strip()
+        parts.append(f"Problem: {problem.group(1).strip()}")
+    if location:
+        parts.append(f"Lokalizacja: {location.group(1).strip()}")
+    if duration:
+        parts.append(f"{duration.group(1).strip()}: {duration.group(2).strip()}")
+
+    description = "\n".join(parts).strip()
+    if len(description) < 8:
+        return None
+    if len(title) < 2:
+        title = (problem.group(1).strip() if problem else description.splitlines()[0])[:80]
+    return NewReportDraft(
+        title=title[:255],
+        description=description[:5000],
+        kind="problem",
+        unit_id=None,
+    )
 
 
 def synthesize_report_draft(
     history_blob: str,
     user_message: str,
+    assistant_reply: str = "",
 ) -> NewReportDraft | None:
-    """Złóż draft sprawy z historii, gdy model zapomniał markera."""
+    """Złóż draft sprawy z historii / podsumowania modelu, gdy brak markera."""
+    from_reply = _draft_from_reply_summary(assistant_reply)
+    if from_reply is not None:
+        return from_reply
+
     parts: list[str] = []
     for chunk in (history_blob or "").split("\n"):
         text = chunk.strip()

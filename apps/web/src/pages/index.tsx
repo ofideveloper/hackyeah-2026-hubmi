@@ -2,6 +2,7 @@ import Head from "next/head";
 import Link from "next/link";
 
 import { AssistantChat } from "@/components/AssistantChat";
+import { GuestHeaderActions, SiteHeader } from "@/components/SiteHeader";
 
 const steps = [
   {
@@ -36,29 +37,7 @@ export default function HomePage() {
       </Head>
 
       <div className="min-h-screen overflow-hidden">
-        <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 sm:px-10">
-          <Link
-            href="/"
-            className="font-display flex items-center gap-2 text-xl font-semibold tracking-tight"
-            aria-label="MaloHUB — strona główna"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-sm font-bold text-white">
-              H
-            </span>
-            MaloHUB
-          </Link>
-          <nav className="flex items-center gap-3" aria-label="Nawigacja główna">
-            <Link
-              href="/login"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
-            >
-              Zaloguj się
-            </Link>
-            <Link href="/register" className="btn-primary px-4 py-2.5">
-              Załóż konto
-            </Link>
-          </nav>
-        </header>
+        <SiteHeader width="full" logoSize="lg" actions={<GuestHeaderActions />} />
 
         <main>
           <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-12 sm:px-10 sm:pb-28 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">

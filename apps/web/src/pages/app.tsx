@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 import { AssistantChat } from "@/components/AssistantChat";
+import { BrandLogo } from "@/components/BrandLogo";
 import { fetchMe, fetchMyReports, type Report, type User } from "@/lib/api";
 import { clearToken, getToken } from "@/lib/auth";
 
@@ -66,8 +67,8 @@ export default function AppHomePage() {
       <main className="animate-soft-in mx-auto min-h-screen max-w-3xl px-6 py-12">
         <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-8">
           <div>
-            <p className="font-display text-sm font-semibold text-[var(--accent)]">MaloHUB</p>
-            <h1 className="font-display mt-1 text-3xl font-semibold tracking-tight">
+            <BrandLogo size="sm" href={null} />
+            <h1 className="font-display mt-5 text-3xl font-semibold tracking-tight">
               Twoja przestrzeń
             </h1>
             <p className="mt-2 max-w-md text-sm text-[var(--muted)]">
@@ -90,13 +91,20 @@ export default function AppHomePage() {
         <section className="mt-8">
           <AssistantChat
             userName={user.full_name || `${user.name} ${user.surname}`.trim()}
-            onReportCreated={(report) =>
-              setReports((prev) => [report, ...prev.filter((r) => r.id !== report.id)])
-            }
+            onReportCreated={(report) => {
+              setReports((prev) => [report, ...prev.filter((r) => r.id !== report.id)]);
+              // Dopnij świeżą listę z API (na wypadek wyścigu / innej sesji)
+              const token = getToken();
+              if (token) {
+                void fetchMyReports(token)
+                  .then(setReports)
+                  .catch(() => undefined);
+              }
+            }}
           />
         </section>
 
-        <section className="mt-12">
+        <section id="moje-sprawy" className="mt-12 scroll-mt-6">
           <h2 className="font-display text-lg font-semibold tracking-tight">Twoje sprawy</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
             Statusy aktualizuje zespół — Ty tylko śledzisz postęp.

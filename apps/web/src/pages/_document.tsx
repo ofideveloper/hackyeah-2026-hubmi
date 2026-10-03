@@ -4,7 +4,7 @@ export default function Document() {
   return (
     <Html lang="pl">
       <Head>
-        <meta name="theme-color" content="#27227d" />
+        <meta name="theme-color" content="#847362" />
         <meta name="application-name" content="MaloHUB" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

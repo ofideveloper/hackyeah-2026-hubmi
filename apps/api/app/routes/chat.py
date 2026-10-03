@@ -19,6 +19,8 @@ from ..llm.client import _score_project
 from ..llm.modes import VALID_MODES, detect_chat_mode, mode_instructions
 from ..llm.prompts import load_prompt
 from ..llm.suggestions import (
+    claims_report_saved,
+    claims_report_saving,
     extract_location_request,
     extract_new_project_draft,
     extract_new_report_draft,
@@ -658,6 +660,18 @@ async def _chat_handler(
     reply, location_request = extract_location_request(reply)
     reply, ids = extract_project_ids(reply)
 
+    wants_report_write = (
+        is_report_confirm(user_message)
+        or claims_report_saved(reply)
+        or claims_report_saving(reply)
+        or report_draft is not None
+    )
+    # Model wystawił marker / „zapisuje” w prozie poza trybem report → przełącz
+    if mode in {"clarify", "catalog"} and (
+        wants_report_write or report_offer
+    ):
+        mode = "report"
+
     # Twarde bramki wg trybu — model / scoring nie mogą „przeskoczyć”
     if mode != "catalog":
         ids = []
@@ -694,15 +708,11 @@ async def _chat_handler(
         report_draft = None
         report_offer = False
     elif mode == "report":
-        # LLM często „obiecuje” zapis bez markera — po CTA / przy bloku składamy sprawę sami
-        if report_draft is None and (
-            is_report_confirm(user_message)
-            or "zgłoszenie zostało" in reply.casefold()
-            or "zapisałem zgłoszenie" in reply.casefold()
-            or "zapisalam zgloszenie" in reply.casefold()
-            or "zapisałam zgłoszenie" in reply.casefold()
-        ):
-            report_draft = synthesize_report_draft(history_blob, user_message)
+        # LLM często „obiecuje” zapis bez markera — składamy sprawę sami
+        if report_draft is None and wants_report_write:
+            report_draft = synthesize_report_draft(
+                history_blob, user_message, assistant_reply=reply
+            )
 
         if report_draft is not None:
             report_offer = False
@@ -715,9 +725,8 @@ async def _chat_handler(
             )
             if user is None:
                 reply = (
-                    f"{reply.rstrip()}\n\n"
-                    "Żeby zapisać **zgłoszenie** i śledzić status, **załóż konto** "
-                    "albo zaloguj się — wtedy przekażę sprawę dalej."
+                    "Mam już zarys sprawy, ale żeby **zapisać zgłoszenie** i śledzić status, "
+                    "**załóż konto** albo zaloguj się — wtedy przekażę ją dalej."
                 )
                 report_offer = True
             else:
@@ -730,19 +739,26 @@ async def _chat_handler(
                     report_draft.description,
                     report_draft.kind,
                 )
-                if "zgłoszenie zapisane" not in reply.casefold():
-                    if created_report.unit_name:
-                        unit_bit = f" Jednostka: {created_report.unit_name}."
-                    else:
-                        unit_bit = (
-                            " Jednostka nieprzydzielona automatycznie "
-                            "(brak dopasowania kompetencji) — zespół przypisze ją w panelu."
-                        )
-                    reply = (
-                        f"{reply.rstrip()}\n\n"
-                        f"**Zgłoszenie zapisane:** {created_report.title}.{unit_bit} "
-                        "Status: przyjęte — zobaczysz je na liście spraw."
+                if created_report.unit_name:
+                    unit_bit = f" Jednostka: {created_report.unit_name}."
+                else:
+                    unit_bit = (
+                        " Jednostka nieprzydzielona automatycznie "
+                        "(brak dopasowania kompetencji) — zespół przypisze ją w panelu."
                     )
+                reply = (
+                    f"Zapisuję sprawę: **{created_report.title}**.\n\n"
+                    f"{created_report.description}\n\n"
+                    f"**Zgłoszenie zapisane.**{unit_bit} "
+                    "Status: przyjęte — zobaczysz je na liście spraw poniżej."
+                )
+        elif claims_report_saved(reply) or claims_report_saving(reply):
+            # Model obiecał zapis, ale brak faktów → nie kłam; pokaż CTA
+            reply = (
+                "Żeby zapisać zgłoszenie, potrzebuję jeszcze krótkiego opisu: "
+                "**co** się dzieje, **gdzie** i od kiedy. Potem potwierdź zapis."
+            )
+            report_offer = False
     elif mode == "intake" and draft is not None:
         if user is None:
             reply = (

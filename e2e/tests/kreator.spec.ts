@@ -55,7 +55,8 @@ test("asystent kreatora odpowiada i wstawia tekst do fiszki", async ({ userPage:
   await page.getByLabel("Tytuł pomysłu").fill("Mobilny punkt porad");
   await page.getByLabel("Krótki opis").fill("Porady prawne i socjalne w małych miejscowościach.");
 
-  await page.getByLabel("Własne pytanie albo wskazówka dla asystenta").fill("Jak dotrzeć do seniorów na wsi?");
+  await page.getByRole("radio", { name: "Zapytaj asystenta" }).click();
+  await page.getByLabel("Twoje pytanie").fill("Jak dotrzeć do seniorów na wsi?");
   await page.getByRole("button", { name: "Zapytaj" }).click();
 
   const insert = page.getByRole("button", { name: "Wstaw do pola „Istota pomysłu”" });

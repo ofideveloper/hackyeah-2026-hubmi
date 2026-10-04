@@ -9,7 +9,7 @@ import {
   type Report,
   type ReportStatus,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 
 const REPORT_STATUSES: { value: ReportStatus; label: string }[] = [
   { value: "nowe", label: "Przyjęte" },
@@ -36,9 +36,8 @@ export function AdminReportsView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    Promise.all([fetchAdminReports(token), fetchUnits(token)])
+    if (!hasSessionHint()) return;
+    Promise.all([fetchAdminReports(), fetchUnits()])
       .then(([nextReports, nextUnits]) => {
         setReports(nextReports);
         setUnits(nextUnits);
@@ -50,10 +49,9 @@ export function AdminReportsView() {
   }, []);
 
   async function onChangeStatus(reportId: string, status: ReportStatus) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     try {
-      const updated = await updateReportStatus(token, reportId, status);
+      const updated = await updateReportStatus(reportId, status);
       setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));
       setError(null);
     } catch (err) {
@@ -62,10 +60,9 @@ export function AdminReportsView() {
   }
 
   async function onChangeUnit(reportId: string, unitId: string) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     try {
-      const updated = await updateReportUnit(token, reportId, unitId || null);
+      const updated = await updateReportUnit(reportId, unitId || null);
       setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));
       setError(null);
     } catch (err) {

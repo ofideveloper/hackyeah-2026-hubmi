@@ -55,7 +55,7 @@ Browser  →  fetch("/api/...")  →  pages/api/[...path].ts  →  process.env.A
 **Rób**
 
 - Klient tylko przez `@/lib/api.ts` i ścieżki `/api/...`
-- Token JWT w kliencie przez `@/lib/auth.ts` (localStorage)
+- JWT nie jest dostępny w kliencie — siedzi w cookie HttpOnly ustawianym przez BFF; funkcje z `@/lib/api` nie przyjmują tokena. `@/lib/auth.ts` czyta tylko znacznik sesji (`hasSessionHint`)
 - Sesja użytkownika: `AuthProvider` + `useAuth` (`hooks/useAuth.tsx`) w `_app` — jeden `fetchMe` na start, cache między widokami (bez migania inicjałów w `UserMenu`)
 
 **Nie rób**

@@ -114,8 +114,8 @@ export default function KnowledgePage() {
   const [onlyVideo, setOnlyVideo] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [opened, setOpened] = useState<InnovationSummary | null>(null);
-  const { status, token } = useAuth();
-  const loggedIn = status === "authenticated" || (status === "loading" && Boolean(token));
+  const { status, sessionHint } = useAuth();
+  const loggedIn = status === "authenticated" || (status === "loading" && sessionHint);
 
   useEffect(() => {
     fetchKnowledge()

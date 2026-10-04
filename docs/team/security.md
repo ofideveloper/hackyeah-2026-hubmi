@@ -20,7 +20,9 @@ Browser → /api/* (Next BFF) → process.env.API_URL → FastAPI (internal)
 - JWT: Bearer, sensowny `exp`; sekret tylko `SECRET_KEY` z env
 - Endpointy chronione właściwą zależnością (`CurrentUserDep` / check roli)
 - Admin (`/admin/*`): weryfikacja `role=admin` po stronie UI **i** API — UI nie jest jedyną barierą
-- Po wylogowaniu: usuń token z klienta; nie trzymaj sekretów poza uzgodnionym storage (`@/lib/auth.ts`)
+- Sesja w przeglądarce: JWT wyłącznie w cookie `hubmi_session` (`HttpOnly`, `SameSite=Lax`, `Secure` na produkcji) ustawianym przez BFF — nigdy w `localStorage` / `sessionStorage` ani w odpowiedzi JSON dla klienta
+- `hubmi_auth` to jawny znacznik „jest sesja” dla UI (bez sekretu) — nie opieraj na nim autoryzacji
+- Wylogowanie: `POST /api/auth/logout` (BFF czyści oba cookie); JWT pozostaje ważny do `exp` — brak unieważniania po stronie serwera
 
 ## Dane i prywatność
 
@@ -41,8 +43,9 @@ Browser → /api/* (Next BFF) → process.env.API_URL → FastAPI (internal)
 ## Front / BFF
 
 - XSS: nie używaj `dangerouslySetInnerHTML` bez sanitizacji; Markdown czatu przez bezpieczny renderer (`react-markdown` bez raw HTML)
-- CSRF / cookies: przy cookie-based auth [UZUPEŁNIJ]; obecnie JWT w storage — nie wysyłaj tokena do obcych originów
-- BFF proxy: forward tylko uzgodnionych ścieżek; nie otwieraj open-proxy do dowolnego hosta
+- CSRF / cookies: BFF odrzuca (403) żądania inne niż GET/HEAD/OPTIONS, które nie są same-origin (`Sec-Fetch-Site`, a w starszych przeglądarkach `Origin`) — `lib/server/session.ts`. Operacje zmieniające stan nigdy przez GET
+- BFF sam dokłada `Authorization: Bearer` z cookie; nagłówek `Authorization` z przeglądarki jest ignorowany
+- BFF proxy: forward tylko uzgodnionych ścieżek; nie otwieraj open-proxy do dowolnego hosta — ścieżka i redirect muszą zostać w originie `API_URL` (`lib/server/proxy.ts`), inaczej token trafiłby do obcego hosta
 - Dependency hygiene: nie dodawaj pakietów „na próbę”; aktualizuj przy znanych CVE krytycznych
 
 ## Checklist PR (security)

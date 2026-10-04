@@ -9,7 +9,7 @@ import {
   type GrantCall,
   type GrantCallInput,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 import { formatDate } from "@/lib/ideas";
 
 const EMPTY_QUESTION = { key: "", label: "", hint: "" };
@@ -41,9 +41,8 @@ export function AdminGrantCallsView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    fetchAdminGrantCalls(token)
+    if (!hasSessionHint()) return;
+    fetchAdminGrantCalls()
       .then(setCalls)
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Nie udało się pobrać naborów"),
@@ -81,13 +80,12 @@ export function AdminGrantCallsView() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setError(null);
     setNotice(null);
     setBusy(true);
     try {
-      const saved = await saveGrantCall(token, form, editingId);
+      const saved = await saveGrantCall(form, editingId);
       setCalls((prev) => {
         const previous = prev.find((call) => call.id === saved.id);
         const merged = {
@@ -109,11 +107,10 @@ export function AdminGrantCallsView() {
   }
 
   async function onDelete(call: GrantCall) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm(`Usunąć nabór „${call.title}” razem ze szkicami wniosków?`)) return;
     try {
-      await deleteGrantCall(token, call.id);
+      await deleteGrantCall(call.id);
       setCalls((prev) => prev.filter((item) => item.id !== call.id));
       if (editingId === call.id) resetForm();
     } catch (err) {
@@ -126,10 +123,9 @@ export function AdminGrantCallsView() {
       setOpened(null);
       return;
     }
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     try {
-      setOpened({ callId: call.id, rows: await fetchGrantApplications(token, call.id) });
+      setOpened({ callId: call.id, rows: await fetchGrantApplications(call.id) });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się pobrać wniosków");
     }

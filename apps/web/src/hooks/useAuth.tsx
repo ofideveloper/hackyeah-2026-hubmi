@@ -8,21 +8,22 @@ import {
   type ReactNode,
 } from "react";
 
-import { fetchMe, type User } from "@/lib/api";
-import { clearToken, getToken, setToken } from "@/lib/auth";
+import { fetchMe, loginUser, logoutUser, type User } from "@/lib/api";
+import { clearSessionHint, dropLegacyToken, hasSessionHint } from "@/lib/auth";
 
 export type AuthStatus = "loading" | "authenticated" | "anonymous";
 
 type AuthContextValue = {
   status: AuthStatus;
   user: User | null;
-  token: string | null;
+  /** Przeglądarka ma znacznik sesji — user może się jeszcze ładować (`status === "loading"`). */
+  sessionHint: boolean;
   isAdmin: boolean;
-  /** Zapisuje JWT i (opcjonalnie) usera; bez usera dociąga `/auth/me`. */
-  establishSession: (token: string, user?: User) => Promise<User>;
+  /** Loguje przez BFF (JWT trafia do cookie HttpOnly) i dociąga `/auth/me`. */
+  login: (email: string, password: string) => Promise<User>;
   /** Aktualizuje cache (np. po edycji profilu). */
   setUser: (user: User | null) => void;
-  /** Ponownie pobiera `/auth/me` (gdy jest token). */
+  /** Ponownie pobiera `/auth/me` (gdy jest sesja). */
   refreshUser: () => Promise<User | null>;
   logout: () => void;
 };
@@ -31,10 +32,17 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Start as loading — nigdy nie traktuj pierwszego renderu jako wylogowania,
-  // zanim bootstrap sprawdzi localStorage (inaczej /admin i /app wyrzucają na /login).
+  // zanim bootstrap sprawdzi sesję (inaczej /admin i /app wyrzucają na /login).
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [user, setUserState] = useState<User | null>(null);
-  const [token, setTokenState] = useState<string | null>(null);
+  const [sessionHint, setSessionHint] = useState(false);
+
+  const setAnonymous = useCallback(() => {
+    clearSessionHint();
+    setSessionHint(false);
+    setUserState(null);
+    setStatus("anonymous");
+  }, []);
 
   const setUser = useCallback((next: User | null) => {
     setUserState(next);
@@ -42,70 +50,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    clearToken();
-    setTokenState(null);
-    setUserState(null);
-    setStatus("anonymous");
+    setAnonymous();
+    void logoutUser().catch(() => undefined);
+  }, [setAnonymous]);
+
+  const loadUser = useCallback(async (): Promise<User> => {
+    setSessionHint(true);
+    setStatus("loading");
+    const me = await fetchMe();
+    setUserState(me);
+    setStatus("authenticated");
+    return me;
   }, []);
 
   const refreshUser = useCallback(async (): Promise<User | null> => {
-    const current = getToken();
-    if (!current) {
-      setTokenState(null);
-      setUserState(null);
-      setStatus("anonymous");
+    if (!hasSessionHint()) {
+      setAnonymous();
       return null;
     }
-    setTokenState(current);
-    setStatus("loading");
     try {
-      const me = await fetchMe(current);
-      setUserState(me);
-      setStatus("authenticated");
-      return me;
+      return await loadUser();
     } catch {
-      clearToken();
-      setTokenState(null);
-      setUserState(null);
-      setStatus("anonymous");
+      setAnonymous();
       return null;
     }
-  }, []);
+  }, [loadUser, setAnonymous]);
 
-  const establishSession = useCallback(
-    async (nextToken: string, nextUser?: User): Promise<User> => {
-      setToken(nextToken);
-      setTokenState(nextToken);
-      setStatus("loading");
+  const login = useCallback(
+    async (email: string, password: string): Promise<User> => {
+      await loginUser(email, password);
       try {
-        const me = nextUser ?? (await fetchMe(nextToken));
-        setUserState(me);
-        setStatus("authenticated");
-        return me;
+        return await loadUser();
       } catch (err) {
-        clearToken();
-        setTokenState(null);
-        setUserState(null);
-        setStatus("anonymous");
+        setAnonymous();
         throw err;
       }
     },
-    [],
+    [loadUser, setAnonymous],
   );
 
   useEffect(() => {
-    const current = getToken();
-    if (!current) {
-      setTokenState(null);
-      setUserState(null);
-      setStatus("anonymous");
+    dropLegacyToken();
+    if (!hasSessionHint()) {
+      setAnonymous();
       return;
     }
 
     let cancelled = false;
-    setTokenState(current);
+    setSessionHint(true);
     setStatus("loading");
-    fetchMe(current)
+    fetchMe()
       .then((me) => {
         if (cancelled) return;
         setUserState(me);
@@ -113,29 +107,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (cancelled) return;
-        clearToken();
-        setTokenState(null);
-        setUserState(null);
-        setStatus("anonymous");
+        setAnonymous();
       });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setAnonymous]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
       user,
-      token,
+      sessionHint,
       isAdmin: user?.role === "admin",
-      establishSession,
+      login,
       setUser,
       refreshUser,
       logout,
     }),
-    [status, user, token, establishSession, setUser, refreshUser, logout],
+    [status, user, sessionHint, login, setUser, refreshUser, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

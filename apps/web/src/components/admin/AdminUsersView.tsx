@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { fetchAdminUsers, setUserRole, type User } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 import { ROLE_LABEL } from "@/lib/communication";
 
 export function AdminUsersView() {
@@ -11,9 +11,8 @@ export function AdminUsersView() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    fetchAdminUsers(token)
+    if (!hasSessionHint()) return;
+    fetchAdminUsers()
       .then(setUsers)
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Nie udało się pobrać użytkowników"),
@@ -22,13 +21,11 @@ export function AdminUsersView() {
   }, []);
 
   async function onMentor(user: User) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setBusyId(user.id);
     setError(null);
     try {
       const saved = await setUserRole(
-        token,
         user.id,
         user.role === "specialist" ? "user" : "specialist",
       );

@@ -16,6 +16,7 @@ Pełny opis: `docs/team/security.md`.
 ## Auth i dane
 
 - Hasła tylko hashowane; nie loguj haseł ani JWT
+- JWT w przeglądarce tylko w cookie HttpOnly ustawianym przez BFF — nigdy w storage ani JS; żądania zmieniające stan muszą być same-origin (BFF → 403)
 - Endpointy z `CurrentUserDep` / sprawdzeniem roli; admin także po stronie API
 - Waliduj input (SQLModel/Pydantic); SQL tylko przez ORM / parametry
 - Błędy zewnętrzne: bez stack trace / sekretów

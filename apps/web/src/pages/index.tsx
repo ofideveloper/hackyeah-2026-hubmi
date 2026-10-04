@@ -67,9 +67,9 @@ function isOpiekunHash(asPath: string): boolean {
 
 export default function HomePage() {
   const router = useRouter();
-  const { status, user, token } = useAuth();
+  const { status, user, sessionHint } = useAuth();
   const [focusChat, setFocusChat] = useState(false);
-  const loggedIn = status === "authenticated" || (status === "loading" && Boolean(token));
+  const loggedIn = status === "authenticated" || (status === "loading" && sessionHint);
   const userName = user
     ? user.full_name || `${user.name} ${user.surname}`.trim()
     : null;

@@ -8,7 +8,7 @@ import { changeMyPassword } from "@/lib/api";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { status, user, token } = useAuth();
+  const { status, user, sessionHint } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,14 +38,14 @@ export default function ProfilePage() {
       return;
     }
 
-    if (!token) {
+    if (!sessionHint) {
       void router.replace("/login");
       return;
     }
 
     setBusy(true);
     try {
-      await changeMyPassword(token, currentPassword, newPassword);
+      await changeMyPassword(currentPassword, newPassword);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");

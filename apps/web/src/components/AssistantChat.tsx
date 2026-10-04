@@ -18,7 +18,7 @@ import {
   type ProjectProposal,
   type Report,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 
 export type ChatRole = "user" | "assistant" | "error";
 
@@ -166,8 +166,7 @@ export function AssistantChat({
     const trimmed = text.trim();
     if (!trimmed || busy) return;
 
-    const token = getToken();
-    if (!guestMode && !token) return;
+    if (!guestMode && !hasSessionHint()) return;
 
     const history = messages
       .filter(
@@ -202,7 +201,7 @@ export function AssistantChat({
         location_request,
         chat_id,
         new_project_draft,
-      } = await sendChatMessage(token, trimmed, history, null, chatId);
+      } = await sendChatMessage(trimmed, history, null, chatId);
       setChatId(chat_id);
       const replyId = `a-${Date.now()}`;
       if (new_project_draft) {

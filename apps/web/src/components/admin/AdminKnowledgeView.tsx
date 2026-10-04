@@ -9,7 +9,7 @@ import {
   type KnowledgeResource,
   type KnowledgeResourceInput,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 
 const KIND_LABEL: Record<KnowledgeResource["kind"], string> = {
   wyzwanie: "Wyzwania (raporty, diagnozy)",
@@ -74,14 +74,12 @@ export function AdminKnowledgeView() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setError(null);
     setNotice(null);
     setBusy(true);
     try {
       const saved = await saveKnowledgeResource(
-        token,
         { ...form, url: form.url?.trim() || null },
         editingId,
       );
@@ -100,11 +98,10 @@ export function AdminKnowledgeView() {
   }
 
   async function onDelete(resource: KnowledgeResource) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm(`Usunąć „${resource.title}” z Zasobnika wiedzy?`)) return;
     try {
-      await deleteKnowledgeResource(token, resource.id);
+      await deleteKnowledgeResource(resource.id);
       setResources((prev) => prev.filter((r) => r.id !== resource.id));
       if (editingId === resource.id) resetForm();
     } catch (err) {
@@ -113,13 +110,12 @@ export function AdminKnowledgeView() {
   }
 
   async function onRefresh() {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setError(null);
     setNotice(null);
     setRefreshing(true);
     try {
-      const { added } = await refreshInnovationLibrary(token);
+      const { added } = await refreshInnovationLibrary();
       await load();
       setNotice(
         added > 0

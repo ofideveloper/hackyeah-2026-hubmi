@@ -10,7 +10,7 @@ import {
   type OrganizationalUnit,
   type Project,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 
 type ProjectDraft = {
   unit_id: string;
@@ -31,9 +31,8 @@ export function AdminProjectsView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    Promise.all([fetchUnits(token), fetchProjects(token)])
+    if (!hasSessionHint()) return;
+    Promise.all([fetchUnits(), fetchProjects()])
       .then(([nextUnits, nextProjects]) => {
         setUnits(nextUnits);
         setProjects(nextProjects);
@@ -62,12 +61,11 @@ export function AdminProjectsView() {
 
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token || !unitId) return;
+    if (!hasSessionHint() || !unitId) return;
     setError(null);
     setBusy(true);
     try {
-      const project = await createProject(token, {
+      const project = await createProject({
         unit_id: unitId,
         name,
         description,
@@ -84,12 +82,11 @@ export function AdminProjectsView() {
 
   async function onSaveEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token || !editingId || !draft) return;
+    if (!hasSessionHint() || !editingId || !draft) return;
     setError(null);
     setBusy(true);
     try {
-      const updated = await updateProject(token, editingId, {
+      const updated = await updateProject(editingId, {
         unit_id: draft.unit_id,
         name: draft.name,
         description: draft.description,
@@ -104,11 +101,10 @@ export function AdminProjectsView() {
   }
 
   async function onDelete(projectId: string) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm("Usunąć ten projekt?")) return;
     try {
-      await deleteProject(token, projectId);
+      await deleteProject(projectId);
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
       if (editingId === projectId) cancelEdit();
     } catch (err) {

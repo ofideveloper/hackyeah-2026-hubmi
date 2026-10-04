@@ -22,7 +22,8 @@ import {
   type ReportStatus,
   type User,
 } from "@/lib/api";
-import { clearToken, getToken } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
+import { hasSessionHint } from "@/lib/auth";
 
 const REPORT_STATUSES: { value: ReportStatus; label: string }[] = [
   { value: "nowe", label: "Przyjęte" },
@@ -32,6 +33,7 @@ const REPORT_STATUSES: { value: ReportStatus; label: string }[] = [
 
 export function AdminPanel() {
   const router = useRouter();
+  const { logout: authLogout } = useAuth();
   const [admin, setAdmin] = useState<User | null>(null);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -55,19 +57,18 @@ export function AdminPanel() {
   const [projectBusy, setProjectBusy] = useState(false);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
+    if (!hasSessionHint()) {
       void router.replace("/login");
       return;
     }
 
     Promise.all([
-      fetchMe(token),
-      fetchAdminStats(token),
-      fetchAdminUsers(token),
-      fetchUnits(token),
-      fetchProjects(token),
-      fetchAdminReports(token),
+      fetchMe(),
+      fetchAdminStats(),
+      fetchAdminUsers(),
+      fetchUnits(),
+      fetchProjects(),
+      fetchAdminReports(),
     ])
       .then(([me, nextStats, nextUsers, nextUnits, nextProjects, nextReports]) => {
         if (me.role !== "admin") {
@@ -89,19 +90,18 @@ export function AdminPanel() {
   }, [router]);
 
   function logout() {
-    clearToken();
+    authLogout();
     void router.push("/login");
   }
 
   async function onCreateUnit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
 
     setUnitError(null);
     setUnitBusy(true);
     try {
-      const unit = await createUnit(token, {
+      const unit = await createUnit({
         name,
         territory,
         competencies,
@@ -125,15 +125,14 @@ export function AdminPanel() {
   }
 
   async function onDeleteUnit(unitId: string) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm("Usunąć jednostkę oraz powiązane zgłoszenia i projekty?")) return;
 
     try {
-      await deleteUnit(token, unitId);
+      await deleteUnit(unitId);
       setUnits((prev) => prev.filter((u) => u.id !== unitId));
       setProjects((prev) => prev.filter((p) => p.unit_id !== unitId));
-      const nextStats = await fetchAdminStats(token);
+      const nextStats = await fetchAdminStats();
       setStats(nextStats);
       setProjectUnitId((current) => {
         if (current !== unitId) return current;
@@ -147,13 +146,12 @@ export function AdminPanel() {
 
   async function onCreateProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token || !projectUnitId) return;
+    if (!hasSessionHint() || !projectUnitId) return;
 
     setProjectError(null);
     setProjectBusy(true);
     try {
-      const project = await createProject(token, {
+      const project = await createProject({
         unit_id: projectUnitId,
         name: projectName,
         description: projectDescription,
@@ -172,12 +170,11 @@ export function AdminPanel() {
   }
 
   async function onDeleteProject(projectId: string) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm("Usunąć ten projekt?")) return;
 
     try {
-      await deleteProject(token, projectId);
+      await deleteProject(projectId);
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
       setStats((prev) =>
         prev ? { ...prev, projects_total: Math.max(0, prev.projects_total - 1) } : prev,
@@ -188,11 +185,10 @@ export function AdminPanel() {
   }
 
   async function onReassignProject(projectId: string, unitId: string) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
 
     try {
-      const updated = await updateProject(token, projectId, { unit_id: unitId });
+      const updated = await updateProject(projectId, { unit_id: unitId });
       setProjects((prev) => prev.map((p) => (p.id === projectId ? updated : p)));
       setProjectError(null);
     } catch (err) {
@@ -201,11 +197,10 @@ export function AdminPanel() {
   }
 
   async function onChangeReportStatus(reportId: string, status: ReportStatus) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
 
     try {
-      const updated = await updateReportStatus(token, reportId, status);
+      const updated = await updateReportStatus(reportId, status);
       setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));
       setReportError(null);
     } catch (err) {

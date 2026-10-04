@@ -152,7 +152,7 @@ export function LoggedInMenu({
   unreadKontakt: unreadProp,
   user,
 }: LoggedInMenuProps) {
-  const { token } = useAuth();
+  const { sessionHint } = useAuth();
   const [unread, setUnread] = useState(unreadProp ?? 0);
 
   useEffect(() => {
@@ -161,11 +161,11 @@ export function LoggedInMenu({
 
   useEffect(() => {
     if (unreadProp !== undefined) return;
-    if (!token) return;
-    fetchConversations(token)
+    if (!sessionHint) return;
+    fetchConversations()
       .then((threads) => setUnread(unreadCount(threads)))
       .catch(() => undefined);
-  }, [unreadProp, token]);
+  }, [unreadProp, sessionHint]);
 
   return (
     <NavContent
@@ -198,9 +198,9 @@ export function AppNav({ current, isAdmin, unreadKontakt, user }: AppNavProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { status, user: authUser, isAdmin: authIsAdmin, token } = useAuth();
+  const { status, user: authUser, isAdmin: authIsAdmin, sessionHint } = useAuth();
 
-  const showLoggedIn = status === "authenticated" || (status === "loading" && Boolean(token));
+  const showLoggedIn = status === "authenticated" || (status === "loading" && sessionHint);
   const resolvedUser = user ?? authUser;
   const resolvedAdmin = isAdmin ?? authIsAdmin;
   const [unread, setUnread] = useState(unreadKontakt ?? 0);
@@ -215,11 +215,11 @@ export function AppNav({ current, isAdmin, unreadKontakt, user }: AppNavProps) {
 
   useEffect(() => {
     if (unreadKontakt !== undefined) return;
-    if (!token || !showLoggedIn) return;
-    fetchConversations(token)
+    if (!sessionHint || !showLoggedIn) return;
+    fetchConversations()
       .then((threads) => setUnread(unreadCount(threads)))
       .catch(() => undefined);
-  }, [unreadKontakt, token, showLoggedIn]);
+  }, [unreadKontakt, sessionHint, showLoggedIn]);
 
   useEffect(() => {
     function close() {

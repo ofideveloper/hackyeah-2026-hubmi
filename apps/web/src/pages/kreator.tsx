@@ -26,7 +26,7 @@ import {
   type KnowledgeArea,
   type MyIdea,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 import { CANVAS_FIELDS, EMPTY_IDEA, formatDate, STAGE_LABEL } from "@/lib/ideas";
 
 const STAGES = Object.keys(STAGE_LABEL) as IdeaStage[];
@@ -62,7 +62,7 @@ function IdeaCard({ idea, children }: { idea: Idea; children?: React.ReactNode }
 }
 
 export default function IdeaCreatorPage() {
-  const { status, user, token } = useAuth();
+  const { status, user } = useAuth();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [myIdeas, setMyIdeas] = useState<MyIdea[]>([]);
   const [calls, setCalls] = useState<GrantCall[]>([]);
@@ -88,16 +88,16 @@ export default function IdeaCreatorPage() {
   }, []);
 
   useEffect(() => {
-    if (status !== "authenticated" || !token) {
+    if (status !== "authenticated") {
       setMyIdeas([]);
       return;
     }
-    fetchMyIdeas(token)
+    fetchMyIdeas()
       .then(setMyIdeas)
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Nie udało się pobrać Twoich pomysłów"),
       );
-  }, [status, token]);
+  }, [status]);
 
   function resetForm() {
     setForm(EMPTY_IDEA);
@@ -139,12 +139,11 @@ export default function IdeaCreatorPage() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setError(null);
     setBusy(true);
     try {
-      const saved = await saveIdea(token, form, editingId);
+      const saved = await saveIdea(form, editingId);
       setMyIdeas((prev) => [saved, ...prev.filter((item) => item.id !== saved.id)]);
       setIdeas((prev) =>
         editingId
@@ -163,11 +162,10 @@ export default function IdeaCreatorPage() {
   }
 
   async function onDelete(idea: MyIdea) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm(`Usunąć fiszkę „${idea.name}”?`)) return;
     try {
-      await deleteIdea(token, idea.id);
+      await deleteIdea(idea.id);
       setMyIdeas((prev) => prev.filter((item) => item.id !== idea.id));
       setIdeas((prev) => prev.filter((item) => item.id !== idea.id));
       if (editingId === idea.id) resetForm();

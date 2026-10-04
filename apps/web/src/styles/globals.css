@@ -2314,3 +2314,38 @@ body {
   outline: 2px solid var(--accent-hover);
   outline-offset: 2px;
 }
+
+/* —— Stopka —— to samo tło co header; tekst --text (7.5:1), przygaszony 0.8 (5.3:1) */
+.site-footer {
+  margin-top: 2rem;
+  border-top: 1px solid rgba(18, 19, 26, 0.08);
+  background: var(--header-bg);
+  color: var(--text);
+}
+
+.site-footer-heading {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.site-footer-muted {
+  color: rgba(18, 19, 26, 0.8);
+}
+
+.site-footer-link {
+  font-size: 0.9375rem;
+  text-decoration: underline;
+  text-decoration-color: rgba(18, 19, 26, 0.35);
+  text-underline-offset: 0.25em;
+  transition: text-decoration-color 0.15s ease;
+}
+
+.site-footer-link:hover {
+  text-decoration-color: currentColor;
+}
+
+.site-footer-bottom {
+  border-top: 1px solid rgba(18, 19, 26, 0.18);
+}

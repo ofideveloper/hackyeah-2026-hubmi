@@ -2,7 +2,7 @@
 
 Online: [https://hackyeah-2026-hubmi.vercel.app/](https://hackyeah-2026-hubmi.vercel.app/)
 
-PWA na HackYeah — mieszkaniec rozmawia ze społecznym opiekunem AI, a system dopasowuje projekty, zbiera zgłoszenia i kieruje sprawy do właściwych jednostek.
+PWA na HackYeah — mieszkaniec rozmawia z opiekunem AI, a system dopasowuje projekty, zbiera zgłoszenia i kieruje sprawy do właściwych jednostek.
 
 ## Problem
 
@@ -10,7 +10,7 @@ Ludzie nie wiedzą, która jednostka odpowiada za ich sprawę. Formularze zniech
 
 ## Rozwiązanie
 
-MaloHUB zamienia zgłoszenie w rozmowę ze **społecznym opiekunem**:
+MaloHUB zamienia zgłoszenie w rozmowę z **opiekunem**:
 
 1. Opisujesz sytuację własnymi słowami (nawet bez konta — na landingu).
 2. AI dobiera gotowe rozwiązanie z katalogu **albo** zapisuje zgłoszenie / zbiera materiał pod nową inicjatywę.

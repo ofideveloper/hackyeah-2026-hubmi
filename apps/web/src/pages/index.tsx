@@ -32,27 +32,22 @@ const destinations = [
   {
     href: "/wiedza",
     title: "Zasobnik wiedzy",
-    description: "Wyzwania społeczne, biblioteka innowacji i materiały edukacyjne.",
+    description: "Wyzwania, innowacje i materiały edukacyjne.",
   },
   {
     href: "/kreator",
     title: "Kreator pomysłów",
-    description: "Opisz innowację, rozwiń fiszkę i złóż wniosek w naborze grantowym.",
+    description: "Fiszka innowacji i wniosek grantowy.",
   },
   {
     href: "/tester",
     title: "Tester innowacji",
-    description: "Zgłoś się do testów rozwiązań i zostaw opinię z usprawnieniami.",
+    description: "Testuj rozwiązania i zostaw opinię.",
   },
   {
     href: "/kontakt",
     title: "Kontakt",
-    description: "Pytania do ROPS, mentorzy oraz współpraca międzysektorowa.",
-  },
-  {
-    href: "/app",
-    title: "Zapytaj opiekuna",
-    description: "Opisz sprawę i śledź statusy w swojej przestrzeni.",
+    description: "ROPS, mentorzy i partnerstwa.",
   },
 ];
 
@@ -99,7 +94,7 @@ export default function HomePage() {
         <title>MaloHUB — Twoja sprawa ma znaczenie</title>
         <meta
           name="description"
-          content="Opisz sprawę opiekunowi, przeglądaj wiedzę i innowacje społeczne. Prosto, lokalnie i w jednym miejscu."
+          content="Opisz sprawę opiekunowi, przeglądaj wiedzę i innowacje społeczne. Prosto i w jednym miejscu."
         />
       </Head>
 
@@ -111,12 +106,11 @@ export default function HomePage() {
             <div className="animate-fade-up">
               <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/80 px-3.5 py-2 text-sm font-medium text-[var(--muted)] shadow-sm">
                 <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-                Sprawy Twojej okolicy w jednym miejscu
+                Twoja sprawa w jednym miejscu
               </p>
               <h1 className="font-display max-w-2xl text-4xl font-semibold leading-[1.1] tracking-tight text-[var(--text)] sm:text-5xl lg:text-6xl">
                 Zgłaszaj to, co{" "}
-                <span className="text-[var(--accent)]">ważne</span> dla Twojej
-                okolicy.
+                <span className="text-[var(--accent)]">ważne</span>.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8">
                 Problem, wydarzenie albo pomysł? Opisz go opiekunowi albo zajrzyj do
@@ -133,7 +127,14 @@ export default function HomePage() {
               </div>
               {!loggedIn && (
                 <p className="mt-4 text-sm text-[var(--muted)]">
-                  Możesz zacząć bez logowania — konto przyda się później.
+                  Rozmowę możesz zacząć od razu —{" "}
+                  <Link
+                    href="/login"
+                    className="font-medium text-[var(--text)] underline decoration-[var(--border)] underline-offset-2 transition hover:text-[var(--accent-hover)] hover:decoration-[var(--accent)]"
+                  >
+                    konto
+                  </Link>{" "}
+                  pozwoli później śledzić sprawę.
                 </p>
               )}
             </div>
@@ -224,30 +225,63 @@ export default function HomePage() {
               </div>
 
               {loggedIn ? (
-                <div className="mt-10 rounded-2xl bg-[var(--text)] px-6 py-7 text-white sm:px-8">
-                  <div className="max-w-2xl">
-                    <h2 className="font-display text-xl font-semibold">
-                      Co chcesz zrobić dalej?
-                    </h2>
-                    <p className="mt-1.5 text-sm text-white/70">
-                      Wybierz obszar — wiedza, pomysł, testy, kontakt albo rozmowa z opiekunem.
+                <div className="lp-next relative mt-10 overflow-hidden rounded-3xl bg-[var(--header-bg)] px-6 py-8 text-[var(--text)] sm:px-10 sm:py-10">
+                  <div
+                    className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/25 blur-3xl"
+                    aria-hidden
+                  />
+                  <div
+                    className="pointer-events-none absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-[var(--accent)]/20 blur-3xl"
+                    aria-hidden
+                  />
+                  <div className="relative">
+                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-hover)]">
+                      Twoja przestrzeń
                     </p>
+                    <div className="mt-3 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                      <div className="max-w-xl">
+                        <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+                          Co chcesz zrobić dalej?
+                        </h2>
+                        <p className="mt-2 text-sm leading-6 text-[var(--text)]/75 sm:text-base">
+                          Wybierz obszar albo wróć do rozmowy z opiekunem.
+                        </p>
+                      </div>
+                      <Link
+                        href="/app#opiekun"
+                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--text)] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-hover)]"
+                      >
+                        Zapytaj opiekuna
+                        <span aria-hidden="true">→</span>
+                      </Link>
+                    </div>
+                    <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      {destinations.map((item, index) => (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            className="lp-next-card group flex h-full flex-col rounded-2xl border border-[var(--text)]/10 bg-white/35 px-4 py-5 transition duration-200 hover:-translate-y-0.5 hover:border-[var(--text)]/20 hover:bg-white/55"
+                          >
+                            <span className="font-display text-xs font-semibold tracking-[0.14em] text-[var(--accent-hover)]">
+                              {String(index + 1).padStart(2, "0")}
+                            </span>
+                            <span className="mt-4 flex items-start justify-between gap-2">
+                              <span className="font-semibold leading-snug">{item.title}</span>
+                              <span
+                                className="translate-x-0 text-[var(--accent-hover)] opacity-60 transition duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
+                                aria-hidden="true"
+                              >
+                                →
+                              </span>
+                            </span>
+                            <span className="mt-2 text-sm leading-6 text-[var(--text)]/70">
+                              {item.description}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {destinations.map((item) => (
-                      <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          className="block h-full rounded-xl border border-white/15 bg-white/5 px-4 py-4 transition hover:bg-white/10"
-                        >
-                          <span className="font-semibold">{item.title}</span>
-                          <span className="mt-1.5 block text-sm text-white/70">
-                            {item.description}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
               ) : (
                 <div className="mt-10 flex flex-col justify-between gap-5 rounded-2xl bg-[var(--text)] px-6 py-7 text-white sm:flex-row sm:items-center sm:px-8">

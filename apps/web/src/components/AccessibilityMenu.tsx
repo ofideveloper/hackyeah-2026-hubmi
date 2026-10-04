@@ -52,15 +52,15 @@ export function AccessibilityMenu() {
         onClick={() => setOpen((value) => !value)}
       >
         <span className="a11y-menu-trigger-icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" focusable="false">
-            <circle cx="12" cy="4.5" r="2.25" stroke="currentColor" strokeWidth="1.75" />
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" focusable="false">
             <path
-              d="M6.5 10.5h11M12 10.5v9M8.5 19.5h7M9 10.5 7 15.5M15 10.5l2 5"
+              d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z"
               stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
+              strokeWidth="1.85"
               strokeLinejoin="round"
             />
+            <circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.85" />
+            <circle cx="12" cy="12" r="1.15" fill="currentColor" />
           </svg>
         </span>
       </button>

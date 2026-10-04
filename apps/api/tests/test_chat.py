@@ -205,28 +205,30 @@ def test_no_match_offers_new_project_draft(client, llm, catalog, db, scraper, mo
     assert body["reply"] == NO_MATCH_REPLY, "przy braku dopasowania odpowiedź jest stała, nie od modelu"
     assert body["suggested_projects"] == []
     assert body["new_project_draft"] == draft
-    assert scraper.calls == 1, "przed odpowiedzią „nie mamy” katalog jest dociągany ze źródła"
+    # assert scraper.calls == 1, "przed odpowiedzią „nie mamy” katalog jest dociągany ze źródła"
+    assert scraper.calls == 0, "scraper w czacie jest wyłączony"
     [signal] = db.exec(select(m.NeedSignal)).all()
     assert signal.category_id is None
 
 
-def test_no_match_asks_again_when_refresh_brought_new_projects(client, llm, catalog, scraper):
-    scraper.added = 2
-    llm.reply(f"Nie mamy.\n{NO_MATCH}", f"Jednak mamy.\n{marker(catalog[0])}\n{MATCH}")
-
-    body = ask(client).json()
-
-    assert body["status"] == "match"
-    assert len(llm.calls) == 2
-
-
-def test_catalog_refresh_has_cooldown(client, llm, catalog, scraper):
-    llm.default = f"Nie mamy.\n{NO_MATCH}"
-
-    for _ in range(3):
-        assert ask(client).json()["status"] == "no-match"
-
-    assert scraper.calls == 1
+# Scraper w czacie wyłączony — testy wracają razem z nim.
+# def test_no_match_asks_again_when_refresh_brought_new_projects(client, llm, catalog, scraper):
+#     scraper.added = 2
+#     llm.reply(f"Nie mamy.\n{NO_MATCH}", f"Jednak mamy.\n{marker(catalog[0])}\n{MATCH}")
+#
+#     body = ask(client).json()
+#
+#     assert body["status"] == "match"
+#     assert len(llm.calls) == 2
+#
+#
+# def test_catalog_refresh_has_cooldown(client, llm, catalog, scraper):
+#     llm.default = f"Nie mamy.\n{NO_MATCH}"
+#
+#     for _ in range(3):
+#         assert ask(client).json()["status"] == "no-match"
+#
+#     assert scraper.calls == 1
 
 
 def test_need_is_recorded_once_per_area_within_a_chat(client, llm, catalog, db):

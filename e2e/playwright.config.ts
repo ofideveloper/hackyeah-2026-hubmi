@@ -53,8 +53,8 @@ export default defineConfig({
         LLM_BASE_URL: `http://127.0.0.1:${LLM_PORT}`,
         LLM_API_KEY: "e2e",
         SCRAPE_ON_STARTUP: "false",
-        // „Brak w bazie” w czacie dociąga katalog z rops.krakow.pl — martwe proxy sprawia,
-        // że scraper odpada natychmiast i testy nie dotykają zewnętrznego serwisu.
+        // Martwe proxy — gdyby coś jednak sięgnęło do rops.krakow.pl, odpada natychmiast
+        // i testy nie dotykają zewnętrznego serwisu.
         HTTPS_PROXY: "http://127.0.0.1:9",
         NO_PROXY: "127.0.0.1,localhost",
         LOG_LEVEL: "WARNING",

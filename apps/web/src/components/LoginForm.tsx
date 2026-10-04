@@ -3,11 +3,10 @@ import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
-import { loginUser } from "@/lib/api";
 
 export function LoginForm() {
   const router = useRouter();
-  const { establishSession } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +18,7 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      const token = await loginUser(email, password);
-      const me = await establishSession(token);
+      const me = await login(email, password);
       await router.push(me.role === "admin" ? "/admin" : "/app");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Logowanie nie powiodło się");

@@ -97,8 +97,10 @@ async function parseError(res: Response): Promise<string> {
   }
 }
 
+// TODO(cookie-auth): tymczasowe — sesję niesie cookie HttpOnly, BFF sam dokłada `Authorization`.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function authHeaders(token: string): HeadersInit {
-  return { Authorization: `Bearer ${token}` };
+  return {};
 }
 
 export async function registerUser(payload: {
@@ -121,7 +123,8 @@ export async function registerUser(payload: {
   return res.json() as Promise<User>;
 }
 
-export async function loginUser(email: string, password: string): Promise<string> {
+/** BFF zapisuje JWT w cookie HttpOnly — odpowiedź nie zawiera tokena. */
+export async function loginUser(email: string, password: string): Promise<void> {
   const body = new URLSearchParams({
     username: email,
     password,
@@ -136,9 +139,13 @@ export async function loginUser(email: string, password: string): Promise<string
   if (!res.ok) {
     throw new Error(await parseError(res));
   }
+}
 
-  const data = (await res.json()) as { access_token: string };
-  return data.access_token;
+export async function logoutUser(): Promise<void> {
+  const res = await fetch(`${API_BASE}/auth/logout`, { method: "POST", keepalive: true });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
 }
 
 export async function fetchMe(token: string): Promise<User> {

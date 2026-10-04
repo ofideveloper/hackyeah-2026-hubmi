@@ -198,9 +198,9 @@ export function AppNav({ current, isAdmin, unreadKontakt, user }: AppNavProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { status, user: authUser, isAdmin: authIsAdmin, token } = useAuth();
+  const { status, user: authUser, isAdmin: authIsAdmin, sessionHint, token } = useAuth();
 
-  const showLoggedIn = status === "authenticated" || (status === "loading" && Boolean(token));
+  const showLoggedIn = status === "authenticated" || (status === "loading" && sessionHint);
   const resolvedUser = user ?? authUser;
   const resolvedAdmin = isAdmin ?? authIsAdmin;
   const [unread, setUnread] = useState(unreadKontakt ?? 0);

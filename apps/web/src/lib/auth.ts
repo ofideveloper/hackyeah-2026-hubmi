@@ -1,14 +1,34 @@
-const TOKEN_KEY = "hubmi_token";
+/** Znacznik „jest sesja” czytelny dla JS. Sam JWT siedzi w cookie HttpOnly ustawianym przez BFF. */
+export const SESSION_HINT_COOKIE = "hubmi_auth";
 
-export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
+const LEGACY_TOKEN_KEY = "hubmi_token";
+
+export function hasSessionHint(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split("; ").some((entry) => entry.startsWith(`${SESSION_HINT_COOKIE}=`));
 }
 
-export function setToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
+export function clearSessionHint(): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${SESSION_HINT_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+}
+
+/** Sprzątanie po starszej wersji, która trzymała JWT w localStorage. */
+export function dropLegacyToken(): void {
+  try {
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {
+    // storage niedostępny (np. tryb prywatny) — nie ma czego sprzątać
+  }
+}
+
+// TODO(cookie-auth): tymczasowe — wywołania API nie potrzebują już tokena.
+const PLACEHOLDER_TOKEN = "cookie-session";
+
+export function getToken(): string | null {
+  return hasSessionHint() ? PLACEHOLDER_TOKEN : null;
 }
 
 export function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
+  clearSessionHint();
 }

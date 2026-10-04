@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
+import { SiteTitle, SiteTitleAccent } from "@/components/SiteTitle";
 import { useAuth } from "@/hooks/useAuth";
 import { changeMyPassword } from "@/lib/api";
 
@@ -74,11 +75,11 @@ export default function ProfilePage() {
       <SiteHeader width="full" actions={<AppNav current="profil" />} />
 
       <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
-        <header className="animate-fade-up">
+        <header>
           <p className="kb-meta">Konto</p>
-          <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Twój <span className="text-[var(--accent-text)]">profil</span>
-          </h1>
+          <SiteTitle>
+            Twój <SiteTitleAccent>profil</SiteTitleAccent>
+          </SiteTitle>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Dane konta i zmiana hasła. Sektor oraz organizację ustawisz też w zakładce Kontakt.
           </p>

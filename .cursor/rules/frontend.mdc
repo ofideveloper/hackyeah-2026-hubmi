@@ -28,6 +28,9 @@ BFF: `src/pages/api/[...path].ts` → `process.env.API_URL`.
 
 - Auth: JWT w cookie HttpOnly (BFF) — nie zapisuj tokena w JS / storage; `useAuth().login` / `logout`; SSR hydracja w `_app.getInitialProps` → `AuthProvider(initialUser)`; cache bez `fetchMe` w widokach. UI: `isLoggedIn`; mutacje/fetch: `canUseSession`. Nie bramkuj efektów samym `hasSessionHint()` z `[]` deps.
 - Formularze / panele: `src/components/`
+- CTA box: `components/boxes/DarkCtaBox` (tło `--header-bg`; props: title, description, action, children); sekcje landingu: `components/home/sections/`
+- Nav: hamburger poniżej 1220px (`globals.css`); pełne menu od `min-width: 1220px`
+- H1 podstron: `SiteTitle` / `SiteTitleAccent` — nie duplikuj klas tytułu
 - Menu zalogowanego: `AppNav` / `LoggedInMenu` (`current=…`) — CTA „Zapytaj opiekuna”, konto w `UserMenu` (profil / admin / wyloguj); strona `/profil`
 - Admin: `AdminShell` + `useRequireAdmin` na `/admin/*` (role=admin); podwidoki w `components/admin/`
 - Rozmowy: `components/communication/` (`ThreadList`, `ThreadView`, `ComposeDialog`) — wspólne dla `/kontakt` i `/admin/messages`; nowe wiadomości przez odpytywanie, treść jako czysty tekst

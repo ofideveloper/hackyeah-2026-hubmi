@@ -6,10 +6,12 @@ import Head from "next/head";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useState } from "react";
 
+import { DarkCtaBox } from "@/components/boxes";
 import { ExternalLinkIcon } from "@/components/ExternalLinkIcon";
 import { InnovationDialog } from "@/components/knowledge/InnovationDialog";
 import { VideoEmbed } from "@/components/knowledge/VideoEmbed";
 import { AppNav, caretakerHref, SiteHeader } from "@/components/SiteHeader";
+import { SiteTitle, SiteTitleAccent } from "@/components/SiteTitle";
 import { useAuth } from "@/hooks/useAuth";
 import {
   fetchKnowledge,
@@ -214,12 +216,12 @@ export default function KnowledgePage() {
         tabIndex={-1}
         className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14"
       >
-        <header className="animate-fade-up">
+        <header>
           <p className="kb-meta">Zasobnik wiedzy · ROPS Kraków</p>
-          <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
+          <SiteTitle>
             Co dzieje się w Małopolsce i{" "}
-            <span className="text-[var(--accent-text)]">co już działa</span>
-          </h1>
+            <SiteTitleAccent>co już działa</SiteTitleAccent>
+          </SiteTitle>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Wybierz obszar albo wpisz, czego szukasz — pokażemy wyzwania,
             sprawdzone innowacje społeczne i materiały, które ich dotyczą.
@@ -540,23 +542,16 @@ export default function KnowledgePage() {
               )}
             </section>
 
-            <aside className="mt-16 flex flex-col justify-between gap-5 rounded-2xl bg-[var(--text)] px-6 py-7 text-white sm:flex-row sm:items-center sm:px-8">
-              <div>
-                <h2 className="font-display text-xl font-semibold">
-                  Nie ma tu Twojej sprawy?
-                </h2>
-                <p className="mt-1.5 text-sm text-white/75">
-                  Opisz ją interaktywnemu asystentowi — dobierze rozwiązanie albo przekaże
-                  potrzebę zespołowi.
-                </p>
-              </div>
-              <Link
-                href={caretakerHref(loggedIn)}
-                className="inline-flex shrink-0 items-center justify-center rounded-lg bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--accent-light)]"
-              >
-                Porozmawiaj z interaktywnym asystentem
-              </Link>
-            </aside>
+            <DarkCtaBox
+              as="aside"
+              className="mt-16"
+              title="Nie ma tu Twojej sprawy?"
+              description="Opisz ją interaktywnemu asystentowi — dobierze rozwiązanie albo przekaże potrzebę zespołowi."
+              action={{
+                href: caretakerHref(loggedIn),
+                label: "Porozmawiaj z interaktywnym asystentem",
+              }}
+            />
           </>
         )}
       </main>

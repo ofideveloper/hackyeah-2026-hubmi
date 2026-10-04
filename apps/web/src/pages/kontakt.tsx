@@ -10,6 +10,7 @@ import { ComposeDialog } from "@/components/communication/ComposeDialog";
 import { ThreadList } from "@/components/communication/ThreadList";
 import { ThreadView } from "@/components/communication/ThreadView";
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
+import { SiteTitle, SiteTitleAccent } from "@/components/SiteTitle";
 import { Toast } from "@/components/Toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useThreads } from "@/hooks/useThreads";
@@ -319,11 +320,11 @@ export default function ContactPage() {
       <SiteHeader width="full" actions={<AppNav current="kontakt" />} />
 
       <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
-        <header className="animate-fade-up">
+        <header>
           <p className="kb-meta">Kontakt i współpraca</p>
-          <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Zapytaj, poradź się i <span className="text-[var(--accent-text)]">znajdź partnera</span>
-          </h1>
+          <SiteTitle>
+            Zapytaj, poradź się i <SiteTitleAccent>znajdź partnera</SiteTitleAccent>
+          </SiteTitle>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Napisz bezpośrednio do zespołu ROPS, skorzystaj ze wsparcia mentora albo nawiąż
             współpracę z organizacją z innego sektora.
@@ -500,8 +501,12 @@ export default function ContactPage() {
                 </p>
               ))}
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-wrap gap-2" role="group" aria-label="Rodzaj ogłoszenia">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 sm:items-end">
+              <div
+                className="flex flex-wrap items-center gap-2"
+                role="group"
+                aria-label="Rodzaj ogłoszenia"
+              >
                 {KIND_FILTERS.map((filter) => (
                   <button
                     key={filter.label}

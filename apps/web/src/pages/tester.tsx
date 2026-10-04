@@ -6,6 +6,7 @@ import Head from "next/head";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
+import { SiteTitle, SiteTitleAccent } from "@/components/SiteTitle";
 import { SolutionDialog } from "@/components/tester/SolutionDialog";
 import { Toast } from "@/components/Toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -103,11 +104,12 @@ export default function TesterPage() {
       <SiteHeader width="full" actions={<AppNav current="tester" />} />
 
       <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
-        <header className="animate-fade-up">
+        <header>
           <p className="kb-meta">Tester innowacji</p>
-          <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Sprawdź rozwiązanie i <span className="text-[var(--accent-text)]">powiedz, co poprawić</span>
-          </h1>
+          <SiteTitle>
+            Sprawdź rozwiązanie i{" "}
+            <SiteTitleAccent>powiedz, co poprawić</SiteTitleAccent>
+          </SiteTitle>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Zgłoś się do testów, a po nich oceń rozwiązanie i podpowiedz autorom, co warto
             usprawnić. Opinie testerów są widoczne dla wszystkich.

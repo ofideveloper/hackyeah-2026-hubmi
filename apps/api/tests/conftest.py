@@ -436,9 +436,10 @@ class FakeScraper:
 def scraper(monkeypatch) -> FakeScraper:
     """Żaden test nie pobiera danych z rops.krakow.pl — scraper jest atrapą."""
     fake = FakeScraper()
-    for module in ("app.routes.chat", "app.routes.knowledge", "app.seed"):
+    # Scraper w czacie wyłączony — po przywróceniu: dopisz "app.routes.chat" i odkomentuj reset karencji.
+    for module in ("app.routes.knowledge", "app.seed"):
         monkeypatch.setattr(f"{module}.refresh_new_projects", fake)
-    monkeypatch.setattr("app.routes.chat._last_refresh", None)
+    # monkeypatch.setattr("app.routes.chat._last_refresh", None)
     return fake
 
 

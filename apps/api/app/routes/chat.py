@@ -32,7 +32,7 @@ from ..models import (
     ProposalOfNewProject,
     StatusEnum,
 )
-from ..scripts.scrape_rops import refresh_new_projects
+# from ..scripts.scrape_rops import refresh_new_projects
 from ..similar import is_similar, keywords
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -259,10 +259,11 @@ NO_MATCH_REPLY = (
 
 STATUS_RE = re.compile(r"\[\[hubmi-status:(match|clarify|no-match)\]\]", re.IGNORECASE)
 
+# Scraper w czacie wyłączony — odkomentuj, żeby przywrócić dociąganie katalogu przy „no-match”.
 # Dociąganie nowych danych ze źródła — najwyżej raz na ten okres.
-REFRESH_COOLDOWN_S = float(os.getenv("CATALOG_REFRESH_COOLDOWN_S", "900"))
-_refresh_lock = asyncio.Lock()
-_last_refresh: float | None = None
+# REFRESH_COOLDOWN_S = float(os.getenv("CATALOG_REFRESH_COOLDOWN_S", "900"))
+# _refresh_lock = asyncio.Lock()
+# _last_refresh: float | None = None
 
 
 @dataclass
@@ -339,23 +340,23 @@ def judge_reply(raw: str, catalog: list[tuple[ActualProject, str]]) -> Verdict:
     return Verdict(status, text.strip(), raw, projects, draft)
 
 
-async def refresh_catalog() -> int:
-    """Dociąga nowe projekty ze źródła; zwraca liczbę dodanych (0 w okresie karencji)."""
-    global _last_refresh
-    async with _refresh_lock:
-        now = time.monotonic()
-        if _last_refresh is not None and now - _last_refresh < REFRESH_COOLDOWN_S:
-            return 0
-        _last_refresh = now
-        try:
-            added = await asyncio.to_thread(refresh_new_projects)
-        except Exception as exc:  # źródło zewnętrzne — awaria nie może wywrócić czatu
-            logger.warning(
-                "Odświeżenie katalogu nieudane: %s: %s", type(exc).__name__, exc
-            )
-            return 0
-        logger.info("Odświeżono katalog — %s nowych projektów", added)
-        return added
+# async def refresh_catalog() -> int:
+#     """Dociąga nowe projekty ze źródła; zwraca liczbę dodanych (0 w okresie karencji)."""
+#     global _last_refresh
+#     async with _refresh_lock:
+#         now = time.monotonic()
+#         if _last_refresh is not None and now - _last_refresh < REFRESH_COOLDOWN_S:
+#             return 0
+#         _last_refresh = now
+#         try:
+#             added = await asyncio.to_thread(refresh_new_projects)
+#         except Exception as exc:  # źródło zewnętrzne — awaria nie może wywrócić czatu
+#             logger.warning(
+#                 "Odświeżenie katalogu nieudane: %s: %s", type(exc).__name__, exc
+#             )
+#             return 0
+#         logger.info("Odświeżono katalog — %s nowych projektów", added)
+#         return added
 
 
 async def ask_about_catalog(
@@ -389,12 +390,12 @@ async def continue_conversation(
     turns.append({"role": "user", "text": message})
 
     verdict, catalog = await ask_about_catalog(session, turns)
-    if verdict.status == "no-match" and await refresh_catalog() > 0:
-        try:
-            verdict, catalog = await ask_about_catalog(session, turns)
-        except LLMError as exc:
-            # zostaje pierwsza ocena
-            logger.warning("Ponowne pytanie po odświeżeniu katalogu nieudane: %s", exc)
+    # if verdict.status == "no-match" and await refresh_catalog() > 0:
+    #     try:
+    #         verdict, catalog = await ask_about_catalog(session, turns)
+    #     except LLMError as exc:
+    #         # zostaje pierwsza ocena
+    #         logger.warning("Ponowne pytanie po odświeżeniu katalogu nieudane: %s", exc)
 
     if verdict.status == "no-match":
         verdict.reply = NO_MATCH_REPLY

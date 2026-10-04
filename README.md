@@ -40,14 +40,14 @@ ROPS Kraków ma blisko 200 sprawdzonych innowacji społecznych, a w regionie dzi
 - Asystent kreatora i Middleman pracują wyłącznie na danych podanych przez użytkownika i opisie innowacji z Biblioteki.
 - Dostawca modelu jest wymienny (`LLM_PROVIDER`, `LLM_MODEL`, `LLM_BASE_URL`) — dowolne API zgodne z OpenAI.
 
-## Konto demo
+## Konta demo
 
-| | |
-|---|---|
-| Email | `admin@malohub.dev` |
-| Hasło | `admin12345` |
+| Rola | Email | Hasło |
+|---|---|---|
+| Administrator | `admin@malohub.dev` | `admin12345` |
+| Użytkownik | `user@example.com` | `user12345` |
 
-Konto służy tylko do pokazu. Przed wdrożeniem ustaw własne `ADMIN_PASSWORD` i `SECRET_KEY`.
+Konta służą tylko do pokazu. Przed wdrożeniem ustaw własne `ADMIN_PASSWORD`, `DEMO_USER_PASSWORD` (albo pusty `DEMO_USER_EMAIL`, żeby konta nie tworzyć) i `SECRET_KEY`.
 
 ## Architektura
 

@@ -15,12 +15,23 @@ test("fiszka: utworzenie, edycja i usunięcie", async ({ userPage: page }) => {
   await page.getByLabel("Krótki opis").fill("Wspólny sprzęt rehabilitacyjny dla mieszkańców gminy.");
   await page.getByLabel("Komu jest dedykowany?").fill("Seniorzy i ich opiekunowie");
   await page.getByLabel("Obszar").selectOption({ index: 1 });
-  await page.getByRole("button", { name: "Opublikuj fiszkę" }).click();
+  await page.getByRole("button", { name: "Zgłoś pomysł" }).click();
 
-  await expect(statusWith(page, `Fiszka „${name}” została utworzona.`)).toBeVisible();
-  const mine = page.getByRole("region", { name: "Twoje fiszki" });
+  await expect(
+    statusWith(
+      page,
+      `Pomysł „${name}” został zgłoszony i czeka na ocenę zespołu ROPS.`,
+    ),
+  ).toBeVisible();
+
+  // Po zapisie otwiera się dialog ze szczegółami
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("heading", { name })).toBeVisible();
+  await expect(dialog.getByText("Seniorzy i ich opiekunowie")).toBeVisible();
+  await dialog.getByRole("button", { name: "Zamknij" }).first().click();
+
+  const mine = page.getByRole("region", { name: "Twoje pomysły" });
   await expect(mine.getByRole("heading", { name })).toBeVisible();
-  await expect(mine.getByText("Seniorzy i ich opiekunowie")).toBeVisible();
 
   // Dane są w bazie, nie tylko w stanie strony
   await page.reload();
@@ -30,7 +41,8 @@ test("fiszka: utworzenie, edycja i usunięcie", async ({ userPage: page }) => {
   await expect(page.getByLabel("Tytuł pomysłu")).toHaveValue(name);
   await page.getByLabel("Krótki opis").fill("Opis po zmianie.");
   await page.getByRole("button", { name: "Zapisz zmiany" }).click();
-  await expect(statusWith(page, "Zapisano zmiany w fiszce.")).toBeVisible();
+  await expect(statusWith(page, "Zapisano zmiany w pomyśle.")).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Zamknij" }).first().click();
   await expect(mine.getByText("Opis po zmianie.")).toBeVisible();
 
   page.once("dialog", (dialog) => void dialog.accept());

@@ -14,10 +14,14 @@ test("decyzja admina o fiszce wraca do autora ze statusem, komentarzem i wiadomo
   await expect(card.getByRole("button", { name: action("Zatwierdź", name) })).toHaveCount(0);
 
   await page.goto("/kreator");
-  const mine = page.getByRole("region", { name: "Twoje fiszki" });
+  const mine = page.getByRole("region", { name: "Twoje pomysły" });
   const idea = mine.getByRole("listitem").filter({ hasText: name });
-  await expect(idea.getByText("Świetny pomysł, zapraszamy do naboru.")).toBeVisible();
   await expect(idea.getByText(/Status:/)).not.toContainText(/oczekuje|czeka/i);
+
+  await idea.getByRole("button", { name: action("Zobacz szczegóły", name) }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("Świetny pomysł, zapraszamy do naboru.")).toBeVisible();
+  await dialog.getByRole("button", { name: "Zamknij" }).first().click();
 
   await page.goto("/kontakt");
   await expect(page.getByRole("button", { name: new RegExp(`Fiszka: ${name}`) })).toBeVisible();

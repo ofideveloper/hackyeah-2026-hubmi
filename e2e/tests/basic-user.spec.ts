@@ -106,12 +106,18 @@ test.describe("zwykły użytkownik", { tag: "@smoke" }, () => {
       .getByLabel("Etap realizacji")
       .selectOption({ label: "Prototyp" });
     await page.getByLabel("Obszar").selectOption({ index: 1 });
-    await page.getByRole("button", { name: "Opublikuj fiszkę" }).click();
+    await page.getByRole("button", { name: "Zgłoś pomysł" }).click();
     await expect(
-      statusWith(page, `Fiszka „${name}” została utworzona.`),
+      statusWith(
+        page,
+        `Pomysł „${name}” został zgłoszony i czeka na ocenę zespołu ROPS.`,
+      ),
     ).toBeVisible();
 
-    const mine = page.getByRole("region", { name: "Twoje fiszki" });
+    // Po zapisie otwiera się dialog ze szczegółami — zamknij, żeby wrócić do listy
+    await page.getByRole("dialog").getByRole("button", { name: "Zamknij" }).first().click();
+
+    const mine = page.getByRole("region", { name: "Twoje pomysły" });
     const card = mine.getByRole("listitem").filter({ hasText: name });
     await expect(card.getByText(/Status:/)).toBeVisible();
     await expect(

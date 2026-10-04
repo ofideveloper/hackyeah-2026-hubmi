@@ -1,9 +1,16 @@
 import { Head, Html, Main, NextScript } from "next/document";
 
+/**
+ * Odczyt preferencji a11y przed malowaniem — unika mrugnięcia domyślnym motywem.
+ * Klucz i kształt JSON muszą być zgodne z `lib/a11yPrefs.ts`.
+ */
+const A11Y_BOOT_SCRIPT = `(function(){try{var r=localStorage.getItem("hubmi_a11y");if(!r)return;var p=JSON.parse(r);var d=document.documentElement;if(p.textSize==="small"||p.textSize==="medium"||p.textSize==="large")d.setAttribute("data-text-size",p.textSize);if(p.highContrast)d.setAttribute("data-high-contrast","true");}catch(e){}})();`;
+
 export default function Document() {
   return (
     <Html lang="pl">
       <Head>
+        <script dangerouslySetInnerHTML={{ __html: A11Y_BOOT_SCRIPT }} />
         <meta name="application-name" content="MaloHUB" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

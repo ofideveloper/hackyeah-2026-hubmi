@@ -4,6 +4,7 @@
   --bg: #f3f5f8;
   --bg-elevated: #ffffff;
   --border: #d5dae3;
+  --border-strong: #7c8494;
   --text: #12131a;
   --muted: #5c6474;
   --accent: #847362;
@@ -15,8 +16,97 @@
   --accent-soft: rgba(132, 115, 98, 0.14);
   --header-bg: #ada399;
   --danger: #c23b3b;
+  --success: #1f6b4a;
   --ring: rgba(132, 115, 98, 0.3);
   --shadow: 0 1px 2px rgba(18, 19, 26, 0.05), 0 8px 24px rgba(18, 19, 26, 0.06);
+  /* Skala typografii — menu dostępności ustawia data-text-size na <html> */
+  --a11y-root-font-size: 100%;
+}
+
+html[data-text-size="small"] {
+  --a11y-root-font-size: 87.5%; /* ~14px */
+}
+
+html[data-text-size="medium"] {
+  --a11y-root-font-size: 100%; /* ~16px */
+}
+
+html[data-text-size="large"] {
+  --a11y-root-font-size: 125%; /* ~20px */
+}
+
+/* Tryb wysokiego kontrastu — czarny tekst na białym, bez tła ilustracyjnego */
+html[data-high-contrast="true"] {
+  --bg: #ffffff;
+  --bg-elevated: #ffffff;
+  --border: #000000;
+  --border-strong: #000000;
+  --text: #000000;
+  --muted: #000000;
+  --accent: #000000;
+  --accent-hover: #000000;
+  --accent-light: #333333;
+  --accent-text: #000000;
+  --focus: #000000;
+  --accent-soft: rgba(0, 0, 0, 0.08);
+  --header-bg: #ffffff;
+  --danger: #9b0000;
+  --success: #005c2e;
+  --ring: rgba(0, 0, 0, 0.35);
+  --shadow: none;
+  color-scheme: light;
+}
+
+html[data-high-contrast="true"] body {
+  background-color: #ffffff;
+  background-image: none;
+}
+
+html[data-high-contrast="true"] .btn-primary {
+  background: #000000;
+  color: #ffffff;
+  border: 2px solid #000000;
+}
+
+html[data-high-contrast="true"] .btn-primary:hover {
+  background: #000000;
+  text-decoration: underline;
+}
+
+html[data-high-contrast="true"] .btn-ghost,
+html[data-high-contrast="true"] .btn-header-outline {
+  border: 2px solid #000000;
+  background: #ffffff;
+  color: #000000;
+}
+
+html[data-high-contrast="true"] .site-header {
+  border-bottom: 2px solid #000000;
+  backdrop-filter: none;
+}
+
+html[data-high-contrast="true"] .site-header-link:hover,
+html[data-high-contrast="true"] .site-header-link-active {
+  background: #000000;
+  color: #ffffff;
+}
+
+html[data-high-contrast="true"] .user-menu-trigger,
+html[data-high-contrast="true"] .a11y-menu-trigger,
+html[data-high-contrast="true"] .site-header-menu-btn {
+  border: 2px solid #000000;
+  background: #ffffff;
+}
+
+html[data-high-contrast="true"] .user-menu-dropdown,
+html[data-high-contrast="true"] .a11y-menu-dropdown {
+  border: 2px solid #000000;
+  box-shadow: none;
+}
+
+html[data-high-contrast="true"] a:not(.btn-primary):not(.site-header-link):not(.user-menu-item):not(.a11y-menu-reset) {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 @theme inline {
@@ -27,6 +117,7 @@
 }
 
 html {
+  font-size: var(--a11y-root-font-size);
   /* Stabilizuje layout przy otwieraniu drawerów (overflow:hidden) */
   scrollbar-gutter: stable;
 }
@@ -290,6 +381,184 @@ body {
 
 .user-menu-item:hover {
   background: rgba(18, 19, 26, 0.06);
+}
+
+/* Menu dostępności — rozmiar tekstu + wysoki kontrast */
+.a11y-menu {
+  position: relative;
+  margin-left: 0.1rem;
+}
+
+.a11y-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(18, 19, 26, 0.55);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.a11y-menu-trigger:hover,
+.a11y-menu-trigger[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(18, 19, 26, 0.8);
+}
+
+.a11y-menu-trigger:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.a11y-menu-trigger-icon {
+  display: inline-flex;
+  line-height: 0;
+}
+
+.a11y-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  z-index: 40;
+  width: min(18.5rem, calc(100vw - 2rem));
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  padding: 0.75rem;
+  box-shadow: 0 12px 32px rgba(18, 19, 26, 0.14);
+}
+
+.a11y-menu-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.a11y-menu-fieldset {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.a11y-menu-legend {
+  margin-bottom: 0.45rem;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.a11y-menu-size-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+
+.a11y-menu-size-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  padding: 0.35rem 0.4rem;
+  color: var(--text);
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.a11y-menu-size-btn:hover {
+  background: var(--accent-soft);
+}
+
+.a11y-menu-size-btn-active {
+  border-color: var(--text);
+  background: var(--accent-soft);
+  font-weight: 700;
+}
+
+.a11y-menu-size-label {
+  font-weight: inherit;
+  color: inherit;
+}
+
+.a11y-menu-size-label-small {
+  font-size: 0.75rem;
+}
+
+.a11y-menu-size-label-medium {
+  font-size: 0.875rem;
+}
+
+.a11y-menu-size-label-large {
+  font-size: 1.05rem;
+}
+
+.a11y-menu-row {
+  margin-top: 0.75rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+}
+
+.a11y-menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.a11y-menu-checkbox {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  accent-color: var(--accent-hover);
+}
+
+.a11y-menu-reset {
+  display: block;
+  width: 100%;
+  margin-top: 0.65rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.5rem 0.4rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.a11y-menu-reset:hover {
+  color: var(--text);
+}
+
+.admin-main-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* Poza beżowym headerem (panel admina) — pełne tło przycisku */
+.admin-main-header .a11y-menu-trigger {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+}
+
+.admin-main-header .a11y-menu-trigger:hover,
+.admin-main-header .a11y-menu-trigger[aria-expanded="true"] {
+  background: var(--accent-soft);
 }
 
 /* Header (`--header-bg`) — przycisk z ciemnym outline */

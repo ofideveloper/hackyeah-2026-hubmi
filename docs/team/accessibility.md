@@ -30,6 +30,7 @@ Dotyczy całego UI w `apps/web` (landing, auth, `/app`, `/admin`, czat, statusy 
 - Skip link „Przejdź do treści” jest globalny (`pages/_app.tsx`) — każdy widok musi mieć `<main id="tresc" tabIndex={-1}>`
 - Bez limitów czasu: toast (`components/Toast.tsx`) nie znika sam; komunikaty po przekierowaniu pokazuj na stronie docelowej (np. `/login?registered=1`)
 - PWA nie blokuje orientacji (`"orientation": "any"` w manifestach)
+- **Menu dostępności** (`AccessibilityMenu` w `SiteHeader` i `AdminShell`): wielkość tekstu (mały / średni / duży) oraz tryb wysokiego kontrastu; stan w `localStorage` (`hubmi_a11y`), atrybuty `data-text-size` / `data-high-contrast` na `<html>`; boot-script w `_document.tsx` zapobiega FOUC
 
 ### Understandable
 

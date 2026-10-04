@@ -2,6 +2,7 @@ import App, { type AppContext, type AppProps } from "next/app";
 import { Manrope, Sora } from "next/font/google";
 import { useEffect } from "react";
 
+import { A11yPrefsProvider } from "@/hooks/useA11yPrefs";
 import { AuthProvider } from "@/hooks/useAuth";
 import type { User } from "@/lib/api";
 import "@/styles/globals.css";
@@ -50,9 +51,11 @@ export default function MaloApp({ Component, pageProps, initialUser = null }: Ma
       <a href="#tresc" className="skip-link">
         Przejdź do treści
       </a>
-      <AuthProvider initialUser={initialUser}>
-        <Component {...pageProps} />
-      </AuthProvider>
+      <A11yPrefsProvider>
+        <AuthProvider initialUser={initialUser}>
+          <Component {...pageProps} />
+        </AuthProvider>
+      </A11yPrefsProvider>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { AccessibilityMenu } from "@/components/AccessibilityMenu";
 import { BrandLogo } from "@/components/BrandLogo";
 
 type SiteHeaderWidth = "default" | "wide" | "full";
@@ -20,6 +21,7 @@ const WIDTH: Record<SiteHeaderWidth, string> = {
 /**
  * Wspólny pasek nawigacji MaloHUB — ten sam układ na LP, auth i w aplikacji.
  * Menu: zwykle `AppNav` (desktop + hamburger); na auth może być `GuestHeaderActions`.
+ * Menu dostępności (rozmiar tekstu / kontrast) jest zawsze widoczne.
  */
 export function SiteHeader({
   actions,
@@ -30,7 +32,10 @@ export function SiteHeader({
     <header className="site-header">
       <div className={`site-header-inner mx-auto w-full ${WIDTH[width]}`}>
         <BrandLogo size={logoSize} />
-        <div className="site-header-nav">{actions}</div>
+        <div className="site-header-nav">
+          {actions}
+          <AccessibilityMenu />
+        </div>
       </div>
     </header>
   );

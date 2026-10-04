@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { AssistantChat } from "@/components/AssistantChat";
 import { HowItWorksSection } from "@/components/home/sections";
+import { SiteFooter } from "@/components/SiteFooter";
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -158,30 +159,7 @@ export default function HomePage() {
           <HowItWorksSection loggedIn={loggedIn} />
         </main>
 
-        <footer className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-7 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-10">
-          <Link
-            href="/"
-            className="font-display font-semibold text-[var(--text)]"
-          >
-            MaloHUB
-          </Link>
-          <p>Twoja sprawa ma znaczenie.</p>
-          {loggedIn ? (
-            <Link
-              href="/app"
-              className="transition hover:text-[var(--accent-text)]"
-            >
-              Zapytaj interaktywnego asystenta
-            </Link>
-          ) : (
-            <Link
-              href="/login"
-              className="transition hover:text-[var(--accent-text)]"
-            >
-              Zaloguj się
-            </Link>
-          )}
-        </footer>
+        <SiteFooter loggedIn={loggedIn} />
       </div>
     </>
   );

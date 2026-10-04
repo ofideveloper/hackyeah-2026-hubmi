@@ -25,12 +25,12 @@ const ACTIONS: {
   {
     action: "unconventional",
     label: "Nietuzinkowe warianty",
-    hint: "Pokaże odważniejsze pomysły - możesz wstawić je wykorzystać.",
+    hint: "Pokaże odważniejsze wersje pomysłu — możesz wstawić je do fiszki.",
   },
   {
     action: "canvas",
     label: "Wypełnij puste pola",
-    hint: "Uzupełni puste pola w canvie innowacji społecznej.",
+    hint: "Uzupełni puste pola w sekcji „Dopracuj szczegóły pomysłu”.",
   },
   {
     action: "visualize",
@@ -113,7 +113,7 @@ function PanelBody({
           </h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
             {titleReady
-              ? "Wybierz opcję, potem naciśnij „Uruchom”. Nic nie startuje samo."
+              ? "Wybierz opcję, potem naciśnij „Uruchom”."
               : "Wpisz tytuł pomysłu i pozostałe pola formularza, sprawdź pomysły asystenta."}
           </p>
         </div>
@@ -321,8 +321,8 @@ export function IdeaAssistant({
         const filled = onCanvas(reply.canvas);
         setNotice(
           filled > 0
-            ? `Uzupełniono pola canvy: ${filled}. Jeśli nie pasują — użyj „Cofnij podpowiedź”.`
-            : "Wszystkie pola canvy są już wypełnione — wyczyść pole, aby dostać propozycję.",
+            ? `Uzupełniono puste pola szczegółów: ${filled}. Jeśli nie pasują — użyj „Cofnij podpowiedź”.`
+            : "Wszystkie pola szczegółów są już wypełnione — wyczyść pole, aby dostać propozycję.",
         );
         setResult(null);
         setCanDismissResult(false);

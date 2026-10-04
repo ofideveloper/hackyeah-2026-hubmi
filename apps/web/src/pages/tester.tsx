@@ -37,7 +37,7 @@ const NO_TESTING: MyTesting = { signups: [], reviews: [] };
 
 export default function TesterPage() {
   const searchId = useId();
-  const { user, sessionHint } = useAuth();
+  const { user, canUseSession } = useAuth();
   const [solutions, setSolutions] = useState<TestSolution[] | null>(null);
   const [mine, setMine] = useState<MyTesting>(NO_TESTING);
   const [query, setQuery] = useState("");
@@ -52,12 +52,12 @@ export default function TesterPage() {
     const fail = (err: unknown) =>
       setError(err instanceof Error ? err.message : "Nie udało się pobrać danych");
     fetchTestSolutions().then(setSolutions).catch(fail);
-    if (sessionHint) {
+    if (canUseSession) {
       fetchMyTesting().then(setMine).catch(fail);
     } else {
       setMine(NO_TESTING);
     }
-  }, [sessionHint]);
+  }, [canUseSession]);
 
   useEffect(() => {
     reload();

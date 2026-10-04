@@ -3,8 +3,26 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { SESSION_HINT_COOKIE } from "@/lib/auth";
 
 /** JWT z FastAPI — HttpOnly, niewidoczny dla JS w przeglądarce. */
-const SESSION_COOKIE = "hubmi_session";
+export const SESSION_COOKIE = "hubmi_session";
 const FALLBACK_MAX_AGE_SECONDS = 60 * 60;
+
+/** Odczyt tokena z nagłówka `Cookie` (SSR / getInitialProps — bez NextApiRequest). */
+export function readSessionTokenFromCookieHeader(
+  cookieHeader: string | undefined,
+): string | null {
+  if (!cookieHeader) return null;
+  for (const part of cookieHeader.split(";")) {
+    const trimmed = part.trim();
+    if (!trimmed.startsWith(`${SESSION_COOKIE}=`)) continue;
+    const raw = trimmed.slice(SESSION_COOKIE.length + 1);
+    try {
+      return decodeURIComponent(raw) || null;
+    } catch {
+      return raw || null;
+    }
+  }
+  return null;
+}
 
 function serializeCookie(name: string, value: string, maxAge: number, httpOnly: boolean): string {
   const parts = [`${name}=${encodeURIComponent(value)}`, "Path=/", `Max-Age=${maxAge}`, "SameSite=Lax"];

@@ -1540,6 +1540,117 @@ body {
   padding-block: 1.25rem;
 }
 
+/* Asystent kreatora — przyciski w formularzu + dialog */
+.idea-ai-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding-top: 0.25rem;
+}
+
+.idea-ai-dialog {
+  width: min(100% - 1rem, 36rem);
+  max-height: min(92vh, 40rem);
+}
+
+@media (max-width: 640px) {
+  .idea-ai-dialog {
+    width: 100%;
+    max-height: 92vh;
+    margin: auto 0 0;
+    border-radius: 1.25rem 1.25rem 0 0;
+  }
+}
+
+.idea-ai-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.idea-ai-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.idea-ai-menu,
+.idea-ai-ask,
+.idea-ai-result {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.idea-ai-choice {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  text-align: left;
+  border-radius: 0.85rem;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  padding: 0.9rem 1rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.idea-ai-choice:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--bg-elevated);
+}
+
+.idea-ai-choice:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.idea-ai-ask-input {
+  min-height: 12rem;
+  resize: vertical;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.idea-ai-ask-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .idea-ai-ask-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+.idea-ai-answer {
+  border-radius: 0.85rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  padding: 1rem;
+  font-size: 0.9375rem;
+}
+
+.idea-assistant-preview-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.idea-assistant-preview-list dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.idea-assistant-preview-list dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
 .kb-chip {
   border-radius: 999px;
   border: 1px solid var(--border);

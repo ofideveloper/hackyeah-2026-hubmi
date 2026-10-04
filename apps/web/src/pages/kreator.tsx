@@ -26,7 +26,6 @@ import {
   type KnowledgeArea,
   type MyIdea,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 import { CANVAS_FIELDS, EMPTY_IDEA, formatDate, STAGE_LABEL } from "@/lib/ideas";
 
 const STAGES = Object.keys(STAGE_LABEL) as IdeaStage[];
@@ -68,7 +67,7 @@ function IdeaCard({ idea, children }: { idea: Idea; children?: React.ReactNode }
 }
 
 export default function IdeaCreatorPage() {
-  const { status, user } = useAuth();
+  const { status, user, canUseSession } = useAuth();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [myIdeas, setMyIdeas] = useState<MyIdea[]>([]);
   const [calls, setCalls] = useState<GrantCall[]>([]);
@@ -125,17 +124,49 @@ export default function IdeaCreatorPage() {
     document.getElementById("fiszka")?.scrollIntoView({ block: "start" });
   }
 
+  /** Wstawia propozycje asystenta tylko w puste pola fiszki — nie nadpisuje wpisów autora. */
+  function fillDraft(suggested: {
+    name?: string;
+    description?: string;
+    essence?: string;
+    audience?: string;
+  }): number {
+    const keys = ["name", "description", "essence", "audience"] as const;
+    const patch = Object.fromEntries(
+      keys
+        .filter((key) => suggested[key]?.trim() && !form[key]?.trim())
+        .map((key) => [key, suggested[key]!.trim()]),
+    ) as Partial<IdeaInput>;
+    const filled = Object.keys(patch).length;
+    if (filled > 0) {
+      setForm((prev) => {
+        const next = { ...prev };
+        for (const key of keys) {
+          const value = suggested[key]?.trim();
+          if (value && !prev[key]?.trim()) next[key] = value;
+        }
+        return next;
+      });
+      document.getElementById("fiszka")?.scrollIntoView({ block: "start" });
+    }
+    return filled;
+  }
+
   /** Wstawia propozycje asystenta tylko w puste pola canvy — nie nadpisuje notatek autora. */
   function fillCanvas(suggested: Record<string, string>): number {
     const empty = CANVAS_FIELDS.filter(
-      (field) => suggested[field.key] && !form.canvas[field.key]?.trim(),
+      (field) => suggested[field.key]?.trim() && !form.canvas[field.key]?.trim(),
     );
     if (empty.length > 0) {
       setForm((prev) => ({
         ...prev,
         canvas: {
           ...prev.canvas,
-          ...Object.fromEntries(empty.map((field) => [field.key, suggested[field.key]])),
+          ...Object.fromEntries(
+            CANVAS_FIELDS.filter(
+              (field) => suggested[field.key]?.trim() && !prev.canvas[field.key]?.trim(),
+            ).map((field) => [field.key, suggested[field.key]]),
+          ),
         },
       }));
       document.getElementById("canva")?.scrollIntoView({ block: "start" });
@@ -145,7 +176,7 @@ export default function IdeaCreatorPage() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint()) return;
+    if (!canUseSession) return;
     setError(null);
     setBusy(true);
     try {
@@ -168,7 +199,7 @@ export default function IdeaCreatorPage() {
   }
 
   async function onDelete(idea: MyIdea) {
-    if (!hasSessionHint()) return;
+    if (!canUseSession) return;
     if (!window.confirm(`Usunąć fiszkę „${idea.name}”?`)) return;
     try {
       await deleteIdea(idea.id);
@@ -391,7 +422,7 @@ export default function IdeaCreatorPage() {
               </form>
 
               <div className="lg:sticky lg:top-24">
-                <IdeaAssistant idea={form} onCanvas={fillCanvas} />
+                <IdeaAssistant idea={form} onCanvas={fillCanvas} onDraft={fillDraft} />
               </div>
             </div>
           )}

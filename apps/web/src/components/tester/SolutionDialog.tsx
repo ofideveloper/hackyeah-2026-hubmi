@@ -11,7 +11,7 @@ import {
   type TesterSignup,
   type TestSolution,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { formatDate } from "@/lib/ideas";
 import { KIND_LABEL, RATINGS, ratingLabel, SIGNUP_STATUS } from "@/lib/testing";
 
@@ -35,6 +35,7 @@ export function SolutionDialog({
   onChanged,
   onClose,
 }: SolutionDialogProps) {
+  const { canUseSession } = useAuth();
   const titleId = useId();
   const ratingName = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -66,7 +67,7 @@ export function SolutionDialog({
 
   /** Wspólna obsługa zapisu: blokada przycisków, błąd w oknie, potwierdzenie u rodzica. */
   async function run(action: () => Promise<unknown>, message: string) {
-    if (!hasSessionHint()) return;
+    if (!canUseSession) return;
     setError(null);
     setBusy(true);
     try {

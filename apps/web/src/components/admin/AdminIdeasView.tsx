@@ -7,7 +7,6 @@ import {
   type AdminIdea,
   type IdeaStatus,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 import { CANVAS_FIELDS, STAGE_LABEL } from "@/lib/ideas";
 
 const STATUS: Record<IdeaStatus, { label: string; className: string }> = {
@@ -33,7 +32,6 @@ export function AdminIdeasView() {
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
     fetchAdminIdeas()
       .then(setIdeas)
       .catch((err: unknown) =>
@@ -43,7 +41,6 @@ export function AdminIdeasView() {
   }, []);
 
   async function onStatus(idea: AdminIdea, status: IdeaStatus) {
-    if (!hasSessionHint()) return;
     setBusyId(idea.id);
     setError(null);
     try {
@@ -62,7 +59,6 @@ export function AdminIdeasView() {
   }
 
   async function onDelete(idea: AdminIdea) {
-    if (!hasSessionHint()) return;
     if (!window.confirm(`Trwale usunąć fiszkę „${idea.name}”?`)) return;
     setBusyId(idea.id);
     setError(null);

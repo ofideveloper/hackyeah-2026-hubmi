@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 
+import { useAuth } from "@/hooks/useAuth";
 import {
   fetchMyGrantApplication,
   saveGrantApplication,
@@ -7,7 +8,6 @@ import {
   type GrantCall,
   type MyIdea,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 import { formatDate } from "@/lib/ideas";
 
 const ANSWER_MAX = 4000;
@@ -19,6 +19,7 @@ type GrantApplicationFormProps = {
 
 /** Generator wniosku — pola formularza pochodzą z definicji konkretnego naboru. */
 export function GrantApplicationForm({ call, ideas }: GrantApplicationFormProps) {
+  const { canUseSession } = useAuth();
   const [application, setApplication] = useState<GrantApplication | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [ideaId, setIdeaId] = useState<string | null>(null);
@@ -28,8 +29,12 @@ export function GrantApplicationForm({ call, ideas }: GrantApplicationFormProps)
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
+    if (!canUseSession) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
+    setLoading(true);
     fetchMyGrantApplication(call.id)
       .then((found) => {
         if (cancelled || !found) return;
@@ -46,10 +51,10 @@ export function GrantApplicationForm({ call, ideas }: GrantApplicationFormProps)
     return () => {
       cancelled = true;
     };
-  }, [call.id]);
+  }, [call.id, canUseSession]);
 
   async function save(submit: boolean) {
-    if (!hasSessionHint()) return;
+    if (!canUseSession) return;
     setError(null);
     setNotice(null);
     setBusy(true);

@@ -1,11 +1,20 @@
+import json
 import threading
+from pathlib import Path
 
 from sqlmodel import Session, select
 
 from .config import get_settings
 from .dependencies.auth import get_user, hash_password
 from .dependencies.logger import get_logger
-from .models import ActualProject, KnowledgeResource, KnowledgeResourceKind, RoleEnum, User
+from .models import (
+    ActualProject,
+    CategoriesOfProjects,
+    KnowledgeResource,
+    KnowledgeResourceKind,
+    RoleEnum,
+    User,
+)
 from .scripts.scrape_rops import refresh_new_projects
 
 logger = get_logger(__name__)
@@ -75,6 +84,34 @@ def seed_knowledge_resources(session: Session) -> None:
     logger.info("Zasobnik wiedzy: dodano %s zasobów startowych", len(KNOWLEDGE_SEED))
 
 
+# Zrzut Biblioteki Innowacji z lokalnej bazy (kategorie + projekty ze scrapera rops.krakow.pl).
+INNOVATION_SEED_PATH = Path(__file__).parent / "seed_data" / "innovation_library.json"
+
+
+def _load_innovation_seed(session: Session) -> int:
+    """Wczytuje projekty z `INNOVATION_SEED_PATH`. Zwraca liczbę dodanych."""
+    try:
+        categories = json.loads(INNOVATION_SEED_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        logger.exception("Biblioteka Innowacji: nie udało się wczytać %s", INNOVATION_SEED_PATH)
+        return 0
+
+    added = 0
+    for entry in categories:
+        category = session.exec(
+            select(CategoriesOfProjects).where(CategoriesOfProjects.name == entry["category"])
+        ).first()
+        if category is None:
+            category = CategoriesOfProjects(name=entry["category"])
+            session.add(category)
+            session.flush()
+        for project in entry["projects"]:
+            session.add(ActualProject(category_id=category.id, **project))
+            added += 1
+    session.commit()
+    return added
+
+
 def _scrape_innovation_library() -> None:
     try:
         added = refresh_new_projects()
@@ -85,14 +122,18 @@ def _scrape_innovation_library() -> None:
 
 
 def seed_innovation_library(session: Session) -> threading.Thread | None:
-    """Pusta Biblioteka Innowacji → scraper rops.krakow.pl w wątku w tle.
+    """Pusta Biblioteka Innowacji → zrzut z `seed_data/`, a bez niego scraper w wątku w tle.
 
-    Pełne pobranie trwa kilka minut, więc nie blokuje startu API. Gdy projekty już są,
-    nic nie robi — nowe dociąga admin (`POST /knowledge/refresh`).
+    Pełne pobranie z rops.krakow.pl trwa kilka minut, więc nie blokuje startu API. Gdy
+    projekty już są, nic nie robi — nowe dociąga admin (`POST /knowledge/refresh`).
     """
-    if not get_settings().scrape_on_startup:
-        return None
     if session.exec(select(ActualProject)).first() is not None:
+        return None
+    added = _load_innovation_seed(session)
+    if added:
+        logger.info("Biblioteka Innowacji: dodano %s projektów startowych", added)
+        return None
+    if not get_settings().scrape_on_startup:
         return None
     logger.info("Biblioteka Innowacji jest pusta — pobieram z rops.krakow.pl w tle")
     thread = threading.Thread(target=_scrape_innovation_library, name="scrape-rops", daemon=True)

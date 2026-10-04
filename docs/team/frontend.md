@@ -80,7 +80,8 @@ src/
   styles/                   # globals
 ```
 
-- Wspólny header: `SiteHeader` + `AppNav` (desktop od 1220px, poniżej hamburger / drawer - gość i zalogowany)
+- Wspólny header: `SiteHeader` + `AppNav` (desktop od 1220px, poniżej hamburger / drawer - gość i zalogowany); w `SiteHeader` zawsze `AccessibilityMenu` (rozmiar tekstu + wysoki kontrast; `hooks/useA11yPrefs`, `lib/a11yPrefs`)
+- Panel admina: to samo menu w nagłówku `AdminShell`
 - H1 podstron: `SiteTitle` + opcjonalnie `SiteTitleAccent` (nie landing hero, nie admin)
 - CTA box (title + opis + przycisk, opcjonalnie children): `components/boxes/DarkCtaBox` — tło `--header-bg` jak nagłówek; używane na `/` i `/wiedza`
 - Podpowiedzi / statusy: `components/boxes/InfoNote` (`tone`: info | success | muted)

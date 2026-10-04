@@ -21,6 +21,7 @@ Wymóg produktu: UI bez barier, **WCAG 2.1 poziom AA**. Pełny opis: `docs/team/
 - Nawigacja: `aria-current="page"`; tabele: `<caption>` + `<th scope="col">`
 - `lang="pl"`; animacje: respektuj `prefers-reduced-motion`
 - Statusy spraw: nie tylko kolor — tekst lub ikona + etykieta
+- Menu dostępności (`AccessibilityMenu`): rozmiar tekstu + wysoki kontrast; nie usuwaj z `SiteHeader` / `AdminShell`
 
 ## Nie rób
 

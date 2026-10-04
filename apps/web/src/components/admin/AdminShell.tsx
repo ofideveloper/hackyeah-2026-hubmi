@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { AccessibilityMenu } from "@/components/AccessibilityMenu";
 import { BrandLogo } from "@/components/BrandLogo";
 import { useRequireAdmin } from "@/hooks/useRequireAdmin";
 import { fetchAdminInbox, type AdminInbox } from "@/lib/api";
@@ -151,9 +152,12 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
 
         <main id="tresc" tabIndex={-1} className="admin-main">
           <header className="admin-main-header">
-            <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-              {title}
-            </h1>
+            <div className="admin-main-header-row">
+              <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+                {title}
+              </h1>
+              <AccessibilityMenu />
+            </div>
             {description && (
               <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
                 {description}

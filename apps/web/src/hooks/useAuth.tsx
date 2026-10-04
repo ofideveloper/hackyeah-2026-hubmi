@@ -8,7 +8,14 @@ import {
   type ReactNode,
 } from "react";
 
-import { fetchMe, isUnauthorizedError, loginUser, logoutUser, type User } from "@/lib/api";
+import {
+  fetchMe,
+  isUnauthorizedError,
+  loginUser,
+  logoutUser,
+  onUnauthorized,
+  type User,
+} from "@/lib/api";
 import {
   clearSessionHint,
   dropLegacyToken,
@@ -45,7 +52,10 @@ type AuthProviderProps = {
   initialUser?: User | null;
 };
 
-export function AuthProvider({ children, initialUser = null }: AuthProviderProps) {
+export function AuthProvider({
+  children,
+  initialUser = null,
+}: AuthProviderProps) {
   // SSR / getInitialProps: jeśli serwer już zna usera, nie zaczynaj od „anonymous”.
   const [status, setStatus] = useState<AuthStatus>(() =>
     initialUser ? "authenticated" : "loading",
@@ -189,7 +199,26 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applyUser, setAnonymous]);
 
-  const isLoggedIn = status === "authenticated" || (status === "loading" && sessionHint);
+  // Chroniony endpoint zwrócił 401 (np. JWT wygasł przy otwartej karcie) — potwierdź w `/auth/me`.
+  useEffect(() => {
+    let checking = false;
+    onUnauthorized(() => {
+      if (checking) return;
+      checking = true;
+      fetchMe()
+        .then(applyUser)
+        .catch((err) => {
+          if (isUnauthorizedError(err)) setAnonymous(true);
+        })
+        .finally(() => {
+          checking = false;
+        });
+    });
+    return () => onUnauthorized(null);
+  }, [applyUser, setAnonymous]);
+
+  const isLoggedIn =
+    status === "authenticated" || (status === "loading" && sessionHint);
   const canUseSession = status === "authenticated";
 
   const value = useMemo<AuthContextValue>(
@@ -205,7 +234,17 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
       refreshUser,
       logout,
     }),
-    [status, user, sessionHint, isLoggedIn, canUseSession, login, setUser, refreshUser, logout],
+    [
+      status,
+      user,
+      sessionHint,
+      isLoggedIn,
+      canUseSession,
+      login,
+      setUser,
+      refreshUser,
+      logout,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -72,7 +72,26 @@ export function isUnauthorizedError(error: unknown): boolean {
   return error instanceof ApiError && error.status === 401;
 }
 
+type UnauthorizedListener = () => void;
+let unauthorizedListener: UnauthorizedListener | null = null;
+
+/** AuthProvider nasłuchuje 401 z chronionych endpointów — sesja mogła wygasnąć w trakcie pracy. */
+export function onUnauthorized(listener: UnauthorizedListener | null): void {
+  unauthorizedListener = listener;
+}
+
+/** 401 z logowania to złe hasło, a `/auth/me` obsługuje sam AuthProvider. */
+function isSessionLost(res: Response): boolean {
+  if (res.status !== 401) return false;
+  const path = new URL(res.url, "http://localhost").pathname;
+  return path !== `${API_BASE}/auth/login` && path !== `${API_BASE}/auth/me`;
+}
+
 async function parseError(res: Response): Promise<string> {
+  if (isSessionLost(res)) {
+    unauthorizedListener?.();
+    return "Sesja wygasła. Zaloguj się ponownie.";
+  }
   try {
     const error = (await res.json()) as AuthError;
     return getErrorMessage(error);

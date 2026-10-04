@@ -132,3 +132,18 @@ test.describe("ochrona tras", () => {
     expect((await res.json()).role).toBe("user");
   });
 });
+
+test("wygaśnięcie sesji przy otwartej karcie wylogowuje zamiast pokazywać błąd 401", async ({
+  userPage: page,
+}) => {
+  await page.goto("/app");
+  await expect(page.getByRole("button", { name: /^Menu konta/ })).toBeVisible();
+
+  // Cookie znika razem z `exp` JWT, a AuthProvider wciąż trzyma usera z pierwszego ładowania
+  await page.context().clearCookies({ name: "hubmi_session" });
+  await page.getByRole("banner").getByRole("link", { name: "Tester innowacji" }).click();
+
+  await expect(page).toHaveURL(/\/tester$/);
+  await expect(page.getByRole("banner").getByRole("link", { name: "Zaloguj się" })).toBeVisible();
+  await expect(page.getByText("Not authenticated")).toHaveCount(0);
+});

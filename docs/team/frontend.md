@@ -72,13 +72,19 @@ Browser  →  fetch("/api/...")  →  pages/api/[...path].ts  →  process.env.A
 
 ```
 src/
-  pages/        # trasy Pages Router
-  components/   # UI (formularze, panele)
-  lib/          # api, auth, utils
-  styles/       # globals
+  pages/                    # trasy Pages Router
+  components/               # UI (formularze, panele)
+    boxes/                  # powtarzalne bloki CTA / callout (`DarkCtaBox`, …)
+    home/sections/          # sekcje landingu (`HowItWorksSection`, …)
+  lib/                      # api, auth, utils
+  styles/                   # globals
 ```
 
-- Wspólny header: `SiteHeader` + `AppNav` (desktop od `lg`, poniżej hamburger / drawer - gość i zalogowany)
+- Wspólny header: `SiteHeader` + `AppNav` (desktop od 1220px, poniżej hamburger / drawer - gość i zalogowany)
+- H1 podstron: `SiteTitle` + opcjonalnie `SiteTitleAccent` (nie landing hero, nie admin)
+- CTA box (title + opis + przycisk, opcjonalnie children): `components/boxes/DarkCtaBox` — tło `--header-bg` jak nagłówek; używane na `/` i `/wiedza`
+- Podpowiedzi / statusy: `components/boxes/InfoNote` (`tone`: info | success | muted)
+- Landing: sekcje w `components/home/sections/`; `pages/index.tsx` składa stronę
 - Admin: `AdminShell` + `useRequireAdmin` (JWT + role); podwidoki w `pages/admin/*`
 - PWA: `public/manifest.json`, `public/favicons/`, `public/browserconfig.xml`, `public/sw.js`
 
@@ -108,7 +114,7 @@ Motyw: **light**, szaro–czarny + ciepły brąz brand. Tokeny: `apps/web/src/st
 
 - Typografia: **Sora** (display / brand), **Manrope** (body) - `pages/_app.tsx`
 - Karty tylko przy interakcji (formularze, tabela); hero bez kart
-- Motion: `animate-fade-up`, `animate-soft-in` na landing / formach
+- Motion: bez fade na nagłówkach stron; `animate-fade-up` / `animate-soft-in` tylko na formularzach, toaście, czacie
 
 **Figma (team UI):** setup + linki w [`figma.md`](./figma.md). Po akceptacji designu z Figmy zaktualizuj tokeny tutaj i w `globals.css`.
 

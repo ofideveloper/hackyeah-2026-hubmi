@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { GrantApplicationForm } from "@/components/creator/GrantApplicationForm";
 import { IdeaAssistant } from "@/components/creator/IdeaAssistant";
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
+import { SiteTitle, SiteTitleAccent } from "@/components/SiteTitle";
 import { Toast } from "@/components/Toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -73,6 +74,8 @@ export default function IdeaCreatorPage() {
   const [calls, setCalls] = useState<GrantCall[]>([]);
   const [areas, setAreas] = useState<KnowledgeArea[]>([]);
   const [form, setForm] = useState<IdeaInput>(EMPTY_IDEA);
+  /** Stan fiszki sprzed ostatniej podpowiedzi asystenta — do cofnięcia. */
+  const [assistantBackup, setAssistantBackup] = useState<IdeaInput | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [stageFilter, setStageFilter] = useState<IdeaStage | null>(null);
   const [busy, setBusy] = useState(false);
@@ -106,12 +109,14 @@ export default function IdeaCreatorPage() {
 
   function resetForm() {
     setForm(EMPTY_IDEA);
+    setAssistantBackup(null);
     setEditingId(null);
   }
 
   function startEdit(idea: MyIdea) {
     setError(null);
     setEditingId(idea.id);
+    setAssistantBackup(null);
     setForm({
       name: idea.name,
       description: idea.description,
@@ -122,6 +127,12 @@ export default function IdeaCreatorPage() {
       canvas: idea.canvas,
     });
     document.getElementById("fiszka")?.scrollIntoView({ block: "start" });
+  }
+
+  function undoAssistantFill() {
+    if (!assistantBackup) return;
+    setForm(assistantBackup);
+    setAssistantBackup(null);
   }
 
   /** Wstawia propozycje asystenta tylko w puste pola fiszki — nie nadpisuje wpisów autora. */
@@ -139,6 +150,10 @@ export default function IdeaCreatorPage() {
     ) as Partial<IdeaInput>;
     const filled = Object.keys(patch).length;
     if (filled > 0) {
+      setAssistantBackup({
+        ...form,
+        canvas: { ...form.canvas },
+      });
       setForm((prev) => {
         const next = { ...prev };
         for (const key of keys) {
@@ -158,6 +173,10 @@ export default function IdeaCreatorPage() {
       (field) => suggested[field.key]?.trim() && !form.canvas[field.key]?.trim(),
     );
     if (empty.length > 0) {
+      setAssistantBackup({
+        ...form,
+        canvas: { ...form.canvas },
+      });
       setForm((prev) => ({
         ...prev,
         canvas: {
@@ -226,11 +245,11 @@ export default function IdeaCreatorPage() {
       <SiteHeader width="full" actions={<AppNav current="kreator" />} />
 
       <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
-        <header className="animate-fade-up">
+        <header>
           <p className="kb-meta">Kreator pomysłów</p>
-          <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Masz pomysł na <span className="text-[var(--accent-text)]">innowację społeczną</span>?
-          </h1>
+          <SiteTitle>
+            Masz pomysł na <SiteTitleAccent>innowację społeczną</SiteTitleAccent>?
+          </SiteTitle>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Opisz go na krótkiej fiszce, dopracuj na canvie z pomocą asystenta i pokaż innym. W
             trakcie naborów grantowych złożysz tu także wniosek o finansowanie.
@@ -422,7 +441,13 @@ export default function IdeaCreatorPage() {
               </form>
 
               <div className="lg:sticky lg:top-24">
-                <IdeaAssistant idea={form} onCanvas={fillCanvas} onDraft={fillDraft} />
+                <IdeaAssistant
+                  idea={form}
+                  onCanvas={fillCanvas}
+                  onDraft={fillDraft}
+                  canUndoFill={assistantBackup !== null}
+                  onUndoFill={undoAssistantFill}
+                />
               </div>
             </div>
           )}

@@ -4,57 +4,9 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 import { AssistantChat } from "@/components/AssistantChat";
+import { HowItWorksSection } from "@/components/home/sections";
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
-
-const steps = [
-  {
-    number: "01",
-    title: "Napisz do interaktywnego asystenta",
-    description:
-      "Opisz sprawę własnymi słowami — nawet bez konta. Interaktywny asystent podpowie sensowny kierunek.",
-  },
-  {
-    number: "02",
-    title: "Dobierzemy ścieżkę",
-    description:
-      "Gdy temat jest jasny, wskażemy sprawdzoną innowację albo przekażemy potrzebę zespołowi ROPS.",
-  },
-  {
-    number: "03",
-    title: "Działaj dalej",
-    description:
-      "Po założeniu konta zgłosisz własny pomysł, przetestujesz rozwiązanie i napiszesz do ROPS.",
-  },
-];
-
-const destinations = [
-  {
-    href: "/wiedza",
-    title: "Zasobnik wiedzy",
-    description: "Wyzwania, innowacje i materiały edukacyjne.",
-  },
-  {
-    href: "/kreator",
-    title: "Kreator pomysłów",
-    description: "Fiszka innowacji i wniosek grantowy.",
-  },
-  {
-    href: "/tester",
-    title: "Tester innowacji",
-    description: "Testuj rozwiązania i zostaw opinię.",
-  },
-  {
-    href: "/kontakt",
-    title: "Kontakt",
-    description: "Pytania do ROPS, mentorzy oraz współpraca międzysektorowa.",
-  },
-  {
-    href: "/app",
-    title: "Zapytaj interaktywnego asystenta",
-    description: "Opisz potrzebę — interaktywny asystent wskaże pasujące innowacje.",
-  },
-];
 
 function isOpiekunHash(asPath: string): boolean {
   const hash = asPath.includes("#")
@@ -108,7 +60,7 @@ export default function HomePage() {
 
         <main id="tresc" tabIndex={-1}>
           <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-12 sm:px-10 sm:pb-28 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
-            <div className="animate-fade-up">
+            <div>
               <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/80 px-3.5 py-2 text-sm font-medium text-[var(--muted)] shadow-sm">
                 <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
                 Twoja sprawa w jednym miejscu
@@ -155,7 +107,7 @@ export default function HomePage() {
 
             <div
               id="opiekun"
-              className="animate-fade-up-delay relative mx-auto w-full max-w-xl lg:ml-auto"
+              className="relative mx-auto w-full max-w-xl lg:ml-auto"
             >
               <div
                 aria-hidden="true"
@@ -203,124 +155,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section
-            id="jak-to-dziala"
-            className="border-y border-[var(--border)] bg-white/65"
-          >
-            <div className="mx-auto max-w-7xl px-6 py-16 sm:px-10 sm:py-20">
-              <div className="max-w-2xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">
-                  Jak to działa
-                </p>
-                <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-                  Mniej szukania. Więcej działania.
-                </h2>
-                <p className="mt-4 leading-7 text-[var(--muted)]">
-                  MaloHUB pomaga przejść od zauważonej potrzeby do sprawdzonego
-                  rozwiązania w kilku prostych krokach.
-                </p>
-              </div>
-
-              <div className="mt-10 grid gap-4 md:grid-cols-3">
-                {steps.map((step) => (
-                  <article
-                    key={step.number}
-                    className="rounded-2xl border border-[var(--border)] bg-white p-5 sm:p-6"
-                  >
-                    <p className="font-display text-sm font-semibold text-[var(--accent-text)]">
-                      {step.number}
-                    </p>
-                    <h3 className="mt-5 text-lg font-semibold">{step.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                      {step.description}
-                    </p>
-                  </article>
-                ))}
-              </div>
-
-              {loggedIn ? (
-                <div className="lp-next relative mt-10 overflow-hidden rounded-3xl bg-[var(--header-bg)] px-6 py-8 text-[var(--text)] sm:px-10 sm:py-10">
-                  <div
-                    className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/25 blur-3xl"
-                    aria-hidden
-                  />
-                  <div
-                    className="pointer-events-none absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-[var(--accent)]/20 blur-3xl"
-                    aria-hidden
-                  />
-                  <div className="relative">
-                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-hover)]">
-                      Twoja przestrzeń
-                    </p>
-                    <div className="mt-3 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                      <div className="max-w-xl">
-                        <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-                          Co chcesz zrobić dalej?
-                        </h2>
-                        <p className="mt-2 text-sm leading-6 text-[var(--text)]/75 sm:text-base">
-                          Wybierz obszar albo wróć do rozmowy z interaktywnym
-                          asystentem.
-                        </p>
-                      </div>
-                      <Link
-                        href="/app#opiekun"
-                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--text)] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-hover)]"
-                      >
-                        Zapytaj interaktywnego asystenta
-                        <span aria-hidden="true">→</span>
-                      </Link>
-                    </div>
-                    <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      {destinations.map((item, index) => (
-                        <li key={item.href}>
-                          <Link
-                            href={item.href}
-                            className="lp-next-card group flex h-full flex-col rounded-2xl border border-[var(--text)]/10 bg-white/35 px-4 py-5 transition duration-200 hover:-translate-y-0.5 hover:border-[var(--text)]/20 hover:bg-white/55"
-                          >
-                            <span className="font-display text-xs font-semibold tracking-[0.14em] text-[var(--accent-hover)]">
-                              {String(index + 1).padStart(2, "0")}
-                            </span>
-                            <span className="mt-4 flex items-start justify-between gap-2">
-                              <span className="font-semibold leading-snug">
-                                {item.title}
-                              </span>
-                              <span
-                                className="translate-x-0 text-[var(--accent-hover)] opacity-60 transition duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
-                                aria-hidden="true"
-                              >
-                                →
-                              </span>
-                            </span>
-                            <span className="mt-2 text-sm leading-6 text-[var(--text)]/70">
-                              {item.description}
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-10 flex flex-col justify-between gap-5 rounded-2xl bg-[var(--text)] px-6 py-7 text-white sm:flex-row sm:items-center sm:px-8">
-                  <div>
-                    <h2 className="font-display text-xl font-semibold">
-                      Masz sprawę do zgłoszenia?
-                    </h2>
-                    <p className="mt-1.5 text-sm text-white/70">
-                      Załóż konto i opisz ją we właściwym miejscu.
-                    </p>
-                  </div>
-                  <Link
-                    href="/register"
-                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--accent-light)] hover:text-white"
-                  >
-                    Załóż konto
-                    <span aria-hidden="true">→</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          </section>
+          <HowItWorksSection loggedIn={loggedIn} />
         </main>
 
         <footer className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-7 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-10">

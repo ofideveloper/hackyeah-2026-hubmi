@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { AssistantChat } from "@/components/AssistantChat";
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
+import { SiteTitle, SiteTitleAccent } from "@/components/SiteTitle";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchConversations } from "@/lib/api";
 import { unreadCount } from "@/lib/communication";
@@ -98,11 +99,11 @@ export default function AppHomePage() {
         tabIndex={-1}
         className="kb-page mx-auto max-w-3xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14"
       >
-        <header className="animate-fade-up">
+        <header>
           <p className="kb-meta">Twoja przestrzeń</p>
-          <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Opisz potrzebę i <span>znajdź rozwiązanie!</span>
-          </h1>
+          <SiteTitle>
+            Opisz potrzebę i <SiteTitleAccent>znajdź rozwiązanie!</SiteTitleAccent>
+          </SiteTitle>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Witaj
             {user.name ? `, ${user.name}` : ""}. Opisz sprawę poniżej — interaktywny asystent

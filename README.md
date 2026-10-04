@@ -3,6 +3,7 @@
 Cyfrowe serce Małopolskiego Hubu Innowacji Społecznych — platforma, która łączy zgłaszane potrzeby z gotowymi innowacjami, zbiera nowe pomysły i prowadzi dialog między mieszkańcami, samorządami, organizacjami i ROPS Kraków.
 
 Demo: [https://hackyeah-2026-hubmi.vercel.app/](https://hackyeah-2026-hubmi.vercel.app/)
+PWA na HackYeah — mieszkaniec rozmawia z opiekunem AI, a system dopasowuje projekty, zbiera zgłoszenia i kieruje sprawy do właściwych jednostek.
 
 ## Problem
 
@@ -14,6 +15,7 @@ ROPS Kraków ma blisko 200 sprawdzonych innowacji społecznych, a w regionie dzi
 2. Opiekun AI wskazuje pasujące innowacje z Biblioteki ROPS i pokazuje, ile podobnych potrzeb zgłoszono oraz jakie pomysły już nad nimi pracują.
 3. Gdy nic nie pasuje, potrzeba trafia do zespołu ROPS jako propozycja, a w panelu admina buduje trend.
 4. Dalej prowadzą moduły: Kreator pomysłów, Tester innowacji i bezpośrednia rozmowa z ROPS lub mentorem. Instytucji, która chce wdrożyć innowację, zespół ROPS przygotowuje kartę usługi w Middlemanie.
+MaloHUB zamienia zgłoszenie w rozmowę z **opiekunem**:
 
 ## Moduły wyzwania
 

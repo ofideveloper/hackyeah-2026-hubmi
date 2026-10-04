@@ -3,14 +3,14 @@
 ## Nazwa i one-liner
 
 - **Nazwa:** MaloHUB
-- **One-liner:** PWA, w której mieszkaniec rozmawia ze społecznym opiekunem, a jednostki i projekty działają „pod spodem”.
+- **One-liner:** PWA, w której mieszkaniec rozmawia z opiekunem, a jednostki i projekty działają „pod spodem”.
 
 ## Opis (HackYeah)
 
 Aplikacja webowa (PWA) z dwoma perspektywami:
 
 1. **Admin** — jednostki (teren + kompetencje), projekty, statusy spraw mieszkańców.
-2. **Mieszkaniec** — czat ze **społecznym opiekunem** + podgląd **statusów spraw** (bez formularzy, bez listy projektów).
+2. **Mieszkaniec** — czat z **opiekunem** + podgląd **statusów spraw** (bez formularzy, bez listy projektów).
 3. **AI** — prowadzi rozmowę; może sugerować projekty / otwierać sprawy (under the hood). UI nie zmusza usera do tych akcji.
 
 ## Copy na UI
@@ -18,13 +18,14 @@ Aplikacja webowa (PWA) z dwoma perspektywami:
 | Ekran | Element | Tekst |
 |-------|---------|--------|
 | Landing | Brand | MaloHUB |
-| Landing | Headline | Zgłaszaj problemy i wydarzenia w swojej jednostce. |
+| Landing | Eyebrow | Twoja sprawa w jednym miejscu |
+| Landing | Headline | Zgłaszaj to, co ważne. |
 | Landing | CTA | Porozmawiaj z opiekunem → `#opiekun`, Załóż konto → `/register` |
 | Landing | Hero — czat | Ten sam `AssistantChat` co w `/app` (`guestMode`); pełny zapis spraw po koncie |
 | Login | Tytuł | Zaloguj się |
 | Login | Support | Wróć do zgłoszeń i pomysłów w swojej jednostce. |
 | Register | Tytuł | Załóż konto |
-| App `/app` | Czat | Witaj, {username} · Twój społeczny opiekun |
+| App `/app` | Czat | Witaj, {username} · Twój opiekun |
 | App `/app` | Czat support | Opowiedz, co Cię zajmuje — razem pomyślimy nad rozwiązaniem. |
 | App `/app` | Sprawy | Statusy aktualizuje zespół — Ty tylko śledzisz postęp. |
 | Admin `/admin` | Intro | Jednostki, projekty, statusy spraw |

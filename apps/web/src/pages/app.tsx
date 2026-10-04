@@ -42,17 +42,31 @@ export default function AppHomePage() {
 
   useEffect(() => {
     if (!router.isReady || status !== "authenticated" || loadingData) return;
-    const hash = router.asPath.includes("#")
-      ? router.asPath.slice(router.asPath.indexOf("#") + 1)
-      : "";
-    if (hash === "opiekun" || hash === "") {
-      setFocusChat(hash === "opiekun");
-      if (hash === "opiekun") {
-        document
-          .getElementById("opiekun")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    const activate = () => {
+      const hash = router.asPath.includes("#")
+        ? router.asPath.slice(router.asPath.indexOf("#") + 1)
+        : typeof window !== "undefined"
+          ? window.location.hash.replace(/^#/, "")
+          : "";
+      if (hash !== "opiekun") {
+        setFocusChat(false);
+        return;
       }
-    }
+      const input = document.getElementById("chat-message-input");
+      (input ?? document.getElementById("opiekun"))?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      setFocusChat(true);
+      if (input instanceof HTMLTextAreaElement) {
+        window.setTimeout(() => input.focus({ preventScroll: true }), 280);
+      }
+    };
+
+    activate();
+    window.addEventListener("hashchange", activate);
+    return () => window.removeEventListener("hashchange", activate);
   }, [router.isReady, router.asPath, status, loadingData]);
 
   if (status === "loading" || status === "anonymous" || !user || loadingData) {

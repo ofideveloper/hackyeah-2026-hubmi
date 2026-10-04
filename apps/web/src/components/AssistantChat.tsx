@@ -35,7 +35,7 @@ export type ChatMessage = {
   locationResolved?: boolean;
 };
 
-const CARETAKER = "Twój społeczny opiekun";
+const CARETAKER = "Twój opiekun";
 
 /** Deterministic HH:MM - avoids Node vs browser `toLocaleTimeString` mismatches. */
 function formatClock(date: Date): string {
@@ -139,7 +139,7 @@ function welcomeMessage(guestMode: boolean): ChatMessage {
     role: "assistant",
     content: guestMode
       ? `Miło Cię widzieć. Opisz sprawę własnymi słowami — pomogę znaleźć kierunek albo gotowe rozwiązanie.`
-      : `Miło Cię widzieć. Jestem Twoim społecznym opiekunem. Opisz, co się dzieje — razem pomyślimy nad rozwiązaniem.`,
+      : `Miło Cię widzieć. Jestem Twoim opiekunem. Opisz, co się dzieje — razem pomyślimy nad rozwiązaniem.`,
     timestamp: new Date(),
   };
 }
@@ -183,7 +183,9 @@ export function AssistantChat({
 
   useEffect(() => {
     if (!autoFocus) return;
-    const timer = window.setTimeout(() => inputRef.current?.focus(), 50);
+    const timer = window.setTimeout(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    }, 50);
     return () => window.clearTimeout(timer);
   }, [autoFocus]);
 
@@ -233,9 +235,6 @@ export function AssistantChat({
       } = await sendChatMessage(trimmed, history, null, chatId);
       setChatId(chat_id);
       const replyId = `a-${Date.now()}`;
-      if (new_project_draft) {
-        setDraftDialog({ messageId: replyId, draft: new_project_draft });
-      }
       setMessages((prev) => [
         ...prev,
         {
@@ -347,7 +346,7 @@ export function AssistantChat({
             </h2>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--muted)]">
               {guestMode
-                ? "Napisz, co się dzieje w Twojej okolicy - razem znajdziemy sensowny kierunek."
+                ? "Napisz, co się dzieje — razem znajdziemy sensowny kierunek."
                 : "Opowiedz, co Cię zajmuje - razem pomyślimy nad rozwiązaniem."}
             </p>
           </div>
@@ -482,6 +481,7 @@ export function AssistantChat({
           <label className="min-w-0 flex-1">
             <span className="sr-only">Twoja wiadomość</span>
             <textarea
+              id="chat-message-input"
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}

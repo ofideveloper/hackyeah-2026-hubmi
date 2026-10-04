@@ -1,41 +1,44 @@
-# Frontend — reguły zespołu
+# Frontend - reguły zespołu
 
 Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, `src/lib`).
 
-> Uwaga: w repo mogą leżeć stare pliki pod `src/app/` — **nie rozwijaj App Router**, dopóki zespół nie zdecyduje inaczej. Źródło prawdy to Pages Router.
+> Uwaga: w repo mogą leżeć stare pliki pod `src/app/` - **nie rozwijaj App Router**, dopóki zespół nie zdecyduje inaczej. Źródło prawdy to Pages Router.
 
 ## Routing (aktualne)
 
 | Ścieżka | Rola |
 |---------|------|
-| `/` | Landing — w hero ten sam `AssistantChat` co w `/app` (`guestMode`, `#opiekun`) |
+| `/` | Landing - w hero ten sam `AssistantChat` co w `/app` (`guestMode`, `#opiekun`) |
 | `/login` | Logowanie → admin: `/admin`, user: `/app` |
 | `/register` | Rejestracja → `/login` |
-| `/app` | Dom mieszkańca: czat z opiekunem |
-| `/admin` | Panel admin — przegląd (tylko `role=admin`) |
-| `/admin/catalog` | Katalog projektów z bazy (`ActualProject`) — przegląd, szukanie, szczegóły (tylko odczyt, przez `/knowledge`) |
-| `/admin/proposals` | Propozycje z czatu — akceptacja / odrzucenie |
+| `/app` | Dom mieszkańca: czat + statusy spraw (bez formularzy) |
+| `/admin` | Panel admin - przegląd (tylko `role=admin`) |
+| `/admin/units` | Jednostki - create + edycja (`name`/`territory`/`competencies`) + delete |
+| `/admin/projects` | Projekty jednostek (`UnitProject`) - create + pełna edycja + delete |
+| `/admin/catalog` | Katalog projektów z bazy (`ActualProject`) - przegląd, szukanie, szczegóły (tylko odczyt, przez `/knowledge`) |
+| `/admin/proposals` | Propozycje projektów z czatu → jednostka |
+| `/admin/reports` | Sprawy / statusy |
 | `/admin/users` | Użytkownicy + nadanie / odebranie roli mentora |
 | `/wiedza` | Zasobnik wiedzy (publiczny): wyzwania, Biblioteka Innowacji (`ActualProject`), materiały |
 | `/admin/knowledge` | Redakcja zasobów Zasobnika (`KnowledgeResource`) + dociąganie nowych innowacji |
-| `/admin/trends` | Trendy potrzeb z czatu wg obszarów (`NeedSignal`) — tylko admin |
+| `/admin/trends` | Trendy potrzeb z czatu wg obszarów (`NeedSignal`) - tylko admin |
 | `/kreator` | Kreator pomysłów: publiczna lista fiszek; po zalogowaniu fiszka + canva + asystent AI; generator wniosków tylko przy trwającym naborze |
-| `/admin/ideas` | Fiszki z Kreatora pomysłów — podgląd (autor, canva), zatwierdź / odrzuć / usuń |
-| `/admin/grants` | Nabory grantowe — terminy, pola wniosku, podgląd złożonych wniosków |
+| `/admin/ideas` | Fiszki z Kreatora pomysłów - podgląd (autor, canva), zatwierdź / odrzuć / usuń |
+| `/admin/grants` | Nabory grantowe - terminy, pola wniosku, podgląd złożonych wniosków |
 | `/tester` | Tester innowacji: publiczna lista rozwiązań z ocenami i opiniami; po zalogowaniu zgłoszenie do testów, a po jego przyjęciu opinia (ocena, feedback, usprawnienia) i „Moje testy i opinie” |
 | `/admin/testing` | Zgłoszenia testerów (przyjmij / odrzuć) i moderacja opinii |
-| `/kontakt` | Platforma komunikacji: zakładki Rozmowy (pytania do ROPS, wątki z mentorami i partnerami — po zalogowaniu), Mentorzy i Partnerstwa (tablica ogłoszeń — publiczne); profil z sektorem |
+| `/kontakt` | Platforma komunikacji: zakładki Rozmowy (pytania do ROPS, wątki z mentorami i partnerami - po zalogowaniu), Mentorzy i Partnerstwa (tablica ogłoszeń - publiczne); profil z sektorem |
 | `/profil` | Konto zalogowanego: dane + zmiana hasła; wejście z dropdownu przy kółku użytkownika w `AppNav` |
-| `/admin/messages` | Wspólna skrzynka ROPS — pytania użytkowników, odpowiedź, zamknięcie rozmowy |
+| `/admin/messages` | Wspólna skrzynka ROPS - pytania użytkowników, odpowiedź, zamknięcie rozmowy |
 | `/admin/login` | Redirect → `/login` |
 | `/api/*` | BFF → FastAPI (nie UI) |
 
-Flow usera: rozmowa ze społecznym opiekunem + podgląd statusów.
+Flow usera: rozmowa z opiekunem + podgląd statusów.
 Projekty / tworzenie spraw: under the hood (AI / API), nie UI mieszkańca.
 
-**Czat / Markdown:** `AssistantChat` → `ChatMarkdown` (`react-markdown` + GFM). AI ma odpowiadać wg `apps/api/app/llm/prompts/caretaker_system.md` (bold, listy, `###`, linki — bez tabel/kodu). Landing: `<AssistantChat guestMode />` w `#opiekun` (bez JWT). App: z `userName`.
+**Czat / Markdown:** `AssistantChat` → `ChatMarkdown` (`react-markdown` + GFM). AI ma odpowiadać wg `apps/api/app/llm/prompts/caretaker_system.md` (bold, listy, `###`, linki - bez tabel/kodu). Landing: `<AssistantChat guestMode />` w `#opiekun` (bez JWT). App: z `userName`.
 
-**Czat:** bez chipów ścieżek — użytkownik opisuje sprawę własnymi słowami.  
+**Czat:** bez chipów ścieżek - użytkownik opisuje sprawę własnymi słowami.  
 - `catalog` → karty PROJECT\|  
 - `report` → zbieranie + `report_offer` / `created_report` (bez sugestii projektów)  
 - `intake` → `project_proposal`  
@@ -52,8 +55,8 @@ Browser  →  fetch("/api/...")  →  pages/api/[...path].ts  →  process.env.A
 **Rób**
 
 - Klient tylko przez `@/lib/api.ts` i ścieżki `/api/...`
-- JWT nie jest dostępny w kliencie — siedzi w cookie HttpOnly ustawianym przez BFF; funkcje z `@/lib/api` nie przyjmują tokena. `@/lib/auth.ts` czyta tylko znacznik sesji (`hasSessionHint`)
-- Sesja użytkownika: `AuthProvider` + `useAuth` (`hooks/useAuth.tsx`) w `_app` — jeden `fetchMe` na start, cache między widokami (bez migania inicjałów w `UserMenu`)
+- JWT nie jest dostępny w kliencie - siedzi w cookie HttpOnly ustawianym przez BFF; funkcje z `@/lib/api` nie przyjmują tokena. `@/lib/auth.ts` czyta tylko znacznik sesji (`hasSessionHint`)
+- Sesja użytkownika: `AuthProvider` + `useAuth` (`hooks/useAuth.tsx`) w `_app` - jeden `fetchMe` na start, cache między widokami (bez migania inicjałów w `UserMenu`)
 
 **Nie rób**
 
@@ -71,51 +74,50 @@ src/
   styles/       # globals
 ```
 
-- Wspólny header: `SiteHeader` + `AppNav` (desktop od `lg`, poniżej hamburger / drawer — gość i zalogowany)
+- Wspólny header: `SiteHeader` + `AppNav` (desktop od `lg`, poniżej hamburger / drawer - gość i zalogowany)
 - Admin: `AdminShell` + `useRequireAdmin` (JWT + role); podwidoki w `pages/admin/*`
 - PWA: `public/manifest.json`, `public/favicons/`, `public/browserconfig.xml`, `public/sw.js`
 
 ## Design / UI (aktualny baseline)
 
-Motyw: **light**, szaro–czarny + ciepły brąz brand. Tokeny: `apps/web/src/styles/globals.css` — dobrane pod **WCAG 2.1 AA** (kontrast liczony na `--bg` i `--bg-elevated`).
+Motyw: **light**, szaro–czarny + ciepły brąz brand. Tokeny: `apps/web/src/styles/globals.css` - dobrane pod **WCAG 2.1 AA** (kontrast liczony na `--bg` i `--bg-elevated`).
 
 | Token | Rola | Kontrast |
 |-------|------|----------|
-| `--bg` `#f3f5f8` | tło | — |
-| `--bg-elevated` `#ffffff` | surface formularzy / tabeli | — |
-| `--text` `#12131a` | tekst | 17:1 |
-| `--muted` `#5c6474` | opis, placeholdery | 5.4:1 |
-| `--accent` `#847362` | CTA / brand — **tylko jako tło** pod biały tekst (4.6:1), nie jako kolor tekstu | — |
-| `--accent-text` `#6b5c4e` | tekst akcentu (linki, wyróżnienia, etykiety) | 5.9:1 |
-| `--accent-hover` `#6b5c4e` | hover; tło headera i panelu mobilnego pod biały tekst | biały na nim 6.4:1 |
-| `--accent-light` `#a8927e` | **tylko dekoracja** — nie pod biały tekst (3:1) | — |
-| `--border` `#d5dae3` | linie dekoracyjne, karty | — |
+| `--bg` `#f3f5f8` | tło | - |
+| `--bg-elevated` `#ffffff` | surface formularzy / tabeli | - |
+| `--text` `#12131a` | tekst; także tekst i obrysy w headerze (`#ada399`) | 17:1 / 7.5:1 na headerze |
+| `--muted` `#525a69` | opis | 6.4:1 |
+| `--accent` `#6b5c4e` | CTA / brand, tekst akcentu, tło pod biały tekst | 5.9:1 (biały na nim 6.4:1) |
+| `--accent-hover` `#54473b` | hover / głęboki brand | 8.2:1 |
+| `--accent-light` `#a8927e` | **tylko dekoracja** - nie pod biały tekst (3:1) | - |
+| `--border` `#d5dae3` | linie dekoracyjne, karty | - |
 | `--border-strong` `#7c8494` | granice pól, chipów, przycisków outline | 3.4:1 |
 | `--danger` `#a82a2a` / `--success` `#1f6b4a` | błędy / potwierdzenia | 6.3:1 / 5.9:1 |
 | `--focus` `#12131a` | globalny `:focus-visible` (obrys 2 px); na ciemnym headerze biały obrys | ≥ 3:1 |
 | `.btn-primary` / `.btn-ghost` / `.field` / `.surface` | wspólne klasy UI | |
 
-- Fokus: **nie nadpisuj** `outline` lokalnie — globalny `:focus-visible` działa na jasnych i ciemnych tłach
+- Fokus: **nie nadpisuj** `outline` lokalnie - globalny `:focus-visible` działa na jasnych i ciemnych tłach
 - Header ma jasne tło → tekst `--text`, nie biały
 - Linki w treści: zawsze podkreślone (nie tylko kolor)
-- Tło strony (`background.png`) jest przykryte nakładką ≥ 90% — nie zmniejszaj, bo ilustracje obniżą kontrast tekstu
+- Tło strony (`background.png`) jest przykryte nakładką ≥ 90% - nie zmniejszaj, bo ilustracje obniżą kontrast tekstu
 
-- Typografia: **Sora** (display / brand), **Manrope** (body) — `pages/_app.tsx`
+- Typografia: **Sora** (display / brand), **Manrope** (body) - `pages/_app.tsx`
 - Karty tylko przy interakcji (formularze, tabela); hero bez kart
 - Motion: `animate-fade-up`, `animate-soft-in` na landing / formach
 
 **Figma (team UI):** setup + linki w [`figma.md`](./figma.md). Po akceptacji designu z Figmy zaktualizuj tokeny tutaj i w `globals.css`.
 
-**Design do unikania (domyślne AI looks):** fioletowe gradienty, cream+terracotta+serif „AI brochure”, broadsheet/newspaper layout, ciężki dark mode — chyba że świadomie z Figmy.
+**Design do unikania (domyślne AI looks):** fioletowe gradienty, cream+terracotta+serif „AI brochure”, broadsheet/newspaper layout, ciężki dark mode - chyba że świadomie z Figmy.
 
 ## Stan i dane
 
-- [UZUPEŁNIJ — czy React Query / Zustand / tylko useState]
+- [UZUPEŁNIJ - czy React Query / Zustand / tylko useState]
 - Błędy API: pokazuj `detail` z FastAPI użytkownikowi w formie czytelnego komunikatu
 
 ## Dostępność
 
-Wymóg: **WCAG 2.1 AA** — reguły i checklista: [`accessibility.md`](./accessibility.md); egzekucja AI: `.cursor/rules/accessibility.mdc`.
+Wymóg: **WCAG 2.1 AA** - reguły i checklista: [`accessibility.md`](./accessibility.md); egzekucja AI: `.cursor/rules/accessibility.mdc`.
 
 ## Checklist PR (frontend)
 

@@ -1,7 +1,7 @@
 {
-  "name": "MaloHUB — Twój społeczny opiekun",
+  "name": "MaloHUB — Twój opiekun",
   "short_name": "MaloHUB",
-  "description": "Społeczny opiekun, który razem z Tobą pomyśli nad rozwiązaniem.",
+  "description": "Opiekun, który razem z Tobą pomyśli nad rozwiązaniem.",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",

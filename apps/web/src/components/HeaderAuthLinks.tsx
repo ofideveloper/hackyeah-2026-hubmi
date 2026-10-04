@@ -32,7 +32,7 @@ export function GuestHeaderActions() {
   );
 }
 
-/** Link do czatu opiekuna — zalogowany → `/app`, gość → landing `#opiekun`. */
+/** Link do czatu opiekuna — zalogowany → `/app#opiekun`, gość → landing `#opiekun`. */
 export function caretakerHref(loggedIn: boolean): string {
-  return loggedIn ? "/app" : "/#opiekun";
+  return loggedIn ? "/app#opiekun" : "/#opiekun";
 }

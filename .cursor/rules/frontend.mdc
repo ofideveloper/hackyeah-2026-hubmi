@@ -26,7 +26,7 @@ BFF: `src/pages/api/[...path].ts` → `process.env.API_URL`.
 
 ## Wzorce
 
-- Auth: JWT w cookie HttpOnly (BFF) — nie zapisuj tokena w JS / storage; logowanie i wylogowanie przez `useAuth().login` / `logout`; sesja usera: `useAuth` / `AuthProvider` (nie wołaj `fetchMe` na każdym widoku)
+- Auth: JWT w cookie HttpOnly (BFF) — nie zapisuj tokena w JS / storage; `useAuth().login` / `logout`; cache w `AuthProvider` (bez `fetchMe` w widokach). UI: `isLoggedIn`; mutacje/fetch: `canUseSession`. Nie bramkuj efektów samym `hasSessionHint()` z `[]` deps.
 - Formularze / panele: `src/components/`
 - Menu zalogowanego: `AppNav` / `LoggedInMenu` (`current=…`) — CTA „Zapytaj opiekuna”, konto w `UserMenu` (profil / admin / wyloguj); strona `/profil`
 - Admin: `AdminShell` + `useRequireAdmin` na `/admin/*` (role=admin); podwidoki w `components/admin/`

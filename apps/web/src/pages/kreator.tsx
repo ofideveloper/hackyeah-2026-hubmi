@@ -26,7 +26,6 @@ import {
   type KnowledgeArea,
   type MyIdea,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 import { CANVAS_FIELDS, EMPTY_IDEA, formatDate, STAGE_LABEL } from "@/lib/ideas";
 
 const STAGES = Object.keys(STAGE_LABEL) as IdeaStage[];
@@ -62,7 +61,7 @@ function IdeaCard({ idea, children }: { idea: Idea; children?: React.ReactNode }
 }
 
 export default function IdeaCreatorPage() {
-  const { status, user } = useAuth();
+  const { status, user, canUseSession } = useAuth();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [myIdeas, setMyIdeas] = useState<MyIdea[]>([]);
   const [calls, setCalls] = useState<GrantCall[]>([]);
@@ -139,7 +138,7 @@ export default function IdeaCreatorPage() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint()) return;
+    if (!canUseSession) return;
     setError(null);
     setBusy(true);
     try {
@@ -162,7 +161,7 @@ export default function IdeaCreatorPage() {
   }
 
   async function onDelete(idea: MyIdea) {
-    if (!hasSessionHint()) return;
+    if (!canUseSession) return;
     if (!window.confirm(`Usunąć fiszkę „${idea.name}”?`)) return;
     try {
       await deleteIdea(idea.id);

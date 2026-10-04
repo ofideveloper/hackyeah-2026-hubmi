@@ -32,6 +32,16 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
   const router = useRouter();
   const gate = useRequireAdmin();
 
+  if (gate.status === "loading") {
+    return (
+      <main id="tresc" tabIndex={-1} className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
+        <p className="text-[var(--muted)]" role="status">
+          Ładowanie…
+        </p>
+      </main>
+    );
+  }
+
   if (gate.status !== "ready") {
     return null;
   }

@@ -10,7 +10,6 @@ import {
   fetchAdminReports,
   fetchAdminStats,
   fetchAdminUsers,
-  fetchMe,
   fetchProjects,
   fetchUnits,
   updateProject,
@@ -23,7 +22,6 @@ import {
   type User,
 } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import { hasSessionHint } from "@/lib/auth";
 
 const REPORT_STATUSES: { value: ReportStatus; label: string }[] = [
   { value: "nowe", label: "Przyjęte" },
@@ -33,8 +31,7 @@ const REPORT_STATUSES: { value: ReportStatus; label: string }[] = [
 
 export function AdminPanel() {
   const router = useRouter();
-  const { logout: authLogout } = useAuth();
-  const [admin, setAdmin] = useState<User | null>(null);
+  const { status, user, logout: authLogout } = useAuth();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [units, setUnits] = useState<OrganizationalUnit[]>([]);
@@ -57,24 +54,24 @@ export function AdminPanel() {
   const [projectBusy, setProjectBusy] = useState(false);
 
   useEffect(() => {
-    if (!hasSessionHint()) {
+    if (status === "loading") return;
+    if (status === "anonymous") {
       void router.replace("/login");
+      return;
+    }
+    if (!user || user.role !== "admin") {
+      void router.replace("/app");
       return;
     }
 
     Promise.all([
-      fetchMe(),
       fetchAdminStats(),
       fetchAdminUsers(),
       fetchUnits(),
       fetchProjects(),
       fetchAdminReports(),
     ])
-      .then(([me, nextStats, nextUsers, nextUnits, nextProjects, nextReports]) => {
-        if (me.role !== "admin") {
-          throw new Error("Brak uprawnień administratora");
-        }
-        setAdmin(me);
+      .then(([nextStats, nextUsers, nextUnits, nextProjects, nextReports]) => {
         setStats(nextStats);
         setUsers(nextUsers);
         setUnits(nextUnits);
@@ -87,7 +84,7 @@ export function AdminPanel() {
         void router.replace("/app");
       })
       .finally(() => setLoading(false));
-  }, [router]);
+  }, [router, status, user]);
 
   function logout() {
     authLogout();
@@ -96,8 +93,6 @@ export function AdminPanel() {
 
   async function onCreateUnit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint()) return;
-
     setUnitError(null);
     setUnitBusy(true);
     try {
@@ -125,7 +120,6 @@ export function AdminPanel() {
   }
 
   async function onDeleteUnit(unitId: string) {
-    if (!hasSessionHint()) return;
     if (!window.confirm("Usunąć jednostkę oraz powiązane zgłoszenia i projekty?")) return;
 
     try {
@@ -146,7 +140,7 @@ export function AdminPanel() {
 
   async function onCreateProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint() || !projectUnitId) return;
+    if (!projectUnitId) return;
 
     setProjectError(null);
     setProjectBusy(true);
@@ -170,7 +164,6 @@ export function AdminPanel() {
   }
 
   async function onDeleteProject(projectId: string) {
-    if (!hasSessionHint()) return;
     if (!window.confirm("Usunąć ten projekt?")) return;
 
     try {
@@ -185,8 +178,6 @@ export function AdminPanel() {
   }
 
   async function onReassignProject(projectId: string, unitId: string) {
-    if (!hasSessionHint()) return;
-
     try {
       const updated = await updateProject(projectId, { unit_id: unitId });
       setProjects((prev) => prev.map((p) => (p.id === projectId ? updated : p)));
@@ -197,8 +188,6 @@ export function AdminPanel() {
   }
 
   async function onChangeReportStatus(reportId: string, status: ReportStatus) {
-    if (!hasSessionHint()) return;
-
     try {
       const updated = await updateReportStatus(reportId, status);
       setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));
@@ -208,7 +197,7 @@ export function AdminPanel() {
     }
   }
 
-  if (loading || !admin || !stats) {
+  if (loading || !user || user.role !== "admin" || !stats) {
     return (
       <main id="tresc" tabIndex={-1} className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6">
         <p className="animate-soft-in text-[var(--muted)]" role="status">{error ?? "Ładowanie panelu…"}</p>
@@ -226,7 +215,7 @@ export function AdminPanel() {
           </h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
             Jednostki, projekty i odpowiedzialność ·{" "}
-            {admin.full_name || `${admin.name} ${admin.surname}`.trim() || admin.email}
+            {user.full_name || `${user.name} ${user.surname}`.trim() || user.email}
           </p>
         </div>
         <div className="flex gap-2">

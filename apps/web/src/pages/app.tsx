@@ -22,7 +22,7 @@ function statusClass(status: string): string {
 
 export default function AppHomePage() {
   const router = useRouter();
-  const { status, user, sessionHint } = useAuth();
+  const { status, user, canUseSession } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [unread, setUnread] = useState(0);
@@ -34,7 +34,6 @@ export default function AppHomePage() {
       void router.replace("/login");
       return;
     }
-    if (!sessionHint) return;
 
     let cancelled = false;
     setLoadingData(true);
@@ -54,7 +53,7 @@ export default function AppHomePage() {
     return () => {
       cancelled = true;
     };
-  }, [status, sessionHint, router]);
+  }, [status, router]);
 
   useEffect(() => {
     if (!router.isReady || status !== "authenticated" || loadingData) return;
@@ -124,7 +123,7 @@ export default function AppHomePage() {
             userName={user.full_name || `${user.name} ${user.surname}`.trim()}
             onReportCreated={(report) => {
               setReports((prev) => [report, ...prev.filter((r) => r.id !== report.id)]);
-              if (sessionHint) {
+              if (canUseSession) {
                 void fetchMyReports()
                   .then(setReports)
                   .catch(() => undefined);

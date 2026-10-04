@@ -31,8 +31,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    // 401 z FastAPI = token wygasł lub jest nieważny — nie trzymaj martwej sesji
-    if (upstream.status === 401 && token) {
+    // Czyść cookie tylko przy 401 z `/auth/me`. Inne endpointy mogą zwrócić 401
+    // z innych powodów — kasowanie sesji przy każdym 401 wylogowywało usera w trakcie nawigacji.
+    if (upstream.status === 401 && token && (path === "auth/me" || path.startsWith("auth/me/"))) {
       clearSessionCookies(res);
     }
 

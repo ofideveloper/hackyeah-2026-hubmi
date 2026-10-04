@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
 import { fetchNeedTrends, type AreaTrend, type NeedTrends } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 const SPARK_HEIGHT = 28;
 const SPARK_BAR = 8;
@@ -61,7 +60,6 @@ export function AdminTrendsView() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
     fetchNeedTrends()
       .then(setTrends)
       .catch((err: unknown) =>

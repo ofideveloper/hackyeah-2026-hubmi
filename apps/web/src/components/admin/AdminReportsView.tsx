@@ -9,7 +9,6 @@ import {
   type Report,
   type ReportStatus,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 const REPORT_STATUSES: { value: ReportStatus; label: string }[] = [
   { value: "nowe", label: "Przyjęte" },
@@ -36,7 +35,6 @@ export function AdminReportsView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
     Promise.all([fetchAdminReports(), fetchUnits()])
       .then(([nextReports, nextUnits]) => {
         setReports(nextReports);
@@ -49,7 +47,6 @@ export function AdminReportsView() {
   }, []);
 
   async function onChangeStatus(reportId: string, status: ReportStatus) {
-    if (!hasSessionHint()) return;
     try {
       const updated = await updateReportStatus(reportId, status);
       setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));
@@ -60,7 +57,6 @@ export function AdminReportsView() {
   }
 
   async function onChangeUnit(reportId: string, unitId: string) {
-    if (!hasSessionHint()) return;
     try {
       const updated = await updateReportUnit(reportId, unitId || null);
       setReports((prev) => prev.map((r) => (r.id === reportId ? updated : r)));

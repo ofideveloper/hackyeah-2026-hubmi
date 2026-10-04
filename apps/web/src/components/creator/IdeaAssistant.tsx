@@ -1,13 +1,13 @@
 import { useId, useState, type FormEvent } from "react";
 
 import { ChatMarkdown } from "@/components/ChatMarkdown";
+import { useAuth } from "@/hooks/useAuth";
 import {
   askIdeaAssistant,
   type IdeaAssistantAction,
   type IdeaAssistantReply,
   type IdeaInput,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 const ACTIONS: { action: IdeaAssistantAction; label: string }[] = [
   { action: "develop", label: "Rozwiń pomysł" },
@@ -25,6 +25,7 @@ type IdeaAssistantProps = {
 
 /** Asystent kreatora innowacji: podpowiedzi do fiszki i szkic wizualizacji (SVG). */
 export function IdeaAssistant({ idea, onCanvas }: IdeaAssistantProps) {
+  const { canUseSession } = useAuth();
   const questionId = useId();
   const [question, setQuestion] = useState("");
   const [result, setResult] = useState<IdeaAssistantReply | null>(null);
@@ -33,7 +34,7 @@ export function IdeaAssistant({ idea, onCanvas }: IdeaAssistantProps) {
   const [busy, setBusy] = useState<IdeaAssistantAction | null>(null);
 
   async function run(action: IdeaAssistantAction) {
-    if (!hasSessionHint() || busy) return;
+    if (!canUseSession || busy) return;
     setError(null);
     setNotice(null);
     setBusy(action);

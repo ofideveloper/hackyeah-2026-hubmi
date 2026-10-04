@@ -88,6 +88,20 @@ function getErrorMessage(error: AuthError): string {
   return "Something went wrong";
 }
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+export function isUnauthorizedError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 401;
+}
+
 async function parseError(res: Response): Promise<string> {
   try {
     const error = (await res.json()) as AuthError;
@@ -95,6 +109,11 @@ async function parseError(res: Response): Promise<string> {
   } catch {
     return "Request failed";
   }
+}
+
+async function throwIfNotOk(res: Response): Promise<void> {
+  if (res.ok) return;
+  throw new ApiError(await parseError(res), res.status);
 }
 
 export async function registerUser(payload: {
@@ -128,28 +147,28 @@ export async function loginUser(email: string, password: string): Promise<void> 
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
+    credentials: "same-origin",
   });
 
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
+  await throwIfNotOk(res);
 }
 
 export async function logoutUser(): Promise<void> {
-  const res = await fetch(`${API_BASE}/auth/logout`, { method: "POST", keepalive: true });
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
+  const res = await fetch(`${API_BASE}/auth/logout`, {
+    method: "POST",
+    keepalive: true,
+    credentials: "same-origin",
+  });
+  await throwIfNotOk(res);
 }
 
 export async function fetchMe(): Promise<User> {
   const res = await fetch(`${API_BASE}/auth/me`, {
     cache: "no-store",
+    credentials: "same-origin",
   });
 
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
+  await throwIfNotOk(res);
 
   return res.json() as Promise<User>;
 }
@@ -562,9 +581,7 @@ export type NeedTrends = {
 };
 
 async function jsonOrThrow<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
+  await throwIfNotOk(res);
   return res.json() as Promise<T>;
 }
 
@@ -695,6 +712,7 @@ function jsonRequest(method: string, payload: unknown): RequestInit {
     method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    credentials: "same-origin",
   };
 }
 
@@ -1021,16 +1039,6 @@ export type ProfileInput = {
   organization: string;
   mentor_bio: string;
 };
-
-/** Błąd z kodem HTTP — odpytywanie rozmowy musi odróżnić 401/404 od chwilowej awarii. */
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
-  }
-}
 
 export async function fetchMentors(): Promise<Mentor[]> {
   return jsonOrThrow(await fetch(`${API_BASE}/mentors`, { cache: "no-store" }));

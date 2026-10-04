@@ -8,7 +8,7 @@ import { changeMyPassword } from "@/lib/api";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { status, user, sessionHint } = useAuth();
+  const { status, user } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,7 +38,7 @@ export default function ProfilePage() {
       return;
     }
 
-    if (!sessionHint) {
+    if (status !== "authenticated") {
       void router.replace("/login");
       return;
     }

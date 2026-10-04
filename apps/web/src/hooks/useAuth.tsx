@@ -8,8 +8,13 @@ import {
   type ReactNode,
 } from "react";
 
-import { fetchMe, loginUser, logoutUser, type User } from "@/lib/api";
-import { clearSessionHint, dropLegacyToken, hasSessionHint } from "@/lib/auth";
+import { fetchMe, isUnauthorizedError, loginUser, logoutUser, type User } from "@/lib/api";
+import {
+  clearSessionHint,
+  dropLegacyToken,
+  hasSessionHint,
+  markSessionHint,
+} from "@/lib/auth";
 
 export type AuthStatus = "loading" | "authenticated" | "anonymous";
 
@@ -18,6 +23,10 @@ type AuthContextValue = {
   user: User | null;
   /** Przeglądarka ma znacznik sesji — user może się jeszcze ładować (`status === "loading"`). */
   sessionHint: boolean;
+  /** Nav / CTA: `authenticated` albo bootstrap z hintem (bez migania „Zaloguj się”). */
+  isLoggedIn: boolean;
+  /** Mutacje i fetch chronione — tylko po udanym `/auth/me`. */
+  canUseSession: boolean;
   isAdmin: boolean;
   /** Loguje przez BFF (JWT trafia do cookie HttpOnly) i dociąga `/auth/me`. */
   login: (email: string, password: string) => Promise<User>;
@@ -37,20 +46,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<User | null>(null);
   const [sessionHint, setSessionHint] = useState(false);
 
-  const setAnonymous = useCallback(() => {
-    clearSessionHint();
-    setSessionHint(false);
+  const setAnonymous = useCallback((clearHint = true) => {
+    if (clearHint) {
+      clearSessionHint();
+      setSessionHint(false);
+    }
     setUserState(null);
     setStatus("anonymous");
   }, []);
 
+  const applyUser = useCallback((me: User) => {
+    markSessionHint();
+    setSessionHint(true);
+    setUserState(me);
+    setStatus("authenticated");
+  }, []);
+
   const setUser = useCallback((next: User | null) => {
     setUserState(next);
-    if (next) setStatus("authenticated");
+    if (next) {
+      markSessionHint();
+      setSessionHint(true);
+      setStatus("authenticated");
+    }
   }, []);
 
   const logout = useCallback(() => {
-    setAnonymous();
+    setAnonymous(true);
     void logoutUser().catch(() => undefined);
   }, [setAnonymous]);
 
@@ -58,20 +80,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionHint(true);
     setStatus("loading");
     const me = await fetchMe();
-    setUserState(me);
-    setStatus("authenticated");
+    applyUser(me);
     return me;
-  }, []);
+  }, [applyUser]);
 
   const refreshUser = useCallback(async (): Promise<User | null> => {
-    if (!hasSessionHint()) {
-      setAnonymous();
-      return null;
-    }
     try {
       return await loadUser();
-    } catch {
-      setAnonymous();
+    } catch (err) {
+      if (isUnauthorizedError(err)) {
+        setAnonymous(true);
+      }
       return null;
     }
   }, [loadUser, setAnonymous]);
@@ -82,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         return await loadUser();
       } catch (err) {
-        setAnonymous();
+        setAnonymous(true);
         throw err;
       }
     },
@@ -91,42 +110,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     dropLegacyToken();
-    if (!hasSessionHint()) {
-      setAnonymous();
-      return;
-    }
+    const hinted = hasSessionHint();
+    setSessionHint(hinted);
+    setStatus("loading");
 
     let cancelled = false;
-    setSessionHint(true);
-    setStatus("loading");
-    fetchMe()
-      .then((me) => {
-        if (cancelled) return;
-        setUserState(me);
-        setStatus("authenticated");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setAnonymous();
-      });
+    let retryTimer: number | undefined;
+    let attempts = 0;
+
+    const bootstrap = () => {
+      attempts += 1;
+      // Zawsze próbuj `/auth/me` — HttpOnly cookie może istnieć nawet gdy hint zniknął
+      // (np. po błędzie sieci, który wcześniej czyścił tylko `hubmi_auth`).
+      fetchMe()
+        .then((me) => {
+          if (cancelled) return;
+          applyUser(me);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          if (isUnauthorizedError(err)) {
+            setAnonymous(true);
+            return;
+          }
+          // Sieć / 5xx: nie kasuj hintu i nie ustawiaj `anonymous` (to wyrzuca z /app na /login).
+          // Parę ponowień; potem zostań w `loading` + hint — odświeżenie strony może odzyskać sesję.
+          if (attempts < 3) {
+            retryTimer = window.setTimeout(bootstrap, 350 * attempts);
+            return;
+          }
+          if (hinted || hasSessionHint()) {
+            setSessionHint(true);
+            setStatus("loading");
+            return;
+          }
+          setAnonymous(false);
+        });
+    };
+
+    bootstrap();
 
     return () => {
       cancelled = true;
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
     };
-  }, [setAnonymous]);
+  }, [applyUser, setAnonymous]);
+
+  const isLoggedIn = status === "authenticated" || (status === "loading" && sessionHint);
+  const canUseSession = status === "authenticated";
 
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
       user,
       sessionHint,
+      isLoggedIn,
+      canUseSession,
       isAdmin: user?.role === "admin",
       login,
       setUser,
       refreshUser,
       logout,
     }),
-    [status, user, sessionHint, login, setUser, refreshUser, logout],
+    [status, user, sessionHint, isLoggedIn, canUseSession, login, setUser, refreshUser, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

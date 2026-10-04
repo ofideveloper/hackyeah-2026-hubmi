@@ -27,7 +27,6 @@ import {
   type Sector,
   type User,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 import {
   LISTING_KIND_LABEL,
   MENTOR_BIO_MAX,
@@ -79,6 +78,7 @@ function SectorSelect({
 }
 
 function ProfileForm({ user, onSaved }: { user: User; onSaved: (user: User) => void }) {
+  const { canUseSession } = useAuth();
   const [sector, setSector] = useState<Sector | null>(user.sector ?? null);
   const [organization, setOrganization] = useState(user.organization ?? "");
   const [bio, setBio] = useState(user.mentor_bio ?? "");
@@ -87,7 +87,7 @@ function ProfileForm({ user, onSaved }: { user: User; onSaved: (user: User) => v
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint()) return;
+    if (!canUseSession) return;
     setBusy(true);
     setError(null);
     try {
@@ -144,6 +144,7 @@ function ProfileForm({ user, onSaved }: { user: User; onSaved: (user: User) => v
 }
 
 function ListingForm({ onCreated }: { onCreated: () => void }) {
+  const { canUseSession } = useAuth();
   const [kind, setKind] = useState<ListingKind>("szukam");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -153,7 +154,7 @@ function ListingForm({ onCreated }: { onCreated: () => void }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint()) return;
+    if (!canUseSession) return;
     setBusy(true);
     setError(null);
     try {
@@ -227,7 +228,7 @@ function ListingForm({ onCreated }: { onCreated: () => void }) {
 
 export default function ContactPage() {
   const tabsId = useId();
-  const { user, sessionHint, setUser } = useAuth();
+  const { user, sessionHint, setUser, canUseSession } = useAuth();
   const [tab, setTab] = useState<Tab>("rozmowy");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mentors, setMentors] = useState<Mentor[] | null>(null);
@@ -266,7 +267,7 @@ export default function ContactPage() {
   const unread = unreadCount(threads ?? []);
 
   async function onCompose(target: Compose, values: { subject: string; body: string }) {
-    if (!hasSessionHint()) return;
+    if (!canUseSession) return;
     const created =
       target.type === "ogloszenie"
         ? await contactListingAuthor(target.listing.id, values.body)
@@ -284,7 +285,7 @@ export default function ContactPage() {
   }
 
   async function onDeleteListing(listing: Listing) {
-    if (!hasSessionHint()) return;
+    if (!canUseSession) return;
     if (!window.confirm(`Usunąć ogłoszenie „${listing.title}”?`)) return;
     setError(null);
     try {

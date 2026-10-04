@@ -2,7 +2,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { fetchAdminStats, type AdminStats } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 const LINKS = [
   { href: "/admin/units", label: "Jednostki", hint: "Teren i kompetencje" },
@@ -22,7 +21,6 @@ export function AdminOverview() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
     fetchAdminStats()
       .then(setStats)
       .catch((err: unknown) =>

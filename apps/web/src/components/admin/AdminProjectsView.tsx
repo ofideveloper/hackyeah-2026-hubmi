@@ -10,7 +10,6 @@ import {
   type OrganizationalUnit,
   type Project,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 type ProjectDraft = {
   unit_id: string;
@@ -31,7 +30,6 @@ export function AdminProjectsView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
     Promise.all([fetchUnits(), fetchProjects()])
       .then(([nextUnits, nextProjects]) => {
         setUnits(nextUnits);
@@ -61,7 +59,7 @@ export function AdminProjectsView() {
 
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint() || !unitId) return;
+    if (!unitId) return;
     setError(null);
     setBusy(true);
     try {
@@ -82,7 +80,7 @@ export function AdminProjectsView() {
 
   async function onSaveEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint() || !editingId || !draft) return;
+    if (!editingId || !draft) return;
     setError(null);
     setBusy(true);
     try {
@@ -101,7 +99,6 @@ export function AdminProjectsView() {
   }
 
   async function onDelete(projectId: string) {
-    if (!hasSessionHint()) return;
     if (!window.confirm("Usunąć ten projekt?")) return;
     try {
       await deleteProject(projectId);

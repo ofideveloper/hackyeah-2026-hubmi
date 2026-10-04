@@ -9,7 +9,6 @@ import {
   type AdminTesterSignup,
   type IdeaStatus,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 import { KIND_LABEL, SIGNUP_STATUS } from "@/lib/testing";
 
 type Tab = "signups" | "reviews";
@@ -31,7 +30,6 @@ export function AdminTestingView() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
     Promise.all([fetchAdminTesterSignups(), fetchAdminSolutionReviews()])
       .then(([signupRows, reviewRows]) => {
         setSignups(signupRows);
@@ -44,7 +42,6 @@ export function AdminTestingView() {
   }, []);
 
   async function onStatus(signup: AdminTesterSignup, status: IdeaStatus) {
-    if (!hasSessionHint()) return;
     setBusyId(signup.id);
     setError(null);
     try {
@@ -58,7 +55,6 @@ export function AdminTestingView() {
   }
 
   async function onDeleteReview(review: AdminSolutionReview) {
-    if (!hasSessionHint()) return;
     if (!window.confirm(`Trwale usunąć opinię o „${review.target_name ?? "rozwiązaniu"}”?`)) return;
     setBusyId(review.id);
     setError(null);

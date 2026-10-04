@@ -7,7 +7,6 @@ import {
   updateUnit,
   type OrganizationalUnit,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 type UnitDraft = {
   name: string;
@@ -27,7 +26,6 @@ export function AdminUnitsView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
     fetchUnits()
       .then(setUnits)
       .catch((err: unknown) =>
@@ -53,7 +51,6 @@ export function AdminUnitsView() {
 
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint()) return;
     setError(null);
     setBusy(true);
     try {
@@ -71,7 +68,7 @@ export function AdminUnitsView() {
 
   async function onSaveEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint() || !editingId || !draft) return;
+    if (!editingId || !draft) return;
     setError(null);
     setBusy(true);
     try {
@@ -94,7 +91,6 @@ export function AdminUnitsView() {
   }
 
   async function onDelete(unitId: string) {
-    if (!hasSessionHint()) return;
     if (!window.confirm("Usunąć jednostkę oraz powiązane zgłoszenia i projekty?")) return;
     try {
       await deleteUnit(unitId);

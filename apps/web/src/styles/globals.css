@@ -173,7 +173,7 @@ body {
   background: var(--accent-soft);
 }
 
-/* Header na ciemniejszym tle — tekstowy link (bez bordera) */
+/* Header (`--header-bg`) — tekstowy link; ciemny tekst, bo biały daje tylko 2,5:1 (WCAG 1.4.3) */
 .site-header-link {
   display: inline-flex;
   align-items: center;
@@ -182,7 +182,7 @@ body {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #fff;
+  color: var(--text);
   transition: background 0.15s ease, opacity 0.15s ease;
 }
 
@@ -204,7 +204,7 @@ body {
 }
 
 .site-header-cta-active {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 2px rgba(18, 19, 26, 0.75);
 }
 
 /* Kółko konta + dropdown */
@@ -220,23 +220,23 @@ body {
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(18, 19, 26, 0.55);
   background: rgba(255, 255, 255, 0.12);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #fff;
+  color: var(--text);
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .user-menu-trigger:hover,
 .user-menu-trigger[aria-expanded="true"] {
   background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(18, 19, 26, 0.8);
 }
 
 .user-menu-trigger:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -292,18 +292,18 @@ body {
   background: rgba(18, 19, 26, 0.06);
 }
 
-/* Header na ciemniejszym tle — outline biały */
+/* Header (`--header-bg`) — przycisk z ciemnym outline */
 .btn-header-outline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 0.625rem;
-  border: 1px solid #fff;
+  border: 1px solid var(--text);
   background: transparent;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--text);
   transition: background 0.15s ease, opacity 0.15s ease;
 }
 
@@ -896,7 +896,7 @@ body {
 
 .status-pill-done {
   background: rgba(46, 125, 90, 0.12);
-  color: #2e7d5a;
+  color: #256b4c;
 }
 
 .status-pill-rejected {
@@ -959,21 +959,21 @@ body {
   justify-content: center;
   width: 2.75rem;
   height: 2.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(18, 19, 26, 0.55);
   border-radius: 0.75rem;
   background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  color: var(--text);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .site-header-menu-btn:hover {
   background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(18, 19, 26, 0.8);
 }
 
 .site-header-menu-btn:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -1058,7 +1058,7 @@ body {
   width: min(22rem, 88vw);
   height: 100%;
   background: var(--header-bg);
-  color: #fff;
+  color: var(--text);
   box-shadow: -12px 0 40px rgba(18, 19, 26, 0.18);
   transform: translateX(100%);
   transition: transform 0.22s ease;
@@ -1074,7 +1074,7 @@ body {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.1rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 1px solid rgba(18, 19, 26, 0.18);
 }
 
 .site-header-drawer-title {
@@ -1090,15 +1090,15 @@ body {
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(18, 19, 26, 0.55);
   border-radius: 0.7rem;
   background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  color: var(--text);
   cursor: pointer;
 }
 
 .site-header-drawer-close:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -1143,11 +1143,11 @@ body {
   display: block;
   width: 100%;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 1px solid rgba(18, 19, 26, 0.18);
   border-radius: 0;
   padding: 0.9rem 0;
   background: transparent;
-  color: #fff;
+  color: var(--text);
   font: inherit;
   font-size: 1.0625rem;
   font-weight: 500;
@@ -1163,7 +1163,7 @@ body {
 }
 
 .site-header-drawer-link:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -1174,7 +1174,7 @@ body {
   height: 2px;
   margin-top: 0.35rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--text);
 }
 
 .site-header-drawer-cta {
@@ -1188,7 +1188,7 @@ body {
   gap: 0.65rem;
   margin-top: 1.15rem;
   padding-top: 1.15rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 1px solid rgba(18, 19, 26, 0.18);
 }
 
 .site-header-drawer-auth-btn {
@@ -1202,7 +1202,7 @@ body {
   gap: 0;
   margin-top: 1.15rem;
   padding-top: 0.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 1px solid rgba(18, 19, 26, 0.18);
 }
 
 .site-header-drawer-user {
@@ -1222,7 +1222,7 @@ body {
 .site-header-drawer-user-email {
   font-size: 0.8125rem;
   line-height: 1.3;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(18, 19, 26, 0.85);
   word-break: break-word;
 }
 

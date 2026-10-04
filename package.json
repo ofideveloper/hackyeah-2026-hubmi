@@ -10,9 +10,17 @@
     "dev:api": "cd apps/api && .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
     "build": "npm run build -w @hubmi/web",
     "lint": "npm run lint -w @hubmi/web",
-    "setup:api": "cd apps/api && (test -d .venv || python3 -m venv .venv) && .venv/bin/pip install -r requirements.txt"
+    "setup:api": "cd apps/api && (test -d .venv || python3 -m venv .venv) && .venv/bin/pip install -r requirements.txt",
+    "setup:api:dev": "cd apps/api && (.venv/bin/python -m pip install -r requirements-dev.txt || uv pip install --python .venv/bin/python -r requirements-dev.txt)",
+    "test:api": "cd apps/api && .venv/bin/python -m pytest",
+    "test:e2e": "playwright test -c e2e",
+    "test:e2e:smoke": "playwright test -c e2e --grep @smoke",
+    "test:e2e:ui": "playwright test -c e2e --ui",
+    "test:e2e:install": "playwright install chromium"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
     "concurrently": "^9.2.4"
   },
   "engines": {

@@ -1,0 +1,31 @@
+name: API
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: apps/api/.python-version
+          cache: pip
+          cache-dependency-path: apps/api/requirements*.txt
+
+      - run: pip install -r requirements-dev.txt
+
+      # Testy same ustawiają środowisko (osobna baza, atrapa modelu) — patrz tests/conftest.py.
+      - run: pytest --cov=app --cov-report=term

@@ -18,6 +18,9 @@ build/
 .env.*.local
 !.env.example
 
+# Local databases
+*.db
+
 # Next.js
 apps/web/.next/
 apps/web/out/

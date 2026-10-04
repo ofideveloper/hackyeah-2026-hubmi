@@ -138,7 +138,10 @@ export async function fetchMe(): Promise<User> {
     credentials: "same-origin",
   });
 
-  await throwIfNotOk(res);
+  if (!res.ok) {
+    // ApiError ze statusem — AuthProvider kasuje sesję tylko przy 401, nie przy 502/sieci
+    throw new ApiError(await parseError(res), res.status);
+  }
 
   return res.json() as Promise<User>;
 }

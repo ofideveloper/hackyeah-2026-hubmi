@@ -10,13 +10,13 @@ import { ExternalLinkIcon } from "@/components/ExternalLinkIcon";
 import { InnovationDialog } from "@/components/knowledge/InnovationDialog";
 import { VideoEmbed } from "@/components/knowledge/VideoEmbed";
 import { AppNav, caretakerHref, SiteHeader } from "@/components/SiteHeader";
+import { useAuth } from "@/hooks/useAuth";
 import {
   fetchKnowledge,
   type InnovationSummary,
   type KnowledgeOverview,
   type KnowledgeResource,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
 import { youtubeId } from "@/lib/video";
 
 const PAGE_SIZE = 12;
@@ -114,11 +114,8 @@ export default function KnowledgePage() {
   const [onlyVideo, setOnlyVideo] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [opened, setOpened] = useState<InnovationSummary | null>(null);
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  useEffect(() => {
-    setLoggedIn(Boolean(getToken()));
-  }, []);
+  const { status, token } = useAuth();
+  const loggedIn = status === "authenticated" || (status === "loading" && Boolean(token));
 
   useEffect(() => {
     fetchKnowledge()

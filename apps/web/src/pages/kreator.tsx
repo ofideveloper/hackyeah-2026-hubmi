@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 import { GrantApplicationForm } from "@/components/creator/GrantApplicationForm";
 import { IdeaAssistant } from "@/components/creator/IdeaAssistant";
+import { IdeaDialog } from "@/components/creator/IdeaDialog";
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
 import { SiteTitle, SiteTitleAccent } from "@/components/SiteTitle";
 import { Toast } from "@/components/Toast";
@@ -37,32 +38,47 @@ const IDEA_STATUS_LABEL: Record<Idea["status"], string> = {
   rejected: "nieprzyjęta",
 };
 
-function IdeaCard({ idea, children }: { idea: Idea; children?: React.ReactNode }) {
+function IdeaCard({
+  idea,
+  onOpen,
+  children,
+}: {
+  idea: Idea;
+  onOpen: () => void;
+  children?: React.ReactNode;
+}) {
   return (
     <li className="kb-card flex flex-col gap-2">
       <p className="kb-meta">
         {[STAGE_LABEL[idea.stage] ?? idea.stage, idea.category_name].filter(Boolean).join(" · ")}
       </p>
-      <h3 className="font-display text-base font-semibold leading-snug">{idea.name}</h3>
+      <h3 className="font-display text-base font-semibold leading-snug">
+        <button
+          type="button"
+          className="text-left underline-offset-2 transition hover:underline"
+          onClick={onOpen}
+        >
+          {idea.name}
+        </button>
+      </h3>
       <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--muted)]">
         {idea.description}
       </p>
       {idea.essence && (
-        <p className="whitespace-pre-line text-sm leading-relaxed">
+        <p className="line-clamp-3 whitespace-pre-line text-sm leading-relaxed">
           <span className="font-semibold">Istota: </span>
           {idea.essence}
-        </p>
-      )}
-      {idea.audience && (
-        <p className="whitespace-pre-line text-sm leading-relaxed">
-          <span className="font-semibold">Dla kogo: </span>
-          {idea.audience}
         </p>
       )}
       <p className="mt-auto pt-1 text-xs text-[var(--muted)]">
         {[idea.author_name, formatDate(idea.created_at)].filter(Boolean).join(" · ")}
       </p>
-      {children}
+      <div className="flex flex-wrap gap-2 pt-1">
+        <button type="button" className="btn-ghost" onClick={onOpen}>
+          Zobacz szczegóły<span className="sr-only">: {idea.name}</span>
+        </button>
+        {children}
+      </div>
     </li>
   );
 }
@@ -81,8 +97,15 @@ export default function IdeaCreatorPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [opened, setOpened] = useState<Idea | MyIdea | null>(null);
   const closeToast = useCallback(() => setToast(null), []);
   const authChecked = status !== "loading";
+
+  /** Preferuj wersję z canvą (Twoje pomysły), gdy jest dostępna. */
+  function openIdea(idea: Idea | MyIdea) {
+    const mine = myIdeas.find((item) => item.id === idea.id);
+    setOpened(mine ?? idea);
+  }
 
   useEffect(() => {
     const fail = (err: unknown) =>
@@ -207,11 +230,14 @@ export default function IdeaCreatorPage() {
           : [saved, ...prev],
       );
       setToast(
-        editingId ? "Zapisano zmiany w fiszce." : `Fiszka „${saved.name}” została utworzona.`,
+        editingId
+          ? "Zapisano zmiany w pomyśle."
+          : `Pomysł „${saved.name}” został zgłoszony i czeka na ocenę zespołu ROPS.`,
       );
       resetForm();
+      setOpened(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Nie udało się zapisać fiszki");
+      setError(err instanceof Error ? err.message : "Nie udało się zapisać pomysłu");
     } finally {
       setBusy(false);
     }
@@ -219,7 +245,7 @@ export default function IdeaCreatorPage() {
 
   async function onDelete(idea: MyIdea) {
     if (!canUseSession) return;
-    if (!window.confirm(`Usunąć fiszkę „${idea.name}”?`)) return;
+    if (!window.confirm(`Usunąć pomysł „${idea.name}”?`)) return;
     try {
       await deleteIdea(idea.id);
       setMyIdeas((prev) => prev.filter((item) => item.id !== idea.id));
@@ -251,8 +277,8 @@ export default function IdeaCreatorPage() {
             Masz pomysł na <SiteTitleAccent>innowację społeczną</SiteTitleAccent>?
           </SiteTitle>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
-            Opisz go na krótkiej fiszce, dopracuj na canvie z pomocą asystenta i pokaż innym. W
-            trakcie naborów grantowych złożysz tu także wniosek o finansowanie.
+            Opisz pomysł w kilku prostych polach, dopracuj go z asystentem i pokaż innym.
+            Gdy trwa nabór grantowy, złożysz tu także wniosek o dofinansowanie.
           </p>
         </header>
 
@@ -296,15 +322,14 @@ export default function IdeaCreatorPage() {
 
         <section className="kb-section" id="fiszka" aria-labelledby="fiszka-title">
           <h2 id="fiszka-title" className="font-display kb-section-title">
-            {editingId ? "Edycja fiszki" : "Nowa fiszka pomysłu"}
+            {editingId ? "Edycja pomysłu" : "Nowy pomysł"}
           </h2>
           {!authChecked ? (
             <p className="kb-section-lead" role="status">Ładowanie…</p>
           ) : !user ? (
             <div className="surface mt-5 flex flex-wrap items-center justify-between gap-4 p-5">
               <p className="max-w-xl text-sm leading-relaxed text-[var(--muted)]">
-                Żeby zgłosić pomysł, skorzystać z canvy i asystenta kreatora innowacji, zaloguj
-                się lub załóż konto.
+                Żeby zgłosić pomysł i skorzystać z asystenta, zaloguj się lub załóż konto.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link href="/login" className="btn-primary">
@@ -395,11 +420,11 @@ export default function IdeaCreatorPage() {
 
                 <fieldset id="canva" className="scroll-mt-24 border-t border-[var(--border)] pt-4">
                   <legend className="font-display pr-3 text-base font-semibold">
-                    Canva innowacji społecznej
+                    Dopracuj szczegóły pomysłu
                   </legend>
                   <p className="text-sm text-[var(--muted)]">
-                    Robocze notatki do prototypowania — widzisz je tylko Ty. Więcej narzędzi
-                    znajdziesz w{" "}
+                    Kolejne pytania pomogą ułożyć plan — te notatki widzisz tylko Ty. Więcej
+                    inspiracji znajdziesz w{" "}
                     <Link href="/wiedza#materialy" className="kb-link">
                       materiałach edukacyjnych
                     </Link>
@@ -430,7 +455,7 @@ export default function IdeaCreatorPage() {
 
                 <div className="flex flex-wrap gap-2">
                   <button type="submit" disabled={busy} className="btn-primary">
-                    {busy ? "Zapisywanie…" : editingId ? "Zapisz zmiany" : "Opublikuj fiszkę"}
+                    {busy ? "Zapisywanie…" : editingId ? "Zapisz zmiany" : "Zgłoś pomysł"}
                   </button>
                   {editingId && (
                     <button type="button" className="btn-ghost" disabled={busy} onClick={resetForm}>
@@ -456,29 +481,25 @@ export default function IdeaCreatorPage() {
         {user && myIdeas.length > 0 && (
           <section className="kb-section" aria-labelledby="moje-title">
             <h2 id="moje-title" className="font-display kb-section-title">
-              Twoje fiszki
+              Twoje pomysły
             </h2>
             <ul className="mt-5 grid gap-4 sm:grid-cols-2">
               {myIdeas.map((idea) => (
-                <IdeaCard key={idea.id} idea={idea}>
-                  <p className="text-sm">
+                <IdeaCard key={idea.id} idea={idea} onOpen={() => openIdea(idea)}>
+                  <p className="basis-full text-sm">
                     <span className="font-semibold">Status: </span>
                     {IDEA_STATUS_LABEL[idea.status] ?? idea.status}
                   </p>
-                  {idea.admin_note && (
-                    <p className="whitespace-pre-line rounded-lg bg-[var(--accent-soft)] px-3 py-2 text-sm leading-relaxed">
-                      <span className="font-semibold">Komentarz zespołu ROPS: </span>
-                      {idea.admin_note}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <button type="button" className="btn-ghost" onClick={() => startEdit(idea)}>
-                      Edytuj<span className="sr-only">: {idea.name}</span>
-                    </button>
-                    <button type="button" className="btn-ghost" onClick={() => void onDelete(idea)}>
-                      Usuń<span className="sr-only">: {idea.name}</span>
-                    </button>
-                  </div>
+                  <button type="button" className="btn-ghost" onClick={() => startEdit(idea)}>
+                    Edytuj<span className="sr-only">: {idea.name}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => void onDelete(idea)}
+                  >
+                    Usuń<span className="sr-only">: {idea.name}</span>
+                  </button>
                 </IdeaCard>
               ))}
             </ul>
@@ -516,18 +537,25 @@ export default function IdeaCreatorPage() {
           {shownIdeas.length === 0 ? (
             <p className="mt-5 text-sm text-[var(--muted)]">
               {ideas.length === 0
-                ? "Nie ma jeszcze żadnych fiszek — Twoja może być pierwsza."
+                ? "Nie ma jeszcze żadnych pomysłów — Twój może być pierwszy."
                 : "Brak pomysłów na tym etapie."}
             </p>
           ) : (
             <ul className="mt-5 grid gap-4 sm:grid-cols-2">
               {shownIdeas.map((idea) => (
-                <IdeaCard key={idea.id} idea={idea} />
+                <IdeaCard
+                  key={idea.id}
+                  idea={idea}
+                  onOpen={() => openIdea(idea)}
+                />
               ))}
             </ul>
           )}
         </section>
       </main>
+      {opened && (
+        <IdeaDialog idea={opened} onClose={() => setOpened(null)} />
+      )}
       <Toast message={toast} onClose={closeToast} />
     </>
   );

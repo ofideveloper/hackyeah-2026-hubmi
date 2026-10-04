@@ -59,9 +59,9 @@ export function UserMenu({ user: userProp, isAdmin: isAdminProp }: UserMenuProps
   }, [open]);
 
   function logout() {
-    authLogout();
     setOpen(false);
-    void router.push("/");
+    // Najpierw nawigacja — inaczej strażnik chronionej strony zdąży przekierować na /login
+    void router.push("/").finally(authLogout);
   }
 
   const label = user

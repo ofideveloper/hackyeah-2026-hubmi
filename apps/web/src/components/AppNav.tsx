@@ -64,9 +64,9 @@ function NavContent({
   const caretakerActive = current === "app";
 
   function handleLogout() {
-    logout();
     onNavigate?.();
-    void router.push("/");
+    // Najpierw nawigacja — inaczej strażnik chronionej strony zdąży przekierować na /login
+    void router.push("/").finally(logout);
   }
 
   function focusCaretakerComposer() {

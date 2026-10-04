@@ -10,6 +10,7 @@
   --accent-hover: #6b5c4e;
   --accent-light: #a8927e;
   --accent-soft: rgba(132, 115, 98, 0.14);
+  --header-bg: #ada399;
   --danger: #c23b3b;
   --ring: rgba(132, 115, 98, 0.3);
   --shadow: 0 1px 2px rgba(18, 19, 26, 0.05), 0 8px 24px rgba(18, 19, 26, 0.06);
@@ -37,9 +38,9 @@ body {
   background-image:
     linear-gradient(
       180deg,
-      rgba(243, 245, 248, 0.22) 0%,
-      rgba(243, 245, 248, 0.32) 45%,
-      rgba(243, 245, 248, 0.42) 100%
+      rgba(243, 245, 248, 0.38) 0%,
+      rgba(243, 245, 248, 0.5) 60%,
+      rgba(243, 245, 248, 0.6) 100%
     ),
     url("/background.png");
   /* Kafelki od środka u góry; scrolluje wraz ze stroną */
@@ -162,7 +163,6 @@ body {
 
 .site-header-link-active {
   background: rgba(255, 255, 255, 0.22);
-  font-weight: 600;
 }
 
 .site-header-link-active:hover {
@@ -289,7 +289,7 @@ body {
   box-shadow: var(--shadow);
 }
 
-/* —— Czat: społeczny opiekun —— */
+/* —— Czat: opiekun —— */
 .chat-shell {
   border-radius: 1.25rem;
   border: 1px solid var(--border);
@@ -878,7 +878,7 @@ body {
   top: 0;
   z-index: 20;
   border-bottom: 1px solid rgba(18, 19, 26, 0.08);
-  background: #ada399;
+  background: var(--header-bg);
   backdrop-filter: blur(10px);
 }
 
@@ -1025,7 +1025,7 @@ body {
   flex-direction: column;
   width: min(22rem, 88vw);
   height: 100%;
-  background: #ada399;
+  background: var(--header-bg);
   color: #fff;
   box-shadow: -12px 0 40px rgba(18, 19, 26, 0.18);
   transform: translateX(100%);
@@ -1133,10 +1133,6 @@ body {
 .site-header-drawer-link:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
-}
-
-.site-header-drawer-link-active {
-  font-weight: 700;
 }
 
 .site-header-drawer-link-active::after {

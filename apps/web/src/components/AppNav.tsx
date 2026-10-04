@@ -3,7 +3,11 @@ import { useRouter } from "next/router";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { HeaderLoginLink, HeaderRegisterLink } from "@/components/HeaderAuthLinks";
+import {
+  caretakerHref as caretakerHrefFor,
+  HeaderLoginLink,
+  HeaderRegisterLink,
+} from "@/components/HeaderAuthLinks";
 import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchConversations, type User } from "@/lib/api";
@@ -50,13 +54,21 @@ function NavContent({
   const router = useRouter();
   const { logout } = useAuth();
   const linkClass = variant === "drawer" ? drawerLinkClass : navLinkClass;
-  const caretakerHref = loggedIn ? "/app" : "/#opiekun";
+  const caretakerHref = caretakerHrefFor(loggedIn);
   const caretakerActive = current === "app";
 
   function handleLogout() {
     logout();
     onNavigate?.();
     void router.push("/");
+  }
+
+  function focusCaretakerComposer() {
+    const input = document.getElementById("chat-message-input");
+    input?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (input instanceof HTMLTextAreaElement) {
+      window.setTimeout(() => input.focus({ preventScroll: true }), 280);
+    }
   }
 
   return (
@@ -87,7 +99,12 @@ function NavContent({
               : "btn-primary site-header-cta"
         }
         aria-current={caretakerActive ? "page" : undefined}
-        onClick={onNavigate}
+        onClick={() => {
+          onNavigate?.();
+          if (loggedIn && (current === "app" || router.pathname === "/app")) {
+            focusCaretakerComposer();
+          }
+        }}
       >
         Zapytaj opiekuna
       </Link>

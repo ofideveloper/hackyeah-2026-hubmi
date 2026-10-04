@@ -21,7 +21,7 @@ from .routes import (
     units,
     users,
 )
-from .seed import seed_admin_user, seed_knowledge_resources
+from .seed import seed_admin_user, seed_innovation_library, seed_knowledge_resources
 
 setup_logging()
 logger = get_logger(__name__)
@@ -38,12 +38,18 @@ async def log_requests(request: Request, call_next):
     try:
         response = await call_next(request)
     except Exception:
-        logger.exception("%s %s — nieobsłużony wyjątek", request.method, request.url.path)
+        logger.exception(
+            "%s %s — nieobsłużony wyjątek", request.method, request.url.path
+        )
         raise
     elapsed = time.perf_counter() - start
     if response.status_code >= 500:
         logger.warning(
-            "%s %s → %s (%.2fs)", request.method, request.url.path, response.status_code, elapsed
+            "%s %s → %s (%.2fs)",
+            request.method,
+            request.url.path,
+            response.status_code,
+            elapsed,
         )
     elif elapsed > SLOW_REQUEST_S:
         logger.warning(
@@ -81,6 +87,7 @@ async def on_startup():
     with Session(engine) as session:
         seed_admin_user(session)
         seed_knowledge_resources(session)
+        seed_innovation_library(session)
     logger.info("API gotowe")
 
 

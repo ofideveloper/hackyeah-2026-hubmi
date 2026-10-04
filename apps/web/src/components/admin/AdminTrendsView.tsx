@@ -78,7 +78,7 @@ export function AdminTrendsView() {
     );
   }
   if (!trends) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie trendów…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie trendów…</p>;
   }
   if (trends.total === 0) {
     return (
@@ -124,6 +124,7 @@ export function AdminTrendsView() {
         </p>
         <div className="surface mt-4 overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
+            <caption className="sr-only">Potrzeby wg obszarów</caption>
             <thead className="border-b border-[var(--border)] text-[var(--muted)]">
               <tr>
                 <th scope="col" className="px-4 py-3 font-medium">Obszar</th>

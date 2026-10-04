@@ -136,7 +136,7 @@ export function AdminGrantCallsView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie naborów…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie naborów…</p>;
   }
 
   return (

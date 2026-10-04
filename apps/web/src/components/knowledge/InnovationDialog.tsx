@@ -53,6 +53,8 @@ export function InnovationDialog({
   const kicker = detail?.category_name || (badge ? null : "Innowacja społeczna");
 
   return (
+    // Klik w tło natywnego <dialog> to dodatek dla myszy; klawiaturą zamyka Escape (onCancel)
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <dialog
       ref={dialogRef}
       className="kb-dialog"

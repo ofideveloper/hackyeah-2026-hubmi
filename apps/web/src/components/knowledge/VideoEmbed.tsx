@@ -30,8 +30,8 @@ export function VideoEmbed({ url, title }: VideoEmbedProps) {
   if (!playing) {
     return (
       <button type="button" className="kb-video-poster" onClick={() => setPlaying(true)}>
-        <span className="kb-video-play" aria-hidden>
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+        <span className="kb-video-play" aria-hidden="true">
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" focusable="false">
             <path d="M8 5.5v13l11-6.5z" />
           </svg>
         </span>

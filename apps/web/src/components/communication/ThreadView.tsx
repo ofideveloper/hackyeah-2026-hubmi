@@ -194,6 +194,8 @@ export function ThreadView({ conversationId, onChanged }: ThreadViewProps) {
         role="log"
         aria-live="polite"
         aria-label={`Wiadomości w rozmowie: ${detail.subject}`}
+        // przewijany region musi być osiągalny klawiaturą
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
         tabIndex={0}
         className="chat-thread thread-log space-y-3 px-4 py-5 sm:px-6"
       >

@@ -66,7 +66,7 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
       className={`chat-caretaker-avatar flex shrink-0 items-center justify-center rounded-full ${dim}`}
       aria-hidden
     >
-      <svg className={icon} viewBox="0 0 32 32" fill="none">
+      <svg className={icon} viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false">
         <circle cx="11" cy="11" r="3.2" fill="currentColor" opacity="0.95" />
         <circle cx="21" cy="11" r="3.2" fill="currentColor" opacity="0.95" />
         <path
@@ -474,7 +474,7 @@ export function AssistantChat({
                   )}
 
                   <p
-                    className={`mt-1.5 px-1 text-[11px] text-[var(--muted)] ${
+                    className={`mt-1.5 px-1 text-xs text-[var(--muted)] ${
                       message.role === "user" ? "self-end" : "self-start"
                     }`}
                     suppressHydrationWarning
@@ -535,14 +535,14 @@ export function AssistantChat({
           </button>
         </div>
         <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="text-[11px] text-[var(--muted)]">
+          <p className="text-xs text-[var(--muted)]">
             Enter wysyła · Shift+Enter nowa linia
           </p>
           <button
             type="button"
             onClick={startNewChat}
             disabled={busy || onlyWelcome}
-            className="btn-ghost inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-2 py-0 text-[11px] font-medium leading-none"
+            className="btn-ghost inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-2 py-0 text-xs font-medium leading-none"
             title="Zacznij nową sprawę - wyczyść rozmowę"
           >
             <svg

@@ -7,6 +7,10 @@ Uruchomienie (z `apps/api`):
 Bez argumentów pobiera wszystkie kategorie z `CATEGORY_SLUGS`. Kategoria
 (`CategoriesOfProjects`) bierze nazwę z nagłówka strony i jest tworzona, jeśli jej
 nie ma. Ponowne uruchomienie aktualizuje opisy zamiast dublować projekty.
+
+Przy starcie API pusta Biblioteka wypełnia się sama (`seed_innovation_library` w
+`app/seed.py`): ze zrzutu `app/seed_data/innovation_library.json`, a gdy go brak —
+tym scraperem (wyłącznik: `SCRAPE_ON_STARTUP=false`).
 """
 
 import argparse
@@ -202,7 +206,9 @@ def scrape(
                 description,
                 url,
                 video_url=detail.video_url,
-                folder_url=urljoin(url, detail.folder_url) if detail.folder_url else None,
+                folder_url=urljoin(url, detail.folder_url)
+                if detail.folder_url
+                else None,
             )
         )
         print(f"  pobrano: {projects[-1].name} ({len(description)} znaków)")

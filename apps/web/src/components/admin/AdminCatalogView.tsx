@@ -48,7 +48,7 @@ export function AdminCatalogView() {
   }, [projects, query, areaId]);
 
   if (loading) {
-    return <p className="text-sm text-[var(--muted)]">Ładowanie projektów…</p>;
+    return <p className="text-sm text-[var(--muted)]" role="status">Ładowanie projektów…</p>;
   }
 
   return (

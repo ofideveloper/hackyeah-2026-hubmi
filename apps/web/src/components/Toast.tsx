@@ -1,7 +1,5 @@
 import { useEffect } from "react";
 
-const TOAST_MS = 6000;
-
 type ToastProps = {
   /** Pusty / null = toast ukryty */
   message: string | null;
@@ -10,13 +8,18 @@ type ToastProps = {
 
 /**
  * Krótkie potwierdzenie akcji w rogu ekranu. Region `role="status"` jest stale w DOM,
- * żeby czytnik ekranu ogłosił pojawiającą się treść.
+ * żeby czytnik ekranu ogłosił pojawiającą się treść. Bez auto-ukrywania (WCAG 2.2.1):
+ * znika po „Zamknij”, Escape albo gdy zastąpi go kolejny komunikat.
  */
 export function Toast({ message, onClose }: ToastProps) {
   useEffect(() => {
     if (!message) return;
-    const timer = window.setTimeout(onClose, TOAST_MS);
-    return () => window.clearTimeout(timer);
+    function onKeyDown(event: KeyboardEvent) {
+      // otwarty <dialog> obsługuje Escape sam — nie zamykamy wtedy toasta
+      if (event.key === "Escape" && !document.querySelector("dialog[open]")) onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [message, onClose]);
 
   return (

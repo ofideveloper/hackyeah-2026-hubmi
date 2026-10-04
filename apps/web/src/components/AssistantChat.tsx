@@ -10,6 +10,7 @@ import { LocationRequestCard } from "@/components/LocationRequestCard";
 import { NewProjectDialog } from "@/components/NewProjectDialog";
 import { ProjectPreviewModal } from "@/components/ProjectPreviewModal";
 import { ProjectSuggestionCards } from "@/components/ProjectSuggestionCards";
+import { useAuth } from "@/hooks/useAuth";
 import {
   sendChatMessage,
   type ChatProject,
@@ -18,7 +19,6 @@ import {
   type ProjectProposal,
   type SimilarCases,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 export type ChatRole = "user" | "assistant" | "error";
 
@@ -149,6 +149,7 @@ export function AssistantChat({
   guestMode = false,
   autoFocus = false,
 }: AssistantChatProps) {
+  const { canUseSession } = useAuth();
   const displayName = userName?.trim() || "mieszkańcu";
   const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage(guestMode)]);
   const [input, setInput] = useState("");
@@ -198,7 +199,7 @@ export function AssistantChat({
     const trimmed = text.trim();
     if (!trimmed || busy) return;
 
-    if (!guestMode && !hasSessionHint()) return;
+    if (!guestMode && !canUseSession) return;
 
     const history = messages
       .filter(

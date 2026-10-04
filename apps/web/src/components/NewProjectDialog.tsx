@@ -5,8 +5,8 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
+import { useAuth } from "@/hooks/useAuth";
 import { createProjectProposal, type NewProjectDraft, type ProjectProposal } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 type NewProjectDialogProps = {
   draft: NewProjectDraft;
@@ -22,6 +22,7 @@ export function NewProjectDialog({
   onClose,
   onCreated,
 }: NewProjectDialogProps) {
+  const { canUseSession } = useAuth();
   const titleId = useId();
   const errorId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -39,7 +40,7 @@ export function NewProjectDialog({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint() || saving) return;
+    if (!canUseSession || saving) return;
 
     setSaving(true);
     setError(null);

@@ -21,7 +21,9 @@ Browser → /api/* (Next BFF) → process.env.API_URL → FastAPI (internal)
 - Endpointy chronione właściwą zależnością (`CurrentUserDep` / check roli)
 - Admin (`/admin/*`): weryfikacja `role=admin` po stronie UI **i** API — UI nie jest jedyną barierą
 - Sesja w przeglądarce: JWT wyłącznie w cookie `hubmi_session` (`HttpOnly`, `SameSite=Lax`, `Secure` na produkcji) ustawianym przez BFF — nigdy w `localStorage` / `sessionStorage` ani w odpowiedzi JSON dla klienta
-- `hubmi_auth` to jawny znacznik „jest sesja” dla UI (bez sekretu) — nie opieraj na nim autoryzacji
+- `hubmi_auth` to jawny znacznik „jest sesja” dla UI (bez sekretu) — nie opieraj na nim autoryzacji; bootstrap i tak zawsze woła `/auth/me`
+- BFF czyści cookie sesji przy `401` wyłącznie z `/auth/me` (nie przy każdym 401 z API)
+- SSR: `_app.getInitialProps` hydruje usera z cookie przez wewnętrzne `API_URL` — bez wystawiania URL FastAPI do klienta
 - Wylogowanie: `POST /api/auth/logout` (BFF czyści oba cookie); JWT pozostaje ważny do `exp` — brak unieważniania po stronie serwera
 
 ## Dane i prywatność

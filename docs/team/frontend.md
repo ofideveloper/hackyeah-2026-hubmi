@@ -55,14 +55,17 @@ Browser  →  fetch("/api/...")  →  pages/api/[...path].ts  →  process.env.A
 **Rób**
 
 - Klient tylko przez `@/lib/api.ts` i ścieżki `/api/...`
-- JWT nie jest dostępny w kliencie - siedzi w cookie HttpOnly ustawianym przez BFF; funkcje z `@/lib/api` nie przyjmują tokena. `@/lib/auth.ts` czyta tylko znacznik sesji (`hasSessionHint`)
-- Sesja użytkownika: `AuthProvider` + `useAuth` (`hooks/useAuth.tsx`) w `_app` - jeden `fetchMe` na start, cache między widokami (bez migania inicjałów w `UserMenu`)
+- JWT nie jest dostępny w kliencie - siedzi w cookie HttpOnly ustawianym przez BFF; funkcje z `@/lib/api` nie przyjmują tokena. `@/lib/auth.ts` ma tylko znacznik `hubmi_auth` (bootstrap / odzyskanie sesji)
+- Sesja: `_app.getInitialProps` czyta cookie i woła FastAPI `/auth/me` (przez `lib/server/upstream.ts`) → `AuthProvider(initialUser)` zna usera przed pierwszym renderem; potem cache w `useAuth`
+- W widokach: `useAuth().isLoggedIn` (nav/CTA), `useAuth().canUseSession` (mutacje / chronione fetche). Nie bramkuj `useEffect` samym `hasSessionHint()` z pustymi deps
+- BFF czyści cookie tylko przy `401` z `/auth/me`, nie przy każdym 401 z API
 
 **Nie rób**
 
 - `NEXT_PUBLIC_*` z URL-em FastAPI / serwisu `api`
 - Bezpośrednich `fetch("http://localhost:8000/...")` z komponentów
-- Logiki autoryzacji „na sztywno” poza wspólnymi helperami
+- Logiki autoryzacji „na sztywno” poza `useAuth` / `useRequireAdmin`
+- `fetchMe` ani wylogowania przy dowolnym błędzie sieci w widoku — to robi wyłącznie AuthProvider przy prawdziwym 401
 
 ## Komponenty i struktura
 

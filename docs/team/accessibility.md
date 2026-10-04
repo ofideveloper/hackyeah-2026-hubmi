@@ -18,6 +18,7 @@ Dotyczy całego UI w `apps/web` (landing, auth, `/app`, `/admin`, czat, statusy 
 - Kontrast tekstu i UI: min. **4.5:1** (normalny tekst), **3:1** (duży tekst / ikony / obramowania kontrolek) względem tła
 - Tokeny w `globals.css` utrzymuj powyżej tych progów (szczególnie `--muted` na `--bg`)
 - Granice kontrolek: `--border-strong` (3:1); `--border` tylko dekoracyjnie. `--accent-light` nie nadaje się pod biały tekst
+- Nagłówek i menu mobilne (`--header-bg: #ada399`): tekst, ikony i obramowania w `--text` (7,5:1); biały daje tylko 2,5:1
 - Linki w tekście zawsze podkreślone; fokus z globalnego `:focus-visible` (`--focus` + `--focus-halo`)
 
 ### Operable

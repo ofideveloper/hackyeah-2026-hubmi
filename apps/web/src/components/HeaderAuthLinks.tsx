@@ -4,7 +4,7 @@ type LinkClassProps = {
   className?: string;
 };
 
-/** „Zaloguj się” — biały outline na tle site-header */
+/** „Zaloguj się” — ciemny outline na tle site-header */
 export function HeaderLoginLink({ className = "" }: LinkClassProps) {
   return (
     <Link href="/login" className={`btn-header-outline ${className}`.trim()}>

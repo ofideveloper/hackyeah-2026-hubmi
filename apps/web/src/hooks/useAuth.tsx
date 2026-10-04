@@ -4,13 +4,17 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
 
-import { ApiError, fetchMe, loginUser, logoutUser, type User } from "@/lib/api";
-import { clearSessionHint, dropLegacyToken, hasSessionHint } from "@/lib/auth";
+import { fetchMe, isUnauthorizedError, loginUser, logoutUser, type User } from "@/lib/api";
+import {
+  clearSessionHint,
+  dropLegacyToken,
+  hasSessionHint,
+  markSessionHint,
+} from "@/lib/auth";
 
 export type AuthStatus = "loading" | "authenticated" | "anonymous";
 
@@ -19,6 +23,10 @@ type AuthContextValue = {
   user: User | null;
   /** Przeglądarka ma znacznik sesji — user może się jeszcze ładować (`status === "loading"`). */
   sessionHint: boolean;
+  /** Nav / CTA: `authenticated` albo bootstrap z hintem (bez migania „Zaloguj się”). */
+  isLoggedIn: boolean;
+  /** Mutacje i fetch chronione — tylko po udanym `/auth/me`. */
+  canUseSession: boolean;
   isAdmin: boolean;
   /** Loguje przez BFF (JWT trafia do cookie HttpOnly) i dociąga `/auth/me`. */
   login: (email: string, password: string) => Promise<User>;
@@ -31,34 +39,47 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** 401 = sesja nieważna (BFF już czyści cookie). 502/sieć ≠ wylogowanie. */
-function isUnauthorized(err: unknown): boolean {
-  return err instanceof ApiError && err.status === 401;
-}
+type AuthProviderProps = {
+  children: ReactNode;
+  /** User z SSR (`_app.getInitialProps`) — pierwszy render już zna sesję. */
+  initialUser?: User | null;
+};
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  // Start as loading — nigdy nie traktuj pierwszego renderu jako wylogowania,
-  // zanim bootstrap sprawdzi sesję (inaczej /admin i /app wyrzucają na /login).
-  const [status, setStatus] = useState<AuthStatus>("loading");
-  const [user, setUserState] = useState<User | null>(null);
-  const [sessionHint, setSessionHint] = useState(false);
-  const userRef = useRef<User | null>(null);
-  userRef.current = user;
+export function AuthProvider({ children, initialUser = null }: AuthProviderProps) {
+  // SSR / getInitialProps: jeśli serwer już zna usera, nie zaczynaj od „anonymous”.
+  const [status, setStatus] = useState<AuthStatus>(() =>
+    initialUser ? "authenticated" : "loading",
+  );
+  const [user, setUserState] = useState<User | null>(() => initialUser);
+  const [sessionHint, setSessionHint] = useState(() => Boolean(initialUser));
 
-  const setAnonymous = useCallback(() => {
-    clearSessionHint();
-    setSessionHint(false);
+  const setAnonymous = useCallback((clearHint = true) => {
+    if (clearHint) {
+      clearSessionHint();
+      setSessionHint(false);
+    }
     setUserState(null);
     setStatus("anonymous");
   }, []);
 
+  const applyUser = useCallback((me: User) => {
+    markSessionHint();
+    setSessionHint(true);
+    setUserState(me);
+    setStatus("authenticated");
+  }, []);
+
   const setUser = useCallback((next: User | null) => {
     setUserState(next);
-    if (next) setStatus("authenticated");
+    if (next) {
+      markSessionHint();
+      setSessionHint(true);
+      setStatus("authenticated");
+    }
   }, []);
 
   const logout = useCallback(() => {
-    setAnonymous();
+    setAnonymous(true);
     void logoutUser().catch(() => undefined);
   }, [setAnonymous]);
 
@@ -66,40 +87,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionHint(true);
     setStatus("loading");
     const me = await fetchMe();
-    setUserState(me);
-    setStatus("authenticated");
+    applyUser(me);
     return me;
-  }, []);
-
-  /** Chwilowa awaria API — zostaw cookie/hint; przywróć poprzedni user jeśli był. */
-  const keepSessionAfterTransient = useCallback(() => {
-    setSessionHint(true);
-    const previous = userRef.current;
-    if (previous) {
-      setUserState(previous);
-      setStatus("authenticated");
-      return previous;
-    }
-    // hint żyje, profil jeszcze nie — UI traktuje to jak trwające ładowanie sesji
-    setStatus("loading");
-    return null;
-  }, []);
+  }, [applyUser]);
 
   const refreshUser = useCallback(async (): Promise<User | null> => {
-    if (!hasSessionHint()) {
-      setAnonymous();
-      return null;
-    }
     try {
       return await loadUser();
     } catch (err) {
-      if (isUnauthorized(err) || !hasSessionHint()) {
-        setAnonymous();
-        return null;
+      if (isUnauthorizedError(err)) {
+        setAnonymous(true);
       }
-      return keepSessionAfterTransient();
+      return null;
     }
-  }, [loadUser, setAnonymous, keepSessionAfterTransient]);
+  }, [loadUser, setAnonymous]);
 
   const login = useCallback(
     async (email: string, password: string): Promise<User> => {
@@ -107,79 +108,104 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         return await loadUser();
       } catch (err) {
-        if (isUnauthorized(err) || !hasSessionHint()) {
-          setAnonymous();
-        } else {
-          // login ustawił cookie — nie kasuj hintu przez awarię /auth/me
-          keepSessionAfterTransient();
-        }
+        setAnonymous(true);
         throw err;
       }
     },
-    [loadUser, setAnonymous, keepSessionAfterTransient],
+    [loadUser, setAnonymous],
   );
 
   useEffect(() => {
     dropLegacyToken();
-    if (!hasSessionHint()) {
-      setAnonymous();
-      return;
-    }
 
     let cancelled = false;
-    setSessionHint(true);
-    setStatus("loading");
+    let retryTimer: number | undefined;
+    let attempts = 0;
 
-    const bootstrap = async () => {
-      try {
-        const me = await fetchMe();
-        if (cancelled) return;
-        setUserState(me);
-        setStatus("authenticated");
-      } catch (err) {
-        if (cancelled) return;
-        if (isUnauthorized(err) || !hasSessionHint()) {
-          setAnonymous();
-          return;
-        }
-        // 502 / sieć — jedna szybka ponowna próba, potem zostaw sesję bez fałszywego logoutu
-        await new Promise((r) => window.setTimeout(r, 600));
-        if (cancelled) return;
-        try {
-          const me = await fetchMe();
+    const softRevalidate = () => {
+      fetchMe()
+        .then((me) => {
           if (cancelled) return;
-          setUserState(me);
-          setStatus("authenticated");
-        } catch (err2) {
+          applyUser(me);
+        })
+        .catch((err) => {
           if (cancelled) return;
-          if (isUnauthorized(err2) || !hasSessionHint()) {
-            setAnonymous();
-            return;
+          if (isUnauthorizedError(err)) {
+            setAnonymous(true);
           }
-          keepSessionAfterTransient();
-        }
-      }
+          // Sieć / 5xx: zostaw usera z SSR — nie wyrzucaj na /login.
+        });
     };
 
-    void bootstrap();
+    // Serwer już zna usera — od razu oznacz hint i tylko odśwież w tle.
+    if (initialUser) {
+      markSessionHint();
+      setSessionHint(true);
+      softRevalidate();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const hinted = hasSessionHint();
+    setSessionHint(hinted);
+    setStatus("loading");
+
+    const bootstrap = () => {
+      attempts += 1;
+      // Zawsze próbuj `/auth/me` — HttpOnly cookie może istnieć nawet gdy hint zniknął.
+      fetchMe()
+        .then((me) => {
+          if (cancelled) return;
+          applyUser(me);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          if (isUnauthorizedError(err)) {
+            setAnonymous(true);
+            return;
+          }
+          // Sieć / 5xx: nie kasuj hintu i nie ustawiaj `anonymous` (to wyrzuca z /app na /login).
+          if (attempts < 3) {
+            retryTimer = window.setTimeout(bootstrap, 350 * attempts);
+            return;
+          }
+          if (hinted || hasSessionHint()) {
+            setSessionHint(true);
+            setStatus("loading");
+            return;
+          }
+          setAnonymous(false);
+        });
+    };
+
+    bootstrap();
 
     return () => {
       cancelled = true;
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
     };
-  }, [setAnonymous, keepSessionAfterTransient]);
+    // initialUser tylko z pierwszego SSR mount — client navigations nie remountują providera.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyUser, setAnonymous]);
+
+  const isLoggedIn = status === "authenticated" || (status === "loading" && sessionHint);
+  const canUseSession = status === "authenticated";
 
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
       user,
       sessionHint,
+      isLoggedIn,
+      canUseSession,
       isAdmin: user?.role === "admin",
       login,
       setUser,
       refreshUser,
       logout,
     }),
-    [status, user, sessionHint, login, setUser, refreshUser, logout],
+    [status, user, sessionHint, isLoggedIn, canUseSession, login, setUser, refreshUser, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

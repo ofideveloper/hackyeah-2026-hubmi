@@ -11,3 +11,14 @@ dependencies = [
     "pyjwt>=2.15.1",
     "sqlmodel>=0.0.47",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --strict-markers"
+filterwarnings = [
+    # Szum spoza testów: klient testowy Starlette i `on_event` w app/main.py.
+    "ignore:Using `httpx` with `starlette.testclient`",
+    "ignore:\\s*on_event is deprecated:DeprecationWarning",
+    "ignore:'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated",
+]

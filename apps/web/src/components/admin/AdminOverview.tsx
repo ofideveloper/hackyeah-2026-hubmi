@@ -2,7 +2,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { fetchAdminInbox, fetchAdminStats, type AdminInbox, type AdminStats } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 const WAITING: { key: keyof AdminInbox; href: string; label: string }[] = [
   { key: "ideas", href: "/admin/ideas", label: "Nowe fiszki pomysłów" },
@@ -30,7 +29,6 @@ export function AdminOverview() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
     fetchAdminInbox()
       .then(setInbox)
       .catch(() => {

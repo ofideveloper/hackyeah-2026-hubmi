@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
-from ..dependencies.auth import get_current_user
+from ..dependencies.auth import CurrentAdminDep, get_current_user
 from ..dependencies.db import SessionDep
 from ..models import (
     ActualProject,
@@ -55,7 +55,10 @@ async def get_category(category_id: uuid.UUID, session: SessionDep):
 @router.post(
     "", response_model=CategoriesOfProjects, status_code=status.HTTP_201_CREATED
 )
-async def create_category(payload: CategoriesOfProjectsCreate, session: SessionDep):
+async def create_category(
+    payload: CategoriesOfProjectsCreate, _: CurrentAdminDep, session: SessionDep
+):
+    # Obszary porządkują katalog i trafiają do promptu czatu — zmienia je tylko admin.
     ensure_name_free(session, payload.name)
     category = CategoriesOfProjects.model_validate(payload)
     session.add(category)
@@ -66,7 +69,10 @@ async def create_category(payload: CategoriesOfProjectsCreate, session: SessionD
 
 @router.patch("/{category_id}", response_model=CategoriesOfProjects)
 async def update_category(
-    category_id: uuid.UUID, payload: CategoriesOfProjectsCreate, session: SessionDep
+    category_id: uuid.UUID,
+    payload: CategoriesOfProjectsCreate,
+    _: CurrentAdminDep,
+    session: SessionDep,
 ):
     category = get_category_or_404(session, category_id)
     ensure_name_free(session, payload.name, except_id=category_id)
@@ -78,7 +84,7 @@ async def update_category(
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_category(category_id: uuid.UUID, session: SessionDep):
+async def delete_category(category_id: uuid.UUID, _: CurrentAdminDep, session: SessionDep):
     category = get_category_or_404(session, category_id)
     for model in (ActualProject, ProposalOfNewProject):
         in_use = session.exec(

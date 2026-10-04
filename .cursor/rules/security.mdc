@@ -17,6 +17,7 @@ Pełny opis: `docs/team/security.md`.
 
 - Hasła tylko hashowane; nie loguj haseł ani JWT
 - JWT w przeglądarce tylko w cookie HttpOnly ustawianym przez BFF — nigdy w storage ani JS; żądania zmieniające stan muszą być same-origin (BFF → 403)
+- BFF czyści sesję tylko przy `401` z `/auth/me`; SSR hydruje usera w `_app.getInitialProps` przez `API_URL` (nie wystawiaj URL do klienta)
 - Endpointy z `CurrentUserDep` / sprawdzeniem roli; admin także po stronie API
 - Waliduj input (SQLModel/Pydantic); SQL tylko przez ORM / parametry
 - Błędy zewnętrzne: bez stack trace / sekretów

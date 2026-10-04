@@ -47,3 +47,9 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 coverage/
+
+# E2E (Playwright)
+e2e/test-results/
+e2e/playwright-report/
+apps/web/.next-e2e*/
+apps/api/data/*.db*

@@ -8,6 +8,7 @@ import {
   type KeyboardEvent,
 } from "react";
 
+import { useAuth } from "@/hooks/useAuth";
 import {
   ApiError,
   fetchConversation,
@@ -16,7 +17,6 @@ import {
   type ConversationDetail,
   type ConversationStatus,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 import {
   formatDateTime,
   MESSAGE_BODY_MAX,
@@ -47,6 +47,7 @@ function sameThread(prev: ConversationDetail | null, next: ConversationDetail): 
  * odpytywanie API. Rodzic podaje `key={conversationId}`, żeby zmiana rozmowy czyściła stan.
  */
 export function ThreadView({ conversationId, onChanged }: ThreadViewProps) {
+  const { canUseSession } = useAuth();
   const titleId = useId();
   const logRef = useRef<HTMLOListElement>(null);
   const inFlight = useRef(false);
@@ -59,7 +60,7 @@ export function ThreadView({ conversationId, onChanged }: ThreadViewProps) {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!hasSessionHint() || inFlight.current || stopped.current) return;
+    if (!canUseSession || inFlight.current || stopped.current) return;
     inFlight.current = true;
     const startedAt = writes.current;
     try {
@@ -77,7 +78,7 @@ export function ThreadView({ conversationId, onChanged }: ThreadViewProps) {
     } finally {
       inFlight.current = false;
     }
-  }, [conversationId]);
+  }, [canUseSession, conversationId]);
 
   useEffect(() => {
     void load();
@@ -103,7 +104,7 @@ export function ThreadView({ conversationId, onChanged }: ThreadViewProps) {
   }, [messageCount]);
 
   async function write(action: () => Promise<ConversationDetail>, fallback: string) {
-    if (!hasSessionHint() || busy) return false;
+    if (!canUseSession || busy) return false;
     setBusy(true);
     setError(null);
     writes.current += 1;

@@ -9,7 +9,7 @@ type InnovationDialogProps = {
   /** Nazwa znana z listy — nagłówek widać, zanim dojdą szczegóły */
   name: string;
   onClose: () => void;
-  /** Np. „Propozycja opiekuna” — nad kategorią */
+  /** Np. „Propozycja interaktywnego asystenta” — nad kategorią */
   badge?: string;
   /** Opis z czatu, gdy szczegół z API jeszcze nie doszedł albo zawiódł */
   fallbackDescription?: string;

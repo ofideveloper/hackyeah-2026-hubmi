@@ -388,7 +388,7 @@ def _extract_openai_text(data: dict) -> str:
 def _openai_http_message(code: int, err_body: str) -> str:
     if code in (429, 503):
         return (
-            "Opiekun jest chwilowo przeciążony (OpenAI). "
+            "Interaktywny asystent jest chwilowo przeciążony (OpenAI). "
             "Spróbuj za kilka sekund ponownie."
         )
     if code in (401, 403):
@@ -408,7 +408,7 @@ def _openai_http_message(code: int, err_body: str) -> str:
 def _gemini_http_message(code: int, err_body: str) -> str:
     if code in (429, 503):
         return (
-            "Opiekun jest chwilowo przeciążony (dużo zapytań do Gemini). "
+            "Interaktywny asystent jest chwilowo przeciążony (dużo zapytań do Gemini). "
             "Spróbuj za kilka sekund ponownie."
         )
     if code in (401, 403):
@@ -658,7 +658,7 @@ def _housing_draft(facts: dict[str, object], system_text: str) -> str:
     desc = (
         f"Potrzeba mieszkaniowa ({duration}). Miejsce: {place}. "
         f"{public}Sytuacja: {who}. "
-        "Zebrane z rozmowy z mieszkańcem przez społecznego opiekuna MaloHUB."
+        "Zebrane z rozmowy z mieszkańcem przez interaktywnego asystenta MaloHUB."
     )
     place_bit = f" na {place}" if place and place != "lokalizacja do uzupełnienia" else ""
     horizon = "na dłużej" if facts.get("duration") == "long" else "na już"
@@ -679,7 +679,7 @@ def _housing_draft(facts: dict[str, object], system_text: str) -> str:
 
 
 def _fake_complete(user_text: str, system_text: str, history_text: str = "") -> str:
-    """Ciepła odpowiedź opiekuna — uwzględnia to, co już wiadomo z rozmowy."""
+    """Ciepła odpowiedź interaktywnego asystenta — uwzględnia to, co już wiadomo z rozmowy."""
     if not user_text:
         return (
             "Cześć — opowiedz krótko, co Cię zajmuje. "

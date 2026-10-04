@@ -5,7 +5,7 @@ export default function AdminTrendsPage() {
   return (
     <AdminShell
       title="Trendy potrzeb"
-      description="Potrzeby zgłaszane opiekunowi, zagregowane według obszarów. Widok tylko dla administratora."
+      description="Potrzeby zgłaszane interaktywnemu asystentowi, zagregowane według obszarów. Widok tylko dla administratora."
     >
       <AdminTrendsView />
     </AdminShell>

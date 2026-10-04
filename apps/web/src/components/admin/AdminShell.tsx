@@ -10,17 +10,26 @@ import { fetchAdminInbox, type AdminInbox } from "@/lib/api";
 const INBOX_POLL_MS = 30_000;
 
 /** Sekcja panelu → licznik rzeczy czekających na decyzję (`GET /admin/inbox`). */
-type NavItem = { href: string; label: string; exact?: boolean; inbox?: keyof AdminInbox };
+type NavItem = {
+  href: string;
+  label: string;
+  exact?: boolean;
+  inbox?: keyof AdminInbox;
+};
 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Przegląd", exact: true },
   { href: "/admin/catalog", label: "Katalog innowacji" },
   { href: "/admin/middleman", label: "Middleman Innowacji" },
   { href: "/admin/proposals", label: "Propozycje", inbox: "proposals" },
-  { href: "/admin/knowledge", label: "Zasobnik wiedzy" },
   { href: "/admin/ideas", label: "Fiszki pomysłów", inbox: "ideas" },
+  { href: "/admin/knowledge", label: "Zasobnik wiedzy" },
   { href: "/admin/grants", label: "Nabory grantowe" },
-  { href: "/admin/testing", label: "Zgłoszenia testerów", inbox: "tester_signups" },
+  {
+    href: "/admin/testing",
+    label: "Zgłoszenia testerów",
+    inbox: "tester_signups",
+  },
   { href: "/admin/messages", label: "Wiadomości", inbox: "messages" },
   { href: "/admin/trends", label: "Trendy potrzeb" },
   { href: "/admin/users", label: "Użytkownicy" },
@@ -60,7 +69,11 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
 
   if (gate.status === "loading") {
     return (
-      <main id="tresc" tabIndex={-1} className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
+      <main
+        id="tresc"
+        tabIndex={-1}
+        className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6"
+      >
         <p className="text-[var(--muted)]" role="status">
           Ładowanie…
         </p>
@@ -98,7 +111,8 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
               const waiting = item.inbox ? (inbox?.[item.inbox] ?? 0) : 0;
               const active = item.exact
                 ? router.pathname === item.href
-                : router.pathname === item.href || router.pathname.startsWith(`${item.href}/`);
+                : router.pathname === item.href ||
+                  router.pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}
@@ -125,7 +139,11 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
             <Link href="/wiedza" className="admin-nav-link">
               Zasobnik (publiczny)
             </Link>
-            <button type="button" onClick={gate.logout} className="admin-nav-link text-left">
+            <button
+              type="button"
+              onClick={gate.logout}
+              className="admin-nav-link text-left"
+            >
               Wyloguj
             </button>
           </div>
@@ -137,7 +155,9 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
               {title}
             </h1>
             {description && (
-              <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">{description}</p>
+              <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
+                {description}
+              </p>
             )}
           </header>
           <div className="admin-main-body animate-soft-in">{children}</div>

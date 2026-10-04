@@ -18,7 +18,7 @@ function caretakerReply(system, userText) {
       "W bazie nie ma wystarczająco trafnego rozwiązania.",
       "[[hubmi-new-project]]",
       "NAME: Szkic potrzeby z rozmowy",
-      "DESCRIPTION: Potrzeba opisana przez użytkownika w rozmowie z opiekunem.",
+      "DESCRIPTION: Potrzeba opisana przez użytkownika w rozmowie z interaktywnym asystentem.",
       "[[/hubmi-new-project]]",
       "[[hubmi-status:no-match]]",
     ].join("\n");
@@ -27,8 +27,10 @@ function caretakerReply(system, userText) {
 }
 
 function complete(messages) {
-  const system = messages.find((message) => message.role === "system")?.content ?? "";
-  const userText = messages.findLast((message) => message.role === "user")?.content ?? "";
+  const system =
+    messages.find((message) => message.role === "system")?.content ?? "";
+  const userText =
+    messages.findLast((message) => message.role === "user")?.content ?? "";
   if (system.includes("## KATALOG")) return caretakerReply(system, userText);
   return "Odpowiedź atrapy modelu: zacznij od rozmowy z trzema osobami z grupy docelowej.";
 }
@@ -47,7 +49,11 @@ createServer((req, res) => {
   req.on("end", () => {
     try {
       const { messages = [] } = JSON.parse(raw);
-      send(200, { choices: [{ message: { role: "assistant", content: complete(messages) } }] });
+      send(200, {
+        choices: [
+          { message: { role: "assistant", content: complete(messages) } },
+        ],
+      });
     } catch {
       send(400, { error: { message: "invalid JSON" } });
     }

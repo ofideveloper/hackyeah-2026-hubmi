@@ -80,7 +80,7 @@ export function AdminTrendsView() {
   if (trends.total === 0) {
     return (
       <p className="surface p-5 text-sm leading-relaxed text-[var(--muted)]">
-        Jeszcze nie ma danych. Potrzeby zapisują się, gdy opiekun w czacie dopasuje projekt
+        Jeszcze nie ma danych. Potrzeby zapisują się, gdy interaktywny asystent w czacie dopasuje projekt
         albo stwierdzi, że w bazie brakuje odpowiedzi.
       </p>
     );
@@ -165,7 +165,7 @@ export function AdminTrendsView() {
       <section>
         <h2 className="text-base font-semibold">Potrzeby bez odpowiedzi w bazie</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Najnowsze tematy, dla których opiekun nie znalazł projektu — kandydaci na nowe
+          Najnowsze tematy, dla których interaktywny asystent nie znalazł projektu — kandydaci na nowe
           innowacje i materiały.
         </p>
         <ul className="mt-4 space-y-3">

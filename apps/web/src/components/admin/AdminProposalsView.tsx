@@ -74,7 +74,7 @@ export function AdminProposalsView() {
         <h2 className="font-display text-lg font-semibold">Do przetworzenia</h2>
         {open.length === 0 && (
           <p className="text-sm text-[var(--muted)]">
-            Brak nowych propozycji z czatu. Opiekun zbiera je, gdy brakuje pasującego projektu.
+            Brak nowych propozycji z czatu. Interaktywny asystent zbiera je, gdy brakuje pasującego projektu.
           </p>
         )}
         <ul className="space-y-3">

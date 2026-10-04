@@ -22,8 +22,9 @@ function hasCanvas(idea: Idea | MyIdea): idea is MyIdea {
 export function IdeaDialog({ idea, onClose }: IdeaDialogProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const canvasEntries = hasCanvas(idea)
-    ? CANVAS_FIELDS.filter((field) => idea.canvas[field.key]?.trim())
+  const canvas = hasCanvas(idea) ? idea.canvas : null;
+  const canvasEntries = canvas
+    ? CANVAS_FIELDS.filter((field) => canvas[field.key]?.trim())
     : [];
 
   useEffect(() => {
@@ -106,7 +107,7 @@ export function IdeaDialog({ idea, onClose }: IdeaDialogProps) {
                       {field.label}
                     </dt>
                     <dd className="mt-1 whitespace-pre-line">
-                      {idea.canvas[field.key]}
+                      {canvas?.[field.key]}
                     </dd>
                   </div>
                 ))}

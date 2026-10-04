@@ -206,9 +206,6 @@ export function AssistantChat({
       } = await sendChatMessage(trimmed, history, null, chatId);
       setChatId(chat_id);
       const replyId = `a-${Date.now()}`;
-      if (new_project_draft) {
-        setDraftDialog({ messageId: replyId, draft: new_project_draft });
-      }
       setMessages((prev) => [
         ...prev,
         {

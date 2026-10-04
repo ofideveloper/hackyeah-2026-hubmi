@@ -166,6 +166,7 @@ export default function KnowledgePage() {
     .map((area) => ({
       ...area,
       problems: innovations.filter((item) => item.category_id === area.id && item.problem),
+      matched: innovations.filter((item) => item.category_id === area.id).length,
     }))
     .filter((area) => !query.trim() || area.problems.length > 0);
   const videoCount = (data?.innovations ?? []).filter((item) => item.has_video).length;
@@ -303,14 +304,15 @@ export default function KnowledgePage() {
                         </h3>
                         <p className="shrink-0 text-sm text-[var(--muted)]">
                           <span className="font-display text-xl font-semibold tabular-nums text-[var(--text)]">
-                            {area.innovations}
+                            {area.matched}
                           </span>{" "}
+                          {area.matched !== area.innovations && `z ${area.innovations} `}
                           innowacji
                         </p>
                       </div>
                       {/* udział obszaru w bibliotece — liczba obok niesie tę samą informację */}
                       <div className="kb-bar mt-3" aria-hidden>
-                        <span style={{ width: `${(area.innovations / maxCount) * 100}%` }} />
+                        <span style={{ width: `${(area.matched / maxCount) * 100}%` }} />
                       </div>
 
                       {inArea.length === 0 ? (

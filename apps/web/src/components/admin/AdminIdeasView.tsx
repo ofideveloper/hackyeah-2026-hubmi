@@ -7,7 +7,7 @@ import {
   type AdminIdea,
   type IdeaStatus,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 import { CANVAS_FIELDS, STAGE_LABEL } from "@/lib/ideas";
 
 const STATUS: Record<IdeaStatus, { label: string; className: string }> = {
@@ -31,9 +31,8 @@ export function AdminIdeasView() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    fetchAdminIdeas(token)
+    if (!hasSessionHint()) return;
+    fetchAdminIdeas()
       .then(setIdeas)
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Nie udało się pobrać fiszek"),
@@ -42,12 +41,11 @@ export function AdminIdeasView() {
   }, []);
 
   async function onStatus(idea: AdminIdea, status: IdeaStatus) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setBusyId(idea.id);
     setError(null);
     try {
-      const saved = await setIdeaStatus(token, idea.id, status);
+      const saved = await setIdeaStatus(idea.id, status);
       setIdeas((prev) => prev.map((row) => (row.id === saved.id ? saved : row)));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się zmienić statusu");
@@ -57,13 +55,12 @@ export function AdminIdeasView() {
   }
 
   async function onDelete(idea: AdminIdea) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm(`Trwale usunąć fiszkę „${idea.name}”?`)) return;
     setBusyId(idea.id);
     setError(null);
     try {
-      await deleteIdea(token, idea.id);
+      await deleteIdea(idea.id);
       setIdeas((prev) => prev.filter((row) => row.id !== idea.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się usunąć fiszki");

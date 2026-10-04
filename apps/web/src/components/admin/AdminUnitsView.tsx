@@ -7,7 +7,7 @@ import {
   updateUnit,
   type OrganizationalUnit,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 
 type UnitDraft = {
   name: string;
@@ -27,9 +27,8 @@ export function AdminUnitsView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    fetchUnits(token)
+    if (!hasSessionHint()) return;
+    fetchUnits()
       .then(setUnits)
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Nie udało się pobrać jednostek"),
@@ -54,12 +53,11 @@ export function AdminUnitsView() {
 
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setError(null);
     setBusy(true);
     try {
-      const unit = await createUnit(token, { name, territory, competencies });
+      const unit = await createUnit({ name, territory, competencies });
       setUnits((prev) => [...prev, unit].sort((a, b) => a.name.localeCompare(b.name, "pl")));
       setName("");
       setTerritory("");
@@ -73,12 +71,11 @@ export function AdminUnitsView() {
 
   async function onSaveEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token || !editingId || !draft) return;
+    if (!hasSessionHint() || !editingId || !draft) return;
     setError(null);
     setBusy(true);
     try {
-      const updated = await updateUnit(token, editingId, {
+      const updated = await updateUnit(editingId, {
         name: draft.name,
         territory: draft.territory,
         competencies: draft.competencies,
@@ -97,11 +94,10 @@ export function AdminUnitsView() {
   }
 
   async function onDelete(unitId: string) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm("Usunąć jednostkę oraz powiązane zgłoszenia i projekty?")) return;
     try {
-      await deleteUnit(token, unitId);
+      await deleteUnit(unitId);
       setUnits((prev) => prev.filter((u) => u.id !== unitId));
       if (editingId === unitId) cancelEdit();
     } catch (err) {

@@ -7,7 +7,7 @@ import {
   type IdeaAssistantReply,
   type IdeaInput,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 
 const ACTIONS: { action: IdeaAssistantAction; label: string }[] = [
   { action: "develop", label: "Rozwiń pomysł" },
@@ -33,13 +33,12 @@ export function IdeaAssistant({ idea, onCanvas }: IdeaAssistantProps) {
   const [busy, setBusy] = useState<IdeaAssistantAction | null>(null);
 
   async function run(action: IdeaAssistantAction) {
-    const token = getToken();
-    if (!token || busy) return;
+    if (!hasSessionHint() || busy) return;
     setError(null);
     setNotice(null);
     setBusy(action);
     try {
-      const reply = await askIdeaAssistant(token, action, idea, question.trim());
+      const reply = await askIdeaAssistant(action, idea, question.trim());
       if (reply.canvas) {
         // canva trafia prosto do pól formularza, nie do panelu odpowiedzi
         const filled = onCanvas(reply.canvas);

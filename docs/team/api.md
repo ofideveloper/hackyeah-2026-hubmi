@@ -14,7 +14,7 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 | Metoda | Ścieżka | Opis |
 |--------|---------|------|
 | POST | `/auth/register` | Rejestracja (`role=user`); duplikat emaila → 409 |
-| POST | `/auth/login` | Form `username` + `password` → `{ access_token, token_type }`; błąd → 400 |
+| POST | `/auth/login` | Form `username` + `password` → `{ access_token, token_type }`; błąd → 400. Przez BFF (`/api/auth/login`) token trafia do cookie HttpOnly, a klient dostaje `{ ok: true }` |
 | GET | `/auth/me` | Profil (`UserPublic`) |
 | GET | `/categories` | Lista kategorii projektów (zalogowany — cały router `/categories`) |
 | GET | `/categories/{id}` | Kategoria |
@@ -73,6 +73,7 @@ Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProj
 ## Auth i role
 
 - JWT (Bearer, `sub` = email, `exp`), sekret: `SECRET_KEY`, ważność: `ACCESS_TOKEN_EXPIRE_MINUTES`; hasła: scrypt
+- FastAPI zna tylko nagłówek Bearer; cookie sesji obsługuje BFF w `apps/web` (`/api/auth/login`, `/api/auth/logout` — ten drugi istnieje tylko w BFF)
 - Role: `admin` | `user` | `specialist` (`specialist` = mentor; nadaje ją admin przez `PATCH /admin/users/{id}`)
 - Przy starcie `seed_admin_user` (`app/seed.py`) tworzy admina z `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_FULL_NAME` (domyślnie `admin@malohub.dev`); istniejący user z tym emailem dostaje `role=admin`
 - `/categories` i `/projects` wymagają zalogowania (dowolna rola)

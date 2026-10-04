@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { fetchConversations, type Conversation } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 
 const LIST_POLL_MS = 15000;
 
@@ -14,9 +14,8 @@ export function useThreads(active: boolean) {
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(() => {
-    const token = getToken();
-    if (!token) return;
-    fetchConversations(token)
+    if (!hasSessionHint()) return;
+    fetchConversations()
       .then((rows) => {
         setThreads(rows);
         setError(null);

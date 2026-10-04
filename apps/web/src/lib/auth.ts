@@ -21,14 +21,3 @@ export function dropLegacyToken(): void {
     // storage niedostępny (np. tryb prywatny) — nie ma czego sprzątać
   }
 }
-
-// TODO(cookie-auth): tymczasowe — wywołania API nie potrzebują już tokena.
-const PLACEHOLDER_TOKEN = "cookie-session";
-
-export function getToken(): string | null {
-  return hasSessionHint() ? PLACEHOLDER_TOKEN : null;
-}
-
-export function clearToken(): void {
-  clearSessionHint();
-}

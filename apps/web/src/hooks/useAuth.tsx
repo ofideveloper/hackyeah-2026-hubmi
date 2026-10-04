@@ -9,7 +9,7 @@ import {
 } from "react";
 
 import { fetchMe, loginUser, logoutUser, type User } from "@/lib/api";
-import { clearSessionHint, dropLegacyToken, getToken, hasSessionHint } from "@/lib/auth";
+import { clearSessionHint, dropLegacyToken, hasSessionHint } from "@/lib/auth";
 
 export type AuthStatus = "loading" | "authenticated" | "anonymous";
 
@@ -18,8 +18,6 @@ type AuthContextValue = {
   user: User | null;
   /** Przeglądarka ma znacznik sesji — user może się jeszcze ładować (`status === "loading"`). */
   sessionHint: boolean;
-  // TODO(cookie-auth): tymczasowe — usuń razem z parametrem `token` w `@/lib/api`.
-  token: string | null;
   isAdmin: boolean;
   /** Loguje przez BFF (JWT trafia do cookie HttpOnly) i dociąga `/auth/me`. */
   login: (email: string, password: string) => Promise<User>;
@@ -59,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadUser = useCallback(async (): Promise<User> => {
     setSessionHint(true);
     setStatus("loading");
-    const me = await fetchMe(getToken() ?? "");
+    const me = await fetchMe();
     setUserState(me);
     setStatus("authenticated");
     return me;
@@ -101,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     setSessionHint(true);
     setStatus("loading");
-    fetchMe(getToken() ?? "")
+    fetchMe()
       .then((me) => {
         if (cancelled) return;
         setUserState(me);
@@ -122,7 +120,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       user,
       sessionHint,
-      token: sessionHint ? getToken() : null,
       isAdmin: user?.role === "admin",
       login,
       setUser,

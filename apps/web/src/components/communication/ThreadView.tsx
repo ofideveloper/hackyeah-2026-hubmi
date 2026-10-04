@@ -16,7 +16,7 @@ import {
   type ConversationDetail,
   type ConversationStatus,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 import {
   formatDateTime,
   MESSAGE_BODY_MAX,
@@ -59,12 +59,11 @@ export function ThreadView({ conversationId, onChanged }: ThreadViewProps) {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const token = getToken();
-    if (!token || inFlight.current || stopped.current) return;
+    if (!hasSessionHint() || inFlight.current || stopped.current) return;
     inFlight.current = true;
     const startedAt = writes.current;
     try {
-      const next = await fetchConversation(token, conversationId);
+      const next = await fetchConversation(conversationId);
       if (startedAt !== writes.current) return;
       // bez zmian zostaje ten sam obiekt — czytnik ekranu nie dostaje powtórek, fokus zostaje
       setDetail((prev) => (sameThread(prev, next) ? prev : next));
@@ -103,14 +102,13 @@ export function ThreadView({ conversationId, onChanged }: ThreadViewProps) {
     if (log) log.scrollTop = log.scrollHeight;
   }, [messageCount]);
 
-  async function write(action: (token: string) => Promise<ConversationDetail>, fallback: string) {
-    const token = getToken();
-    if (!token || busy) return false;
+  async function write(action: () => Promise<ConversationDetail>, fallback: string) {
+    if (!hasSessionHint() || busy) return false;
     setBusy(true);
     setError(null);
     writes.current += 1;
     try {
-      setDetail(await action(token));
+      setDetail(await action());
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : fallback);
@@ -124,7 +122,7 @@ export function ThreadView({ conversationId, onChanged }: ThreadViewProps) {
     const body = draft.trim();
     if (!body) return;
     const sent = await write(
-      (token) => sendThreadMessage(token, conversationId, body),
+      () => sendThreadMessage(conversationId, body),
       "Nie udało się wysłać wiadomości",
     );
     if (sent) setDraft("");
@@ -144,7 +142,7 @@ export function ThreadView({ conversationId, onChanged }: ThreadViewProps) {
 
   function onStatus(status: ConversationStatus) {
     void write(
-      (token) => setConversationStatus(token, conversationId, status),
+      () => setConversationStatus(conversationId, status),
       "Nie udało się zmienić statusu rozmowy",
     );
   }

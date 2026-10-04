@@ -97,12 +97,6 @@ async function parseError(res: Response): Promise<string> {
   }
 }
 
-// TODO(cookie-auth): tymczasowe — sesję niesie cookie HttpOnly, BFF sam dokłada `Authorization`.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function authHeaders(token: string): HeadersInit {
-  return {};
-}
-
 export async function registerUser(payload: {
   email: string;
   password: string;
@@ -148,9 +142,8 @@ export async function logoutUser(): Promise<void> {
   }
 }
 
-export async function fetchMe(token: string): Promise<User> {
+export async function fetchMe(): Promise<User> {
   const res = await fetch(`${API_BASE}/auth/me`, {
-    headers: authHeaders(token),
     cache: "no-store",
   });
 
@@ -161,9 +154,8 @@ export async function fetchMe(token: string): Promise<User> {
   return res.json() as Promise<User>;
 }
 
-export async function fetchAdminStats(token: string): Promise<AdminStats> {
+export async function fetchAdminStats(): Promise<AdminStats> {
   const res = await fetch(`${API_BASE}/admin/stats`, {
-    headers: authHeaders(token),
     cache: "no-store",
   });
 
@@ -174,9 +166,8 @@ export async function fetchAdminStats(token: string): Promise<AdminStats> {
   return res.json() as Promise<AdminStats>;
 }
 
-export async function fetchAdminUsers(token: string): Promise<User[]> {
+export async function fetchAdminUsers(): Promise<User[]> {
   const res = await fetch(`${API_BASE}/admin/users`, {
-    headers: authHeaders(token),
     cache: "no-store",
   });
 
@@ -187,9 +178,8 @@ export async function fetchAdminUsers(token: string): Promise<User[]> {
   return res.json() as Promise<User[]>;
 }
 
-export async function fetchUnits(token: string): Promise<OrganizationalUnit[]> {
+export async function fetchUnits(): Promise<OrganizationalUnit[]> {
   const res = await fetch(`${API_BASE}/units`, {
-    headers: authHeaders(token),
     cache: "no-store",
   });
 
@@ -201,13 +191,11 @@ export async function fetchUnits(token: string): Promise<OrganizationalUnit[]> {
 }
 
 export async function createUnit(
-  token: string,
   payload: { name: string; territory: string; competencies: string },
 ): Promise<OrganizationalUnit> {
   const res = await fetch(`${API_BASE}/admin/units`, {
     method: "POST",
     headers: {
-      ...authHeaders(token),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
@@ -221,14 +209,12 @@ export async function createUnit(
 }
 
 export async function updateUnit(
-  token: string,
   unitId: string,
   payload: { name?: string; territory?: string; competencies?: string },
 ): Promise<OrganizationalUnit> {
   const res = await fetch(`${API_BASE}/admin/units/${unitId}`, {
     method: "PATCH",
     headers: {
-      ...authHeaders(token),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
@@ -241,10 +227,9 @@ export async function updateUnit(
   return res.json() as Promise<OrganizationalUnit>;
 }
 
-export async function deleteUnit(token: string, unitId: string): Promise<void> {
+export async function deleteUnit(unitId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/admin/units/${unitId}`, {
     method: "DELETE",
-    headers: authHeaders(token),
   });
 
   if (!res.ok) {
@@ -253,12 +238,10 @@ export async function deleteUnit(token: string, unitId: string): Promise<void> {
 }
 
 export async function fetchProjects(
-  token: string,
   unitId?: string,
 ): Promise<Project[]> {
   const query = unitId != null ? `?unit_id=${unitId}` : "";
   const res = await fetch(`${API_BASE}/projects${query}`, {
-    headers: authHeaders(token),
     cache: "no-store",
   });
 
@@ -270,13 +253,11 @@ export async function fetchProjects(
 }
 
 export async function createProject(
-  token: string,
   payload: { unit_id: string; name: string; description: string },
 ): Promise<Project> {
   const res = await fetch(`${API_BASE}/admin/projects`, {
     method: "POST",
     headers: {
-      ...authHeaders(token),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
@@ -290,14 +271,12 @@ export async function createProject(
 }
 
 export async function updateProject(
-  token: string,
   projectId: string,
   payload: { unit_id?: string; name?: string; description?: string },
 ): Promise<Project> {
   const res = await fetch(`${API_BASE}/admin/projects/${projectId}`, {
     method: "PATCH",
     headers: {
-      ...authHeaders(token),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
@@ -310,10 +289,9 @@ export async function updateProject(
   return res.json() as Promise<Project>;
 }
 
-export async function deleteProject(token: string, projectId: string): Promise<void> {
+export async function deleteProject(projectId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/admin/projects/${projectId}`, {
     method: "DELETE",
-    headers: authHeaders(token),
   });
 
   if (!res.ok) {
@@ -321,9 +299,8 @@ export async function deleteProject(token: string, projectId: string): Promise<v
   }
 }
 
-export async function fetchMyReports(token: string): Promise<Report[]> {
+export async function fetchMyReports(): Promise<Report[]> {
   const res = await fetch(`${API_BASE}/reports`, {
-    headers: authHeaders(token),
     cache: "no-store",
   });
 
@@ -334,9 +311,8 @@ export async function fetchMyReports(token: string): Promise<Report[]> {
   return res.json() as Promise<Report[]>;
 }
 
-export async function fetchAdminReports(token: string): Promise<Report[]> {
+export async function fetchAdminReports(): Promise<Report[]> {
   const res = await fetch(`${API_BASE}/admin/reports`, {
-    headers: authHeaders(token),
     cache: "no-store",
   });
 
@@ -348,14 +324,12 @@ export async function fetchAdminReports(token: string): Promise<Report[]> {
 }
 
 export async function updateReportStatus(
-  token: string,
   reportId: string,
   status: ReportStatus,
 ): Promise<Report> {
   const res = await fetch(`${API_BASE}/admin/reports/${reportId}`, {
     method: "PATCH",
     headers: {
-      ...authHeaders(token),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ status }),
@@ -369,14 +343,12 @@ export async function updateReportStatus(
 }
 
 export async function updateReportUnit(
-  token: string,
   reportId: string,
   unitId: string | null,
 ): Promise<Report> {
   const res = await fetch(`${API_BASE}/admin/reports/${reportId}`, {
     method: "PATCH",
     headers: {
-      ...authHeaders(token),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ unit_id: unitId }),
@@ -420,7 +392,6 @@ export type ChatReply = {
 };
 
 export async function sendChatMessage(
-  token: string | null,
   message: string,
   history: ChatHistoryMessage[] = [],
   mode?: ChatMode | null,
@@ -428,7 +399,6 @@ export async function sendChatMessage(
 ): Promise<ChatReply> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...(token ? authHeaders(token) : {}),
   };
   const res = await fetch(`${API_BASE}/chat`, {
     method: "POST",
@@ -470,12 +440,11 @@ export async function sendChatMessage(
 }
 
 export async function createProjectProposal(
-  token: string,
   payload: NewProjectDraft,
 ): Promise<ProjectProposal> {
   const res = await fetch(`${API_BASE}/project-proposals`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -484,9 +453,8 @@ export async function createProjectProposal(
   return res.json() as Promise<ProjectProposal>;
 }
 
-export async function fetchProjectProposals(token: string): Promise<ProjectProposal[]> {
+export async function fetchProjectProposals(): Promise<ProjectProposal[]> {
   const res = await fetch(`${API_BASE}/admin/project-proposals`, {
-    headers: authHeaders(token),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -496,14 +464,12 @@ export async function fetchProjectProposals(token: string): Promise<ProjectPropo
 }
 
 export async function acceptProjectProposal(
-  token: string,
   proposalId: string,
   payload: { unit_id: string; name?: string; description?: string },
 ): Promise<Project> {
   const res = await fetch(`${API_BASE}/admin/project-proposals/${proposalId}/accept`, {
     method: "POST",
     headers: {
-      ...authHeaders(token),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
@@ -515,12 +481,10 @@ export async function acceptProjectProposal(
 }
 
 export async function rejectProjectProposal(
-  token: string,
   proposalId: string,
 ): Promise<ProjectProposal> {
   const res = await fetch(`${API_BASE}/admin/project-proposals/${proposalId}/reject`, {
     method: "POST",
-    headers: authHeaders(token),
   });
   if (!res.ok) {
     throw new Error(await parseError(res));
@@ -613,7 +577,6 @@ export async function fetchInnovation(id: string): Promise<InnovationDetail> {
 }
 
 export async function saveKnowledgeResource(
-  token: string,
   payload: KnowledgeResourceInput,
   resourceId?: string | null,
 ): Promise<KnowledgeResource> {
@@ -621,34 +584,32 @@ export async function saveKnowledgeResource(
   return jsonOrThrow(
     await fetch(resourceId ? `${base}/${resourceId}` : base, {
       method: resourceId ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders(token) },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     }),
   );
 }
 
-export async function deleteKnowledgeResource(token: string, resourceId: string): Promise<void> {
+export async function deleteKnowledgeResource(resourceId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/admin/knowledge/resources/${resourceId}`, {
     method: "DELETE",
-    headers: authHeaders(token),
   });
   if (!res.ok) {
     throw new Error(await parseError(res));
   }
 }
 
-export async function refreshInnovationLibrary(token: string): Promise<{ added: number }> {
+export async function refreshInnovationLibrary(): Promise<{ added: number }> {
   return jsonOrThrow(
     await fetch(`${API_BASE}/admin/knowledge/refresh`, {
       method: "POST",
-      headers: authHeaders(token),
     }),
   );
 }
 
-export async function fetchNeedTrends(token: string): Promise<NeedTrends> {
+export async function fetchNeedTrends(): Promise<NeedTrends> {
   return jsonOrThrow(
-    await fetch(`${API_BASE}/admin/trends`, { headers: authHeaders(token), cache: "no-store" }),
+    await fetch(`${API_BASE}/admin/trends`, { cache: "no-store" }),
   );
 }
 
@@ -729,10 +690,10 @@ export type GrantApplication = {
   author_email: string | null;
 };
 
-function jsonRequest(token: string, method: string, payload: unknown): RequestInit {
+function jsonRequest(method: string, payload: unknown): RequestInit {
   return {
     method,
-    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   };
 }
@@ -741,14 +702,13 @@ export async function fetchIdeas(): Promise<Idea[]> {
   return jsonOrThrow(await fetch(`${API_BASE}/ideas`, { cache: "no-store" }));
 }
 
-export async function fetchMyIdeas(token: string): Promise<MyIdea[]> {
+export async function fetchMyIdeas(): Promise<MyIdea[]> {
   return jsonOrThrow(
-    await fetch(`${API_BASE}/ideas/mine`, { headers: authHeaders(token), cache: "no-store" }),
+    await fetch(`${API_BASE}/ideas/mine`, { cache: "no-store" }),
   );
 }
 
 export async function saveIdea(
-  token: string,
   payload: IdeaInput,
   ideaId?: string | null,
 ): Promise<MyIdea> {
@@ -756,39 +716,36 @@ export async function saveIdea(
   return jsonOrThrow(
     await fetch(
       ideaId ? `${base}/${ideaId}` : base,
-      jsonRequest(token, ideaId ? "PATCH" : "POST", payload),
+      jsonRequest(ideaId ? "PATCH" : "POST", payload),
     ),
   );
 }
 
-export async function deleteIdea(token: string, ideaId: string): Promise<void> {
+export async function deleteIdea(ideaId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/ideas/${ideaId}`, {
     method: "DELETE",
-    headers: authHeaders(token),
   });
   if (!res.ok) {
     throw new Error(await parseError(res));
   }
 }
 
-export async function fetchAdminIdeas(token: string): Promise<AdminIdea[]> {
+export async function fetchAdminIdeas(): Promise<AdminIdea[]> {
   return jsonOrThrow(
-    await fetch(`${API_BASE}/admin/ideas`, { headers: authHeaders(token), cache: "no-store" }),
+    await fetch(`${API_BASE}/admin/ideas`, { cache: "no-store" }),
   );
 }
 
 export async function setIdeaStatus(
-  token: string,
   ideaId: string,
   status: IdeaStatus,
 ): Promise<AdminIdea> {
   return jsonOrThrow(
-    await fetch(`${API_BASE}/admin/ideas/${ideaId}`, jsonRequest(token, "PATCH", { status })),
+    await fetch(`${API_BASE}/admin/ideas/${ideaId}`, jsonRequest("PATCH", { status })),
   );
 }
 
 export async function askIdeaAssistant(
-  token: string,
   action: IdeaAssistantAction,
   draft: IdeaInput,
   question = "",
@@ -796,7 +753,7 @@ export async function askIdeaAssistant(
   const { name, description, essence, audience, stage, canvas } = draft;
   const idea = { name, description, essence, audience, stage, canvas };
   return jsonOrThrow(
-    await fetch(`${API_BASE}/ideas/assistant`, jsonRequest(token, "POST", { action, idea, question })),
+    await fetch(`${API_BASE}/ideas/assistant`, jsonRequest("POST", { action, idea, question })),
   );
 }
 
@@ -805,35 +762,31 @@ export async function fetchOpenGrantCalls(): Promise<GrantCall[]> {
 }
 
 export async function fetchMyGrantApplication(
-  token: string,
   callId: string,
 ): Promise<GrantApplication | null> {
   return jsonOrThrow(
     await fetch(`${API_BASE}/grant-calls/${callId}/application`, {
-      headers: authHeaders(token),
       cache: "no-store",
     }),
   );
 }
 
 export async function saveGrantApplication(
-  token: string,
   callId: string,
   payload: { idea_id: string | null; answers: Record<string, string>; submit: boolean },
 ): Promise<GrantApplication> {
   return jsonOrThrow(
-    await fetch(`${API_BASE}/grant-calls/${callId}/application`, jsonRequest(token, "PUT", payload)),
+    await fetch(`${API_BASE}/grant-calls/${callId}/application`, jsonRequest("PUT", payload)),
   );
 }
 
-export async function fetchAdminGrantCalls(token: string): Promise<GrantCall[]> {
+export async function fetchAdminGrantCalls(): Promise<GrantCall[]> {
   return jsonOrThrow(
-    await fetch(`${API_BASE}/admin/grant-calls`, { headers: authHeaders(token), cache: "no-store" }),
+    await fetch(`${API_BASE}/admin/grant-calls`, { cache: "no-store" }),
   );
 }
 
 export async function saveGrantCall(
-  token: string,
   payload: GrantCallInput,
   callId?: string | null,
 ): Promise<GrantCall> {
@@ -841,15 +794,14 @@ export async function saveGrantCall(
   return jsonOrThrow(
     await fetch(
       callId ? `${base}/${callId}` : base,
-      jsonRequest(token, callId ? "PATCH" : "POST", payload),
+      jsonRequest(callId ? "PATCH" : "POST", payload),
     ),
   );
 }
 
-export async function deleteGrantCall(token: string, callId: string): Promise<void> {
+export async function deleteGrantCall(callId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/admin/grant-calls/${callId}`, {
     method: "DELETE",
-    headers: authHeaders(token),
   });
   if (!res.ok) {
     throw new Error(await parseError(res));
@@ -857,12 +809,10 @@ export async function deleteGrantCall(token: string, callId: string): Promise<vo
 }
 
 export async function fetchGrantApplications(
-  token: string,
   callId: string,
 ): Promise<GrantApplication[]> {
   return jsonOrThrow(
     await fetch(`${API_BASE}/admin/grant-calls/${callId}/applications`, {
-      headers: authHeaders(token),
       cache: "no-store",
     }),
   );
@@ -928,8 +878,8 @@ function solutionUrl(target: TestTarget): string {
   return `${API_BASE}/testing/solutions/${target.kind}/${target.id}`;
 }
 
-async function deleteOrThrow(token: string, url: string): Promise<void> {
-  const res = await fetch(url, { method: "DELETE", headers: authHeaders(token) });
+async function deleteOrThrow(url: string): Promise<void> {
+  const res = await fetch(url, { method: "DELETE" });
   if (!res.ok) {
     throw new Error(await parseError(res));
   }
@@ -943,71 +893,66 @@ export async function fetchSolutionReviews(target: TestTarget): Promise<Solution
   return jsonOrThrow(await fetch(`${solutionUrl(target)}/reviews`, { cache: "no-store" }));
 }
 
-export async function fetchMyTesting(token: string): Promise<MyTesting> {
+export async function fetchMyTesting(): Promise<MyTesting> {
   return jsonOrThrow(
-    await fetch(`${API_BASE}/testing/mine`, { headers: authHeaders(token), cache: "no-store" }),
+    await fetch(`${API_BASE}/testing/mine`, { cache: "no-store" }),
   );
 }
 
 export async function createTesterSignup(
-  token: string,
   target: TestTarget,
   motivation: string,
 ): Promise<TesterSignup> {
   return jsonOrThrow(
-    await fetch(`${solutionUrl(target)}/signups`, jsonRequest(token, "POST", { motivation })),
+    await fetch(`${solutionUrl(target)}/signups`, jsonRequest("POST", { motivation })),
   );
 }
 
-export async function withdrawTesterSignup(token: string, signupId: string): Promise<void> {
-  return deleteOrThrow(token, `${API_BASE}/testing/signups/${signupId}`);
+export async function withdrawTesterSignup(signupId: string): Promise<void> {
+  return deleteOrThrow(`${API_BASE}/testing/signups/${signupId}`);
 }
 
 export async function saveSolutionReview(
-  token: string,
   target: TestTarget,
   payload: SolutionReviewInput,
 ): Promise<SolutionReview> {
-  return jsonOrThrow(await fetch(`${solutionUrl(target)}/review`, jsonRequest(token, "PUT", payload)));
+  return jsonOrThrow(await fetch(`${solutionUrl(target)}/review`, jsonRequest("PUT", payload)));
 }
 
-export async function deleteSolutionReview(token: string, target: TestTarget): Promise<void> {
-  return deleteOrThrow(token, `${solutionUrl(target)}/review`);
+export async function deleteSolutionReview(target: TestTarget): Promise<void> {
+  return deleteOrThrow(`${solutionUrl(target)}/review`);
 }
 
-export async function fetchAdminTesterSignups(token: string): Promise<AdminTesterSignup[]> {
+export async function fetchAdminTesterSignups(): Promise<AdminTesterSignup[]> {
   return jsonOrThrow(
     await fetch(`${API_BASE}/admin/testing/signups`, {
-      headers: authHeaders(token),
       cache: "no-store",
     }),
   );
 }
 
 export async function setTesterSignupStatus(
-  token: string,
   signupId: string,
   status: IdeaStatus,
 ): Promise<AdminTesterSignup> {
   return jsonOrThrow(
     await fetch(
       `${API_BASE}/admin/testing/signups/${signupId}`,
-      jsonRequest(token, "PATCH", { status }),
+      jsonRequest("PATCH", { status }),
     ),
   );
 }
 
-export async function fetchAdminSolutionReviews(token: string): Promise<AdminSolutionReview[]> {
+export async function fetchAdminSolutionReviews(): Promise<AdminSolutionReview[]> {
   return jsonOrThrow(
     await fetch(`${API_BASE}/admin/testing/reviews`, {
-      headers: authHeaders(token),
       cache: "no-store",
     }),
   );
 }
 
-export async function deleteAdminSolutionReview(token: string, reviewId: string): Promise<void> {
-  return deleteOrThrow(token, `${API_BASE}/admin/testing/reviews/${reviewId}`);
+export async function deleteAdminSolutionReview(reviewId: string): Promise<void> {
+  return deleteOrThrow(`${API_BASE}/admin/testing/reviews/${reviewId}`);
 }
 
 // --- Platforma komunikacji (apps/api/app/routes/communication.py) ---
@@ -1092,55 +1037,50 @@ export async function fetchMentors(): Promise<Mentor[]> {
 }
 
 /** Token opcjonalny — z nim API oznacza własne ogłoszenia (`is_mine`). */
-export async function fetchListings(token: string | null): Promise<Listing[]> {
+export async function fetchListings(): Promise<Listing[]> {
   return jsonOrThrow(
     await fetch(`${API_BASE}/partnerships`, {
-      headers: token ? authHeaders(token) : undefined,
       cache: "no-store",
     }),
   );
 }
 
-export async function createListing(token: string, payload: ListingInput): Promise<Listing> {
-  return jsonOrThrow(await fetch(`${API_BASE}/partnerships`, jsonRequest(token, "POST", payload)));
+export async function createListing(payload: ListingInput): Promise<Listing> {
+  return jsonOrThrow(await fetch(`${API_BASE}/partnerships`, jsonRequest("POST", payload)));
 }
 
-export async function deleteListing(token: string, listingId: string): Promise<void> {
-  return deleteOrThrow(token, `${API_BASE}/partnerships/${listingId}`);
+export async function deleteListing(listingId: string): Promise<void> {
+  return deleteOrThrow(`${API_BASE}/partnerships/${listingId}`);
 }
 
 export async function contactListingAuthor(
-  token: string,
   listingId: string,
   body: string,
 ): Promise<ConversationDetail> {
   return jsonOrThrow(
     await fetch(
       `${API_BASE}/partnerships/${listingId}/contact`,
-      jsonRequest(token, "POST", { body }),
+      jsonRequest("POST", { body }),
     ),
   );
 }
 
-export async function fetchConversations(token: string): Promise<Conversation[]> {
+export async function fetchConversations(): Promise<Conversation[]> {
   return jsonOrThrow(
-    await fetch(`${API_BASE}/conversations`, { headers: authHeaders(token), cache: "no-store" }),
+    await fetch(`${API_BASE}/conversations`, { cache: "no-store" }),
   );
 }
 
 export async function createConversation(
-  token: string,
   payload: ConversationInput,
 ): Promise<ConversationDetail> {
-  return jsonOrThrow(await fetch(`${API_BASE}/conversations`, jsonRequest(token, "POST", payload)));
+  return jsonOrThrow(await fetch(`${API_BASE}/conversations`, jsonRequest("POST", payload)));
 }
 
 export async function fetchConversation(
-  token: string,
   conversationId: string,
 ): Promise<ConversationDetail> {
   const res = await fetch(`${API_BASE}/conversations/${conversationId}`, {
-    headers: authHeaders(token),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -1150,43 +1090,40 @@ export async function fetchConversation(
 }
 
 export async function setConversationStatus(
-  token: string,
   conversationId: string,
   status: ConversationStatus,
 ): Promise<ConversationDetail> {
   return jsonOrThrow(
     await fetch(
       `${API_BASE}/conversations/${conversationId}`,
-      jsonRequest(token, "PATCH", { status }),
+      jsonRequest("PATCH", { status }),
     ),
   );
 }
 
 export async function sendThreadMessage(
-  token: string,
   conversationId: string,
   body: string,
 ): Promise<ConversationDetail> {
   return jsonOrThrow(
     await fetch(
       `${API_BASE}/conversations/${conversationId}/messages`,
-      jsonRequest(token, "POST", { body }),
+      jsonRequest("POST", { body }),
     ),
   );
 }
 
-export async function updateMyProfile(token: string, payload: ProfileInput): Promise<User> {
-  return jsonOrThrow(await fetch(`${API_BASE}/users/me`, jsonRequest(token, "PATCH", payload)));
+export async function updateMyProfile(payload: ProfileInput): Promise<User> {
+  return jsonOrThrow(await fetch(`${API_BASE}/users/me`, jsonRequest("PATCH", payload)));
 }
 
 export async function changeMyPassword(
-  token: string,
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
   const res = await fetch(
     `${API_BASE}/users/me/password`,
-    jsonRequest(token, "POST", {
+    jsonRequest("POST", {
       current_password: currentPassword,
       new_password: newPassword,
     }),
@@ -1198,11 +1135,10 @@ export async function changeMyPassword(
 
 /** Nadanie lub odebranie roli mentora. */
 export async function setUserRole(
-  token: string,
   userId: string,
   role: "user" | "specialist",
 ): Promise<User> {
   return jsonOrThrow(
-    await fetch(`${API_BASE}/admin/users/${userId}`, jsonRequest(token, "PATCH", { role })),
+    await fetch(`${API_BASE}/admin/users/${userId}`, jsonRequest("PATCH", { role })),
   );
 }

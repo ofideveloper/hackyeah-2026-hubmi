@@ -8,7 +8,7 @@ import {
   type OrganizationalUnit,
   type ProjectProposal,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 
 const STATUS_LABEL: Record<string, string> = {
   nowe: "Nowe",
@@ -25,9 +25,8 @@ export function AdminProposalsView() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    Promise.all([fetchUnits(token), fetchProjectProposals(token)])
+    if (!hasSessionHint()) return;
+    Promise.all([fetchUnits(), fetchProjectProposals()])
       .then(([nextUnits, nextProposals]) => {
         setUnits(nextUnits);
         setProposals(nextProposals);
@@ -48,13 +47,12 @@ export function AdminProposalsView() {
   }, []);
 
   async function onAccept(proposal: ProjectProposal) {
-    const token = getToken();
     const unitId = unitById[proposal.id];
-    if (!token || !unitId) return;
+    if (!hasSessionHint() || !unitId) return;
     setBusyId(proposal.id);
     setError(null);
     try {
-      await acceptProjectProposal(token, proposal.id, { unit_id: unitId });
+      await acceptProjectProposal(proposal.id, { unit_id: unitId });
       setProposals((prev) =>
         prev.map((row) =>
           row.id === proposal.id
@@ -75,13 +73,12 @@ export function AdminProposalsView() {
   }
 
   async function onReject(proposal: ProjectProposal) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm("Odrzucić tę propozycję?")) return;
     setBusyId(proposal.id);
     setError(null);
     try {
-      const updated = await rejectProjectProposal(token, proposal.id);
+      const updated = await rejectProjectProposal(proposal.id);
       setProposals((prev) => prev.map((row) => (row.id === proposal.id ? updated : row)));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się odrzucić");

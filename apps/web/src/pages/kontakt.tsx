@@ -27,7 +27,7 @@ import {
   type Sector,
   type User,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 import {
   LISTING_KIND_LABEL,
   MENTOR_BIO_MAX,
@@ -87,12 +87,11 @@ function ProfileForm({ user, onSaved }: { user: User; onSaved: (user: User) => v
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setBusy(true);
     setError(null);
     try {
-      onSaved(await updateMyProfile(token, { sector, organization, mentor_bio: bio }));
+      onSaved(await updateMyProfile({ sector, organization, mentor_bio: bio }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się zapisać profilu");
     } finally {
@@ -154,12 +153,11 @@ function ListingForm({ onCreated }: { onCreated: () => void }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setBusy(true);
     setError(null);
     try {
-      await createListing(token, { kind, title, description, sought_sector: soughtSector });
+      await createListing({ kind, title, description, sought_sector: soughtSector });
       setTitle("");
       setDescription("");
       onCreated();
@@ -229,7 +227,7 @@ function ListingForm({ onCreated }: { onCreated: () => void }) {
 
 export default function ContactPage() {
   const tabsId = useId();
-  const { user, token, setUser } = useAuth();
+  const { user, sessionHint, setUser } = useAuth();
   const [tab, setTab] = useState<Tab>("rozmowy");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mentors, setMentors] = useState<Mentor[] | null>(null);
@@ -246,12 +244,13 @@ export default function ContactPage() {
     const fail = (err: unknown) =>
       setError(err instanceof Error ? err.message : "Nie udało się pobrać danych");
     fetchMentors().then(setMentors).catch(fail);
-    fetchListings(token).then(setListings).catch(fail);
-  }, [token]);
+    fetchListings().then(setListings).catch(fail);
+  }, []);
 
+  // `is_mine` w ogłoszeniach zależy od sesji — odśwież po zalogowaniu / wylogowaniu
   useEffect(() => {
     reloadBoard();
-  }, [reloadBoard]);
+  }, [reloadBoard, sessionHint]);
 
   const shownListings = useMemo(
     () =>
@@ -267,11 +266,11 @@ export default function ContactPage() {
   const unread = unreadCount(threads ?? []);
 
   async function onCompose(target: Compose, values: { subject: string; body: string }) {
-    if (!token) return;
+    if (!hasSessionHint()) return;
     const created =
       target.type === "ogloszenie"
-        ? await contactListingAuthor(token, target.listing.id, values.body)
-        : await createConversation(token, {
+        ? await contactListingAuthor(target.listing.id, values.body)
+        : await createConversation({
             kind: target.type === "mentor" ? "mentoring" : "pytanie",
             subject: values.subject,
             body: values.body,
@@ -285,11 +284,11 @@ export default function ContactPage() {
   }
 
   async function onDeleteListing(listing: Listing) {
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm(`Usunąć ogłoszenie „${listing.title}”?`)) return;
     setError(null);
     try {
-      await deleteListing(token, listing.id);
+      await deleteListing(listing.id);
       setToast("Usunięto ogłoszenie.");
       reloadBoard();
     } catch (err) {

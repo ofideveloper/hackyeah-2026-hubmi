@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import { createProjectProposal, type NewProjectDraft, type ProjectProposal } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 
 type NewProjectDialogProps = {
   draft: NewProjectDraft;
@@ -39,14 +39,13 @@ export function NewProjectDialog({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = getToken();
-    if (!token || saving) return;
+    if (!hasSessionHint() || saving) return;
 
     setSaving(true);
     setError(null);
     try {
       onCreated(
-        await createProjectProposal(token, {
+        await createProjectProposal({
           name: name.trim(),
           description: description.trim(),
         }),

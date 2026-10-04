@@ -22,7 +22,7 @@ function statusClass(status: string): string {
 
 export default function AppHomePage() {
   const router = useRouter();
-  const { status, user, token } = useAuth();
+  const { status, user, sessionHint } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [unread, setUnread] = useState(0);
@@ -34,13 +34,13 @@ export default function AppHomePage() {
       void router.replace("/login");
       return;
     }
-    if (!token) return;
+    if (!sessionHint) return;
 
     let cancelled = false;
     setLoadingData(true);
     Promise.all([
-      fetchMyReports(token).catch(() => [] as Report[]),
-      fetchConversations(token).catch(() => []),
+      fetchMyReports().catch(() => [] as Report[]),
+      fetchConversations().catch(() => []),
     ])
       .then(([nextReports, threads]) => {
         if (cancelled) return;
@@ -54,7 +54,7 @@ export default function AppHomePage() {
     return () => {
       cancelled = true;
     };
-  }, [status, token, router]);
+  }, [status, sessionHint, router]);
 
   useEffect(() => {
     if (!router.isReady || status !== "authenticated" || loadingData) return;
@@ -110,8 +110,8 @@ export default function AppHomePage() {
             userName={user.full_name || `${user.name} ${user.surname}`.trim()}
             onReportCreated={(report) => {
               setReports((prev) => [report, ...prev.filter((r) => r.id !== report.id)]);
-              if (token) {
-                void fetchMyReports(token)
+              if (sessionHint) {
+                void fetchMyReports()
                   .then(setReports)
                   .catch(() => undefined);
               }

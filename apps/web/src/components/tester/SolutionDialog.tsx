@@ -11,7 +11,7 @@ import {
   type TesterSignup,
   type TestSolution,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 import { formatDate } from "@/lib/ideas";
 import { KIND_LABEL, RATINGS, ratingLabel, SIGNUP_STATUS } from "@/lib/testing";
 
@@ -65,13 +65,12 @@ export function SolutionDialog({
   useEffect(loadReviews, [loadReviews]);
 
   /** Wspólna obsługa zapisu: blokada przycisków, błąd w oknie, potwierdzenie u rodzica. */
-  async function run(action: (token: string) => Promise<unknown>, message: string) {
-    const token = getToken();
-    if (!token) return;
+  async function run(action: () => Promise<unknown>, message: string) {
+    if (!hasSessionHint()) return;
     setError(null);
     setBusy(true);
     try {
-      await action(token);
+      await action();
       onChanged(message);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się zapisać");
@@ -84,7 +83,7 @@ export function SolutionDialog({
     event.preventDefault();
     if (rating == null) return;
     await run(
-      (token) => saveSolutionReview(token, solution, { rating, feedback, improvement }),
+      () => saveSolutionReview(solution, { rating, feedback, improvement }),
       myReview ? "Zaktualizowano Twoją opinię." : "Dziękujemy za opinię.",
     );
     loadReviews();
@@ -92,7 +91,7 @@ export function SolutionDialog({
 
   async function onDeleteReview() {
     if (!window.confirm("Usunąć Twoją opinię o tym rozwiązaniu?")) return;
-    await run((token) => deleteSolutionReview(token, solution), "Usunięto opinię.");
+    await run(() => deleteSolutionReview(solution), "Usunięto opinię.");
     setRating(null);
     setFeedback("");
     setImprovement("");
@@ -102,7 +101,7 @@ export function SolutionDialog({
   async function onSignup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await run(
-      (token) => createTesterSignup(token, solution, motivation),
+      () => createTesterSignup(solution, motivation),
       `Zgłoszono chęć testowania: „${solution.name}”.`,
     );
     setMotivation("");
@@ -273,7 +272,7 @@ export function SolutionDialog({
                           disabled={busy}
                           onClick={() =>
                             void run(
-                              (token) => withdrawTesterSignup(token, signup.id),
+                              () => withdrawTesterSignup(signup.id),
                               "Wycofano zgłoszenie do testów.",
                             )
                           }

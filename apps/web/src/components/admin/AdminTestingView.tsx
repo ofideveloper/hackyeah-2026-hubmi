@@ -9,7 +9,7 @@ import {
   type AdminTesterSignup,
   type IdeaStatus,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 import { KIND_LABEL, SIGNUP_STATUS } from "@/lib/testing";
 
 type Tab = "signups" | "reviews";
@@ -31,9 +31,8 @@ export function AdminTestingView() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    Promise.all([fetchAdminTesterSignups(token), fetchAdminSolutionReviews(token)])
+    if (!hasSessionHint()) return;
+    Promise.all([fetchAdminTesterSignups(), fetchAdminSolutionReviews()])
       .then(([signupRows, reviewRows]) => {
         setSignups(signupRows);
         setReviews(reviewRows);
@@ -45,12 +44,11 @@ export function AdminTestingView() {
   }, []);
 
   async function onStatus(signup: AdminTesterSignup, status: IdeaStatus) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setBusyId(signup.id);
     setError(null);
     try {
-      const saved = await setTesterSignupStatus(token, signup.id, status);
+      const saved = await setTesterSignupStatus(signup.id, status);
       setSignups((prev) => prev.map((row) => (row.id === saved.id ? saved : row)));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się zmienić statusu");
@@ -60,13 +58,12 @@ export function AdminTestingView() {
   }
 
   async function onDeleteReview(review: AdminSolutionReview) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     if (!window.confirm(`Trwale usunąć opinię o „${review.target_name ?? "rozwiązaniu"}”?`)) return;
     setBusyId(review.id);
     setError(null);
     try {
-      await deleteAdminSolutionReview(token, review.id);
+      await deleteAdminSolutionReview(review.id);
       setReviews((prev) => prev.filter((row) => row.id !== review.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się usunąć opinii");

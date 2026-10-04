@@ -7,7 +7,7 @@ import {
   type GrantCall,
   type MyIdea,
 } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { hasSessionHint } from "@/lib/auth";
 import { formatDate } from "@/lib/ideas";
 
 const ANSWER_MAX = 4000;
@@ -28,10 +28,9 @@ export function GrantApplicationForm({ call, ideas }: GrantApplicationFormProps)
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     let cancelled = false;
-    fetchMyGrantApplication(token, call.id)
+    fetchMyGrantApplication(call.id)
       .then((found) => {
         if (cancelled || !found) return;
         setApplication(found);
@@ -50,13 +49,12 @@ export function GrantApplicationForm({ call, ideas }: GrantApplicationFormProps)
   }, [call.id]);
 
   async function save(submit: boolean) {
-    const token = getToken();
-    if (!token) return;
+    if (!hasSessionHint()) return;
     setError(null);
     setNotice(null);
     setBusy(true);
     try {
-      const saved = await saveGrantApplication(token, call.id, {
+      const saved = await saveGrantApplication(call.id, {
         idea_id: ideaId,
         answers,
         submit,

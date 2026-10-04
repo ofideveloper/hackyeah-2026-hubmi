@@ -117,7 +117,8 @@ export async function fetchMe(): Promise<User> {
   });
 
   if (!res.ok) {
-    throw new Error(await parseError(res));
+    // ApiError ze statusem — AuthProvider kasuje sesję tylko przy 401, nie przy 502/sieci
+    throw new ApiError(await parseError(res), res.status);
   }
 
   return res.json() as Promise<User>;

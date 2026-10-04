@@ -28,14 +28,35 @@ const SECTIONS = [
   { id: "materialy", label: "Materiały edukacyjne" },
 ] as const;
 
+/** Małe litery bez polskich znaków — „Seniorów” i „seniorow” mają się spotkać. */
+function normalize(text: string): string {
+  return text
+    .toLocaleLowerCase("pl")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/ł/g, "l");
+}
+
+// końcówki fleksyjne (już bez ogonków), od najdłuższych
+const ENDINGS = ["osciami", "osciach", "oscia", "osci", "ami", "ach", "ow", "om", "em", "ia", "a", "e", "i", "o", "u", "y"];
+const MIN_STEM = 4;
+
+/** Prymitywny stemming: „praca” → „prac” łapie też „pracy”, „autyzmem” → „autyzm”. */
+function stem(word: string): string {
+  if (word.length <= MIN_STEM) return word;
+  const ending = ENDINGS.find(
+    (end) => word.endsWith(end) && word.length - end.length >= MIN_STEM,
+  );
+  return ending ? word.slice(0, -ending.length) : word;
+}
+
 function matches(query: string, ...texts: string[]): boolean {
   if (!query) return true;
-  const haystack = texts.join(" ").toLocaleLowerCase("pl");
-  return query
-    .toLocaleLowerCase("pl")
+  const haystack = normalize(texts.join(" "));
+  return normalize(query)
     .split(/\s+/)
     .filter(Boolean)
-    .every((word) => haystack.includes(word));
+    .every((word) => haystack.includes(stem(word)));
 }
 
 /** Pierwsze zdanie — w kartach wyzwań pokazujemy sedno problemu, nie cały akapit. */
@@ -142,7 +163,14 @@ export default function KnowledgePage() {
 
   const areas = (data?.areas ?? []).filter((area) => area.innovations > 0);
   const maxCount = Math.max(1, ...areas.map((area) => area.innovations));
-  const shownAreas = areas.filter((area) => !areaId || area.id === areaId);
+  // przy wyszukiwaniu nie pokazujemy obszarów, w których nic nie pasuje
+  const shownAreas = areas
+    .filter((area) => !areaId || area.id === areaId)
+    .map((area) => ({
+      ...area,
+      problems: innovations.filter((item) => item.category_id === area.id && item.problem),
+    }))
+    .filter((area) => !query.trim() || area.problems.length > 0);
   const videoCount = (data?.innovations ?? []).filter((item) => item.has_video).length;
 
   return (
@@ -261,11 +289,14 @@ export default function KnowledgePage() {
                 według tego, kogo dotyczą. Kliknij problem, żeby zobaczyć rozwiązanie.
               </p>
 
+              {shownAreas.length === 0 && (
+                <p className="kb-card mt-6 text-sm text-[var(--muted)]">
+                  Brak wyzwań pasujących do tego wyszukiwania.
+                </p>
+              )}
               <ul className="mt-6 grid gap-4 md:grid-cols-2">
                 {shownAreas.map((area) => {
-                  const inArea = innovations.filter(
-                    (item) => item.category_id === area.id && item.problem,
-                  );
+                  const inArea = area.problems;
                   const limit = areaId ? inArea.length : PROBLEMS_PER_AREA;
                   return (
                     <li key={area.id} className={`kb-card ${areaId ? "md:col-span-2" : ""}`}>

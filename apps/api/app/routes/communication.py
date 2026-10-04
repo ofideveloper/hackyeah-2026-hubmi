@@ -277,9 +277,6 @@ def _listing_public(
     )
 
 
-# --- Publiczne --------------------------------------------------------------
-
-
 @router.get("/mentors", response_model=list[MentorPublic])
 async def list_mentors(session: SessionDep) -> list[MentorPublic]:
     rows = session.exec(
@@ -305,9 +302,6 @@ async def list_listings(user: OptionalUserDep, session: SessionDep) -> list[List
         .limit(LISTINGS_LIMIT)
     ).all()
     return [_listing_public(session, row, user) for row in rows]
-
-
-# --- Zalogowany: ogłoszenia partnerskie --------------------------------------
 
 
 @router.post("/partnerships", response_model=ListingPublic, status_code=status.HTTP_201_CREATED)
@@ -390,9 +384,6 @@ async def contact_listing_author(
     session.refresh(conversation)
     logger.info("Odpowiedź na ogłoszenie %s → rozmowa %s", listing.id, conversation.id)
     return _conversation_detail(session, conversation, user, "author")
-
-
-# --- Zalogowany: rozmowy ------------------------------------------------------
 
 
 @router.get("/conversations", response_model=list[ConversationPublic])

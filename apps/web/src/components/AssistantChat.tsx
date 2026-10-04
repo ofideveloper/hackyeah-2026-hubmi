@@ -16,7 +16,7 @@ import {
   type LocationRequestKind,
   type NewProjectDraft,
   type ProjectProposal,
-  type Report,
+  type SimilarCases,
 } from "@/lib/api";
 import { hasSessionHint } from "@/lib/auth";
 
@@ -28,24 +28,57 @@ export type ChatMessage = {
   content: string;
   timestamp: Date;
   suggestedProjects?: ChatProject[];
+  similar?: SimilarCases | null;
   newProjectDraft?: NewProjectDraft | null;
   projectProposal?: ProjectProposal | null;
-  createdReport?: Report | null;
-  reportOffer?: boolean;
   locationRequest?: LocationRequestKind | null;
   locationResolved?: boolean;
 };
 
 const CARETAKER = "Twój społeczny opiekun";
 
-const REPORT_CONFIRM_MESSAGE =
-  "Tak, zapisz to proszę jako zgłoszenie w MaloHUB - chcę śledzić status.";
-
 /** Deterministic HH:MM - avoids Node vs browser `toLocaleTimeString` mismatches. */
 function formatClock(date: Date): string {
   const h = date.getHours().toString().padStart(2, "0");
   const m = date.getMinutes().toString().padStart(2, "0");
   return `${h}:${m}`;
+}
+
+function needsLabel(count: number): string {
+  if (count === 1) return "1 podobną potrzebę";
+  const few = count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14);
+  return `${count} ${few ? "podobne potrzeby" : "podobnych potrzeb"}`;
+}
+
+/** Podobne przypadki: ile osób zgłosiło to samo i jakie pomysły już nad tym pracują. */
+function SimilarCasesNote({ similar }: { similar: SimilarCases }) {
+  return (
+    <div className="project-draft-note" role="group" aria-label="Podobne przypadki">
+      <p className="project-draft-note-label">Podobne przypadki</p>
+      {similar.needs_last_30_days > 0 && (
+        <p className="project-draft-note-text mt-1.5">
+          W ostatnich 30 dniach inni zgłosili {needsLabel(similar.needs_last_30_days)}
+          {similar.area_name ? ` w obszarze „${similar.area_name}”` : ""}.
+        </p>
+      )}
+      {similar.related_ideas.length > 0 && (
+        <>
+          <p className="project-draft-note-text mt-1.5">Pomysły, nad którymi ktoś już pracuje:</p>
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-[0.8125rem] leading-snug">
+            {similar.related_ideas.map((idea) => (
+              <li key={idea.id}>
+                <span className="font-semibold">{idea.name}</span>
+                {idea.description ? ` — ${idea.description.slice(0, 120)}` : ""}
+              </li>
+            ))}
+          </ul>
+          <Link href="/kreator#pomysly" className="kb-link mt-2 inline-block text-[0.8125rem]">
+            Zobacz pomysły w Kreatorze
+          </Link>
+        </>
+      )}
+    </div>
+  );
 }
 
 function TypingIndicator() {
@@ -96,8 +129,6 @@ type AssistantChatProps = {
   userName?: string | null;
   /** Czat na landingu - działa bez logowania */
   guestMode?: boolean;
-  /** Po zapisaniu sprawy z czatu - odśwież listę na `/app` */
-  onReportCreated?: (report: Report) => void;
   /** Ustaw focus na polu wiadomości (np. po nawigacji do `#opiekun`) */
   autoFocus?: boolean;
 };
@@ -116,7 +147,6 @@ function welcomeMessage(guestMode: boolean): ChatMessage {
 export function AssistantChat({
   userName,
   guestMode = false,
-  onReportCreated,
   autoFocus = false,
 }: AssistantChatProps) {
   const displayName = userName?.trim() || "mieszkańcu";
@@ -196,11 +226,10 @@ export function AssistantChat({
         reply,
         suggested_projects,
         project_proposal,
-        created_report,
-        report_offer,
         location_request,
         chat_id,
         new_project_draft,
+        similar,
       } = await sendChatMessage(trimmed, history, null, chatId);
       setChatId(chat_id);
       const replyId = `a-${Date.now()}`;
@@ -215,22 +244,12 @@ export function AssistantChat({
           content: reply,
           timestamp: new Date(),
           suggestedProjects: suggested_projects,
+          similar,
           newProjectDraft: new_project_draft,
           projectProposal: project_proposal,
-          createdReport: created_report,
-          reportOffer: report_offer,
           locationRequest: location_request,
         },
       ]);
-      if (created_report) {
-        onReportCreated?.(created_report);
-        // Po zapisie przewiń do listy spraw (sekcja pod czatem)
-        requestAnimationFrame(() => {
-          document
-            .getElementById("moje-sprawy")
-            ?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      }
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -320,7 +339,7 @@ export function AssistantChat({
         <div className="flex items-start gap-4">
           <CaretakerMark />
           <div className="min-w-0">
-            <p className="font-display text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
+            <p className="font-display text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-text)]">
               {CARETAKER}
             </p>
             <h2 className="font-display mt-1.5 text-2xl font-semibold tracking-tight text-[var(--text)] sm:text-3xl">
@@ -391,6 +410,8 @@ export function AssistantChat({
                     />
                   )}
 
+                  {message.similar && <SimilarCasesNote similar={message.similar} />}
+
                   {message.newProjectDraft && !message.projectProposal && (
                     <div className="report-offer-card" role="group" aria-label="Nowy projekt">
                       <p className="report-offer-text">
@@ -418,48 +439,8 @@ export function AssistantChat({
                         {message.projectProposal.name}
                       </p>
                       <p className="project-draft-note-text">
-                        Przekazałem materiał dalej - jednostka będzie mogła to przejąć i dopracować.
+                        Przekazałem to zespołowi ROPS - odezwie się, gdy oceni propozycję.
                       </p>
-                    </div>
-                  )}
-
-                  {message.createdReport && (
-                    <div className="project-draft-note" role="status">
-                      <p className="project-draft-note-label">Zgłoszenie zapisane</p>
-                      <p className="font-display project-draft-note-title">
-                        {message.createdReport.title}
-                      </p>
-                      <p className="project-draft-note-text">
-                        Status: przyjęte
-                        {message.createdReport.unit_name
-                          ? ` · ${message.createdReport.unit_name}`
-                          : " · jednostka do przydzielenia przez zespół"}
-                        . Śledź postęp na liście spraw poniżej.
-                      </p>
-                    </div>
-                  )}
-
-                  {message.reportOffer && !message.createdReport && (
-                    <div className="report-offer-card" role="group" aria-label="Zapisz zgłoszenie">
-                      <p className="report-offer-text">
-                        {guestMode
-                          ? "Żeby zapisać zgłoszenie i śledzić status, potrzebne jest konto."
-                          : "Mogę zapisać to jako zgłoszenie - wtedy zobaczysz status sprawy."}
-                      </p>
-                      {guestMode ? (
-                        <Link href="/register" className="btn-primary">
-                          Załóż konto
-                        </Link>
-                      ) : (
-                        <button
-                          type="button"
-                          className="btn-primary"
-                          disabled={busy}
-                          onClick={() => void submitMessage(REPORT_CONFIRM_MESSAGE)}
-                        >
-                          Zapisz zgłoszenie
-                        </button>
-                      )}
                     </div>
                   )}
 

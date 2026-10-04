@@ -15,10 +15,9 @@ from .routes import (
     ideas,
     knowledge,
     llm,
+    middleman,
     projects,
-    reports,
     testing,
-    units,
     users,
 )
 from .seed import seed_admin_user, seed_innovation_library, seed_knowledge_resources
@@ -64,17 +63,16 @@ async def log_requests(request: Request, call_next):
 
 app.include_router(auth.router)
 app.include_router(admin.router)
-app.include_router(units.router)
 app.include_router(categories.router)
 app.include_router(chat.router)
 app.include_router(knowledge.router)
 app.include_router(ideas.router)
 app.include_router(testing.router)
+app.include_router(middleman.router)
 app.include_router(communication.router)
 app.include_router(projects.router)
-app.include_router(reports.router)
 app.include_router(users.router)
-app.include_router(llm.router)  # legacy
+app.include_router(llm.router)
 
 
 @app.on_event("startup")

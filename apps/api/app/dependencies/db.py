@@ -40,37 +40,21 @@ def _sqlite_column_type(table: str, column: str) -> str | None:
     return None
 
 
-def _reports_unit_nullable() -> bool | None:
-    """None = brak tabeli; True/False = nullable unit_id."""
-    insp = inspect(engine)
-    if "reports" not in insp.get_table_names():
-        return None
-    for col in insp.get_columns("reports"):
-        if col["name"] == "unit_id":
-            return bool(col.get("nullable", True))
-    return None
-
-
 def _rebuild_legacy_uuid_tables() -> None:
     """
     Po merge backendów `create_all` nie zmienia istniejących tabel.
-    Stare `reports` / `project_proposals` miały INTEGER id — nowe modele UUID.
-    Dodatkowo `reports.unit_id` musi być nullable (sprawy bez pewnego dopasowania jednostki).
+    Stare `project_proposals` miały INTEGER id — nowy model używa UUID.
     """
     if not database_url.startswith("sqlite"):
         return
 
     to_drop: list[str] = []
-    for table in ("reports", "project_proposals"):
+    for table in ("project_proposals",):
         col_type = _sqlite_column_type(table, "id")
         if col_type is None:
             continue
         if "INT" in col_type and "CHAR" not in col_type:
             to_drop.append(table)
-
-    unit_nullable = _reports_unit_nullable()
-    if unit_nullable is False and "reports" not in to_drop:
-        to_drop.append("reports")
 
     if not to_drop:
         return
@@ -88,7 +72,7 @@ def _add_missing_columns() -> None:
     """`create_all` nie dodaje kolumn do istniejących tabel — dopisz nowe, opcjonalne."""
     added = {
         "actualproject": ("source_url", "video_url", "folder_url"),
-        "proposalofnewproject": ("essence", "audience", "stage", "canvas"),
+        "proposalofnewproject": ("essence", "audience", "stage", "canvas", "admin_note"),
         "user": ("sector", "organization", "mentor_bio"),
     }
     insp = inspect(engine)

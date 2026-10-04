@@ -29,6 +29,8 @@ export function AdminIdeasView() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // robocze komentarze, zanim trafią do autora razem z decyzją
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!hasSessionHint()) return;
@@ -45,8 +47,13 @@ export function AdminIdeasView() {
     setBusyId(idea.id);
     setError(null);
     try {
-      const saved = await setIdeaStatus(idea.id, status);
+      const saved = await setIdeaStatus(idea.id, status, notes[idea.id] ?? idea.admin_note);
       setIdeas((prev) => prev.map((row) => (row.id === saved.id ? saved : row)));
+      setNotes((prev) => {
+        const rest = { ...prev };
+        delete rest[idea.id];
+        return rest;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nie udało się zmienić statusu");
     } finally {
@@ -151,7 +158,7 @@ export function AdminIdeasView() {
 
               {canvas.length > 0 && (
                 <details className="mt-3 text-sm">
-                  <summary className="cursor-pointer font-semibold text-[var(--accent)]">
+                  <summary className="cursor-pointer font-semibold text-[var(--accent-text)]">
                     Canva innowacji ({canvas.length}/{CANVAS_FIELDS.length})
                   </summary>
                   <dl className="mt-2 grid gap-3 sm:grid-cols-2">
@@ -167,7 +174,33 @@ export function AdminIdeasView() {
                 </details>
               )}
 
+              <label className="mt-4 block text-sm">
+                <span className="font-semibold">Komentarz dla autora</span>
+                <span className="ml-1 text-[var(--muted)]">
+                  (opcjonalnie — autor dostanie go w wiadomości razem z decyzją)
+                </span>
+                <textarea
+                  className="field mt-1 w-full"
+                  rows={2}
+                  maxLength={1000}
+                  value={notes[idea.id] ?? idea.admin_note}
+                  onChange={(event) =>
+                    setNotes((prev) => ({ ...prev, [idea.id]: event.target.value }))
+                  }
+                />
+              </label>
+
               <div className="mt-4 flex flex-wrap gap-2">
+                {notes[idea.id] !== undefined && notes[idea.id] !== idea.admin_note && (
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    disabled={busy}
+                    onClick={() => void onStatus(idea, idea.status)}
+                  >
+                    Wyślij komentarz<span className="sr-only">: {idea.name}</span>
+                  </button>
+                )}
                 {idea.status !== "approved" && (
                   <button
                     type="button"

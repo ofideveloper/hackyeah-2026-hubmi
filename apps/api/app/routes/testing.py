@@ -192,9 +192,6 @@ def _signups_out(
     return result
 
 
-# --- Publiczne --------------------------------------------------------------
-
-
 @router.get("/testing/solutions", response_model=list[TestSolution])
 async def list_solutions(session: SessionDep) -> list[TestSolution]:
     """Rozwiązania do oceny i testów: Biblioteka Innowacji + zatwierdzone fiszki."""
@@ -268,9 +265,6 @@ async def list_reviews(
         .order_by(col(SolutionReview.updated_at).desc())
     ).all()
     return _reviews_out(session, list(reviews))
-
-
-# --- Zalogowany -------------------------------------------------------------
 
 
 @router.get("/testing/mine", response_model=MyTesting)
@@ -393,9 +387,6 @@ async def delete_my_review(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Brak opinii")
     session.delete(review)
     session.commit()
-
-
-# --- Admin ------------------------------------------------------------------
 
 
 @router.get("/admin/testing/signups", response_model=list[SignupAdmin])

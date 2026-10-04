@@ -179,6 +179,11 @@ export function AdminTrendsView() {
               <p className="text-sm leading-relaxed">{need.summary}</p>
               <p className="mt-2 text-xs text-[var(--muted)]">
                 {new Date(need.created_at).toLocaleString("pl-PL")}
+                {need.similar > 0 && (
+                  <span className="ml-2 font-semibold text-[var(--text)]">
+                    · powtarza się (podobnych: {need.similar})
+                  </span>
+                )}
               </p>
             </li>
           ))}

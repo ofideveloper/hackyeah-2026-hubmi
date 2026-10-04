@@ -10,7 +10,13 @@ import { fetchConversations, type User } from "@/lib/api";
 import { unreadCount } from "@/lib/communication";
 
 /** Strony z wspólnym menu produktowym — `current` podświetla aktywną pozycję. */
-export type AppNavPage = "wiedza" | "kreator" | "tester" | "kontakt" | "app" | "profil";
+export type AppNavPage =
+  | "wiedza"
+  | "kreator"
+  | "tester"
+  | "kontakt"
+  | "app"
+  | "profil";
 
 const NAV_ITEMS: { id: Exclude<AppNavPage, "app" | "profil">; href: string; label: string }[] = [
   { id: "wiedza", href: "/wiedza", label: "Zasobnik wiedzy" },
@@ -277,6 +283,8 @@ export function AppNav({ current, isAdmin, unreadKontakt, user }: AppNavProps) {
         ref={drawerRootRef}
         className={`site-header-drawer-root${open ? " is-open" : ""}`}
         aria-hidden={!open}
+        // zamknięty panel nie może przyjmować fokusu — samo aria-hidden tego nie gwarantuje
+        inert={!open}
       >
         <button
           type="button"

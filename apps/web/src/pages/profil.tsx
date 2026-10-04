@@ -59,7 +59,7 @@ export default function ProfilePage() {
 
   if (status === "loading" || status === "anonymous" || !user) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
+      <main id="tresc" tabIndex={-1} className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
         <p className="text-[var(--muted)]">Ładowanie…</p>
       </main>
     );
@@ -71,16 +71,13 @@ export default function ProfilePage() {
         <title>Profil · MaloHUB</title>
       </Head>
 
-      <a href="#tresc" className="skip-link">
-        Przejdź do treści
-      </a>
       <SiteHeader width="full" actions={<AppNav current="profil" />} />
 
-      <main id="tresc" className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
+      <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
         <header className="animate-fade-up">
           <p className="kb-meta">Konto</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Twój <span className="text-[var(--accent)]">profil</span>
+            Twój <span className="text-[var(--accent-text)]">profil</span>
           </h1>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Dane konta i zmiana hasła. Sektor oraz organizację ustawisz też w zakładce Kontakt.

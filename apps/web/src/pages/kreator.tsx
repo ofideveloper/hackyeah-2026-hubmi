@@ -31,6 +31,12 @@ import { CANVAS_FIELDS, EMPTY_IDEA, formatDate, STAGE_LABEL } from "@/lib/ideas"
 
 const STAGES = Object.keys(STAGE_LABEL) as IdeaStage[];
 
+const IDEA_STATUS_LABEL: Record<Idea["status"], string> = {
+  pending: "czeka na ocenę zespołu ROPS",
+  approved: "zatwierdzona",
+  rejected: "nieprzyjęta",
+};
+
 function IdeaCard({ idea, children }: { idea: Idea; children?: React.ReactNode }) {
   return (
     <li className="kb-card flex flex-col gap-2">
@@ -192,7 +198,7 @@ export default function IdeaCreatorPage() {
         <header className="animate-fade-up">
           <p className="kb-meta">Kreator pomysłów</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Masz pomysł na <span className="text-[var(--accent)]">innowację społeczną</span>?
+            Masz pomysł na <span className="text-[var(--accent-text)]">innowację społeczną</span>?
           </h1>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Opisz go na krótkiej fiszce, dopracuj na canvie z pomocą asystenta i pokaż innym. W
@@ -399,6 +405,16 @@ export default function IdeaCreatorPage() {
             <ul className="mt-5 grid gap-4 sm:grid-cols-2">
               {myIdeas.map((idea) => (
                 <IdeaCard key={idea.id} idea={idea}>
+                  <p className="text-sm">
+                    <span className="font-semibold">Status: </span>
+                    {IDEA_STATUS_LABEL[idea.status] ?? idea.status}
+                  </p>
+                  {idea.admin_note && (
+                    <p className="whitespace-pre-line rounded-lg bg-[var(--accent-soft)] px-3 py-2 text-sm leading-relaxed">
+                      <span className="font-semibold">Komentarz zespołu ROPS: </span>
+                      {idea.admin_note}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2 pt-1">
                     <button type="button" className="btn-ghost" onClick={() => startEdit(idea)}>
                       Edytuj<span className="sr-only">: {idea.name}</span>

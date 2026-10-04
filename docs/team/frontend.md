@@ -11,13 +11,10 @@ Stack: Next.js 15 **Pages Router** w `apps/web` (`src/pages`, `src/components`, 
 | `/` | Landing — w hero ten sam `AssistantChat` co w `/app` (`guestMode`, `#opiekun`) |
 | `/login` | Logowanie → admin: `/admin`, user: `/app` |
 | `/register` | Rejestracja → `/login` |
-| `/app` | Dom mieszkańca: czat + statusy spraw (bez formularzy) |
+| `/app` | Dom mieszkańca: czat z opiekunem |
 | `/admin` | Panel admin — przegląd (tylko `role=admin`) |
-| `/admin/units` | Jednostki — create + edycja (`name`/`territory`/`competencies`) + delete |
-| `/admin/projects` | Projekty jednostek (`UnitProject`) — create + pełna edycja + delete |
 | `/admin/catalog` | Katalog projektów z bazy (`ActualProject`) — przegląd, szukanie, szczegóły (tylko odczyt, przez `/knowledge`) |
-| `/admin/proposals` | Propozycje projektów z czatu → jednostka |
-| `/admin/reports` | Sprawy / statusy |
+| `/admin/proposals` | Propozycje z czatu — akceptacja / odrzucenie |
 | `/admin/users` | Użytkownicy + nadanie / odebranie roli mentora |
 | `/wiedza` | Zasobnik wiedzy (publiczny): wyzwania, Biblioteka Innowacji (`ActualProject`), materiały |
 | `/admin/knowledge` | Redakcja zasobów Zasobnika (`KnowledgeResource`) + dociąganie nowych innowacji |
@@ -42,7 +39,7 @@ Projekty / tworzenie spraw: under the hood (AI / API), nie UI mieszkańca.
 - `catalog` → karty PROJECT\|  
 - `report` → zbieranie + `report_offer` / `created_report` (bez sugestii projektów)  
 - `intake` → `project_proposal`  
-JWT opcjonalny. Admin: `/admin/proposals`, `/admin/reports`.
+JWT opcjonalny. Admin: `/admin/proposals`.
 
 **Rozmowy (`components/communication/`):** `ThreadList` + `ThreadView` są wspólne dla `/kontakt` i `/admin/messages`; `ComposeDialog` otwiera nową rozmowę. `ThreadView` odpytuje `GET /conversations/{id}` co 5 s (pauza, gdy karta jest w tle; stop po 401/404), a listę odświeża `hooks/useThreads.ts` co 15 s. Historia to `<ol role="log" aria-live="polite">`, każda wiadomość ma autora tekstem („Ty” / nazwa), treść renderowana jako czysty tekst (bez Markdown / HTML). Etykiety i limity: `lib/communication.ts`.
 
@@ -86,15 +83,16 @@ Motyw: **light**, szaro–czarny + ciepły brąz brand. Tokeny: `apps/web/src/st
 |-------|------|----------|
 | `--bg` `#f3f5f8` | tło | — |
 | `--bg-elevated` `#ffffff` | surface formularzy / tabeli | — |
-| `--text` `#12131a` | tekst; także tekst i obrysy w headerze (`#ada399`) | 17:1 / 7.5:1 na headerze |
-| `--muted` `#525a69` | opis | 6.4:1 |
-| `--accent` `#6b5c4e` | CTA / brand, tekst akcentu, tło pod biały tekst | 5.9:1 (biały na nim 6.4:1) |
-| `--accent-hover` `#54473b` | hover / głęboki brand | 8.2:1 |
+| `--text` `#12131a` | tekst | 17:1 |
+| `--muted` `#5c6474` | opis, placeholdery | 5.4:1 |
+| `--accent` `#847362` | CTA / brand — **tylko jako tło** pod biały tekst (4.6:1), nie jako kolor tekstu | — |
+| `--accent-text` `#6b5c4e` | tekst akcentu (linki, wyróżnienia, etykiety) | 5.9:1 |
+| `--accent-hover` `#6b5c4e` | hover; tło headera i panelu mobilnego pod biały tekst | biały na nim 6.4:1 |
 | `--accent-light` `#a8927e` | **tylko dekoracja** — nie pod biały tekst (3:1) | — |
 | `--border` `#d5dae3` | linie dekoracyjne, karty | — |
 | `--border-strong` `#7c8494` | granice pól, chipów, przycisków outline | 3.4:1 |
 | `--danger` `#a82a2a` / `--success` `#1f6b4a` | błędy / potwierdzenia | 6.3:1 / 5.9:1 |
-| `--focus` + `--focus-halo` | globalny `:focus-visible` (ciemny obrys + biała otoczka) | ≥ 3:1 wszędzie |
+| `--focus` `#12131a` | globalny `:focus-visible` (obrys 2 px); na ciemnym headerze biały obrys | ≥ 3:1 |
 | `.btn-primary` / `.btn-ghost` / `.field` / `.surface` | wspólne klasy UI | |
 
 - Fokus: **nie nadpisuj** `outline` lokalnie — globalny `:focus-visible` działa na jasnych i ciemnych tłach

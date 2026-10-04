@@ -20,12 +20,14 @@ class Settings(BaseSettings):
     admin_full_name: str = "MaloHUB Admin"
     log_level: str = "INFO"
     scrape_on_startup: bool = True
+    chat_rate_guest: int = 10
+    chat_rate_user: int = 30
+    ai_rate_user: int = 30
+    ai_rate_window_s: int = 600
 
-    # LLM: `fake` | `openai` | `gemini`
     llm_provider: str = "fake"
     llm_api_key: str = ""
     llm_model: str = "gpt-4o-mini"
-    # Opcjonalnie nadpisuje URL (np. OpenRouter). Puste = z providera.
     llm_base_url: str = ""
 
     @property

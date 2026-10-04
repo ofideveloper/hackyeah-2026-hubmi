@@ -22,9 +22,11 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 | PATCH | `/categories/{id}` | Zmień nazwę |
 | DELETE | `/categories/{id}` | Usuń (409, gdy używana przez projekt / propozycję) |
 | POST | `/projects/` | Utwórz projekt (`category_id`, `name`, `description`) — zalogowany |
-| POST | `/chat` | Body: `{ message, history?, chat_id? }` → `{ reply, chat_id, suggested_projects[], report_offer, created_report?, project_proposal?, location_request? }` (JWT opcjonalny) |
-| PATCH | `/admin/units/{id}` | Edycja jednostki (`name` / `territory` / `competencies`) |
-| PATCH | `/admin/projects/{id}` | Edycja projektu jednostki (`unit_id` / `name` / `description`) |
+| POST | `/chat` | Body: `{ message, chat_id? }` → `{ reply, chat_id, status, suggested_projects[], new_project_draft?, similar? }` (JWT opcjonalny; limit wywołań) |
+| POST | `/project-proposals` | Propozycja z czatu, gdy baza nie ma odpowiedzi (zalogowany) |
+| GET / POST | `/admin/project-proposals`, `…/{id}/accept`, `…/{id}/reject` | Kolejka propozycji (admin); akceptacja i odrzucenie zmieniają tylko status |
+| GET | `/admin/inbox` | Liczniki rzeczy czekających na decyzję (admin) |
+| POST | `/admin/middleman/adapt` | Middleman Innowacji (admin): innowacja + kontekst instytucji → karta usługi (Markdown) |
 | GET | `/ideas` | Publiczna lista fiszek Kreatora pomysłów (bez canvy; autor jako „Imię N.”; bez `status=rejected`) |
 | GET | `/ideas/mine` | Fiszki zalogowanego — z canvą |
 | POST / PATCH / DELETE | `/ideas`, `/ideas/{id}` | Fiszka (`name`, `description`, `essence`, `audience`, `stage`, `category_id`, `canvas{}`) — edycja tylko autor; usuwa autor lub admin |
@@ -84,8 +86,7 @@ Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProj
 
 - `DATABASE_URL` (domyślnie SQLite `apps/api/data/hubmi.db`) — `app/dependencies/db.py`
 - Vercel: SQLite trafia do `/tmp` (nietrwałe) — produkcja: ustaw `DATABASE_URL` (np. Postgres)
-- Startup: `create_all` + przebudowa legacy tabel `reports` / `project_proposals` (INTEGER → UUID), jeśli wykryte
-- Sprawy z czatu: tryb `report` + marker `[[hubmi-new-report]]` **albo** CTA „Zapisz zgłoszenie” (synteza z historii) — wymaga JWT
+- Startup: `create_all` + przebudowa legacy tabeli `project_proposals` (INTEGER → UUID), jeśli wykryta
 
 [UZUPEŁNIJ — pełne migracje / Postgres]
 

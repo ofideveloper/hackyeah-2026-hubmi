@@ -321,7 +321,7 @@ export default function ContactPage() {
         <header className="animate-fade-up">
           <p className="kb-meta">Kontakt i współpraca</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Zapytaj, poradź się i <span className="text-[var(--accent)]">znajdź partnera</span>
+            Zapytaj, poradź się i <span className="text-[var(--accent-text)]">znajdź partnera</span>
           </h1>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Napisz bezpośrednio do zespołu ROPS, skorzystaj ze wsparcia mentora albo nawiąż

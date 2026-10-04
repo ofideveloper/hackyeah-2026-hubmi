@@ -76,7 +76,7 @@ export function AdminUsersView() {
                     className={
                       user.role === "user"
                         ? "text-[var(--muted)]"
-                        : "font-medium text-[var(--accent)]"
+                        : "font-medium text-[var(--accent-text)]"
                     }
                   >
                     {ROLE_LABEL[user.role] ?? user.role}

@@ -18,13 +18,13 @@ const steps = [
     number: "02",
     title: "Dobierzemy ścieżkę",
     description:
-      "Gdy temat jest jasny, wskażemy pasujący projekt albo zbierzemy materiał dla jednostki.",
+      "Gdy temat jest jasny, wskażemy sprawdzoną innowację albo przekażemy potrzebę zespołowi ROPS.",
   },
   {
     number: "03",
-    title: "Śledź postęp",
+    title: "Działaj dalej",
     description:
-      "Po założeniu konta zobaczysz statusy spraw w swojej przestrzeni MaloHUB.",
+      "Po założeniu konta zgłosisz własny pomysł, przetestujesz rozwiązanie i napiszesz do ROPS.",
   },
 ];
 
@@ -47,7 +47,12 @@ const destinations = [
   {
     href: "/kontakt",
     title: "Kontakt",
-    description: "ROPS, mentorzy i partnerstwa.",
+    description: "Pytania do ROPS, mentorzy oraz współpraca międzysektorowa.",
+  },
+  {
+    href: "/app",
+    title: "Zapytaj opiekuna",
+    description: "Opisz potrzebę — opiekun wskaże pasujące innowacje.",
   },
 ];
 
@@ -110,7 +115,8 @@ export default function HomePage() {
               </p>
               <h1 className="font-display max-w-2xl text-4xl font-semibold leading-[1.1] tracking-tight text-[var(--text)] sm:text-5xl lg:text-6xl">
                 Zgłaszaj to, co{" "}
-                <span className="text-[var(--accent)]">ważne</span>.
+                <span className="text-[var(--accent-text)]">ważne</span> dla Twojej
+                okolicy.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8">
                 Problem, wydarzenie albo pomysł? Opisz go opiekunowi albo zajrzyj do
@@ -156,10 +162,10 @@ export default function HomePage() {
                 <p className="mt-3 text-center text-sm text-[var(--muted)]">
                   {loggedIn ? (
                     <>
-                      Statusy spraw i pełna historia są w{" "}
+                      Wygodniej porozmawiasz w{" "}
                       <Link
                         href="/app"
-                        className="font-medium text-[var(--accent)] underline underline-offset-2"
+                        className="font-medium text-[var(--accent-text)] underline underline-offset-2"
                       >
                         Twojej przestrzeni
                       </Link>
@@ -170,14 +176,14 @@ export default function HomePage() {
                       Chcesz przekazać sprawę dalej?{" "}
                       <Link
                         href="/register"
-                        className="font-medium text-[var(--accent)] underline underline-offset-2"
+                        className="font-medium text-[var(--accent-text)] underline underline-offset-2"
                       >
                         Załóż konto
                       </Link>{" "}
                       albo{" "}
                       <Link
                         href="/login"
-                        className="font-medium text-[var(--accent)] underline underline-offset-2"
+                        className="font-medium text-[var(--accent-text)] underline underline-offset-2"
                       >
                         zaloguj się
                       </Link>
@@ -195,14 +201,14 @@ export default function HomePage() {
           >
             <div className="mx-auto max-w-7xl px-6 py-16 sm:px-10 sm:py-20">
               <div className="max-w-2xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">
                   Jak to działa
                 </p>
                 <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
                   Mniej szukania. Więcej działania.
                 </h2>
                 <p className="mt-4 leading-7 text-[var(--muted)]">
-                  MaloHUB pomaga przejść od zauważonej sprawy do właściwej jednostki
+                  MaloHUB pomaga przejść od zauważonej potrzeby do sprawdzonego rozwiązania
                   w kilku prostych krokach.
                 </p>
               </div>
@@ -213,7 +219,7 @@ export default function HomePage() {
                     key={step.number}
                     className="rounded-2xl border border-[var(--border)] bg-white p-5 sm:p-6"
                   >
-                    <p className="font-display text-sm font-semibold text-[var(--accent)]">
+                    <p className="font-display text-sm font-semibold text-[var(--accent-text)]">
                       {step.number}
                     </p>
                     <h3 className="mt-5 text-lg font-semibold">{step.title}</h3>
@@ -312,11 +318,11 @@ export default function HomePage() {
           </Link>
           <p>Twoja sprawa ma znaczenie.</p>
           {loggedIn ? (
-            <Link href="/app" className="transition hover:text-[var(--accent)]">
+            <Link href="/app" className="transition hover:text-[var(--accent-text)]">
               Zapytaj opiekuna
             </Link>
           ) : (
-            <Link href="/login" className="transition hover:text-[var(--accent)]">
+            <Link href="/login" className="transition hover:text-[var(--accent-text)]">
               Zaloguj się
             </Link>
           )}

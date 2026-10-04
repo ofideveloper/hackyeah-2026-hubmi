@@ -20,6 +20,7 @@ from ..models import (
     NeedSignal,
 )
 from ..scripts.scrape_rops import refresh_new_projects
+from ..similar import is_similar, keywords
 
 router = APIRouter(tags=["knowledge"])
 
@@ -27,6 +28,7 @@ router = APIRouter(tags=["knowledge"])
 SECTION_RE = re.compile(r"^(\d{1,2})\.\s+(.{3,120})$")
 TREND_WEEKS = 8
 UNMET_LIMIT = 30
+UNMET_SCAN = 300  # tyle najnowszych potrzeb porównujemy ze sobą
 
 
 class InnovationSection(BaseModel):
@@ -78,6 +80,7 @@ class AreaTrend(BaseModel):
 class UnmetNeed(BaseModel):
     created_at: str
     summary: str
+    similar: int = 0  # ile innych potrzeb bez odpowiedzi dotyczy tego samego
 
 
 class NeedTrends(BaseModel):
@@ -219,6 +222,21 @@ async def refresh_library(_: CurrentAdminDep) -> RefreshResult:
     return RefreshResult(added=await asyncio.to_thread(refresh_new_projects))
 
 
+def _unmet_needs(signals: list[NeedSignal]) -> list[UnmetNeed]:
+    """Najnowsze potrzeby bez odpowiedzi; `similar` pokazuje, że temat się powtarza."""
+    words = [keywords(signal.summary) for signal in signals[:UNMET_SCAN]]
+    return [
+        UnmetNeed(
+            created_at=signal.created_at,
+            summary=signal.summary,
+            similar=sum(
+                1 for j, other in enumerate(words) if j != i and is_similar(words[i], other)
+            ),
+        )
+        for i, signal in enumerate(signals[:UNMET_LIMIT])
+    ]
+
+
 @router.get("/admin/trends", response_model=NeedTrends)
 async def need_trends(_: CurrentAdminDep, session: SessionDep) -> NeedTrends:
     now = datetime.now()
@@ -260,10 +278,6 @@ async def need_trends(_: CurrentAdminDep, session: SessionDep) -> NeedTrends:
     return NeedTrends(
         weeks=[start.date().isoformat() for start in week_starts],
         areas=sorted(by_area.values(), key=lambda a: (-a.last_30_days, -a.total, a.name)),
-        unmet=[
-            UnmetNeed(created_at=s.created_at, summary=s.summary)
-            for s in signals
-            if s.category_id is None
-        ][:UNMET_LIMIT],
+        unmet=_unmet_needs([s for s in signals if s.category_id is None]),
         total=len(signals),
     )

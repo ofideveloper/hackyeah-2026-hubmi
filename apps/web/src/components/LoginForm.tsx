@@ -74,7 +74,7 @@ export function LoginForm() {
 
       <p className="mt-5 text-center text-sm text-[var(--muted)]">
         Nie masz konta?{" "}
-        <Link href="/register" className="text-[var(--accent)] hover:underline">
+        <Link href="/register" className="text-[var(--accent-text)] underline underline-offset-2">
           Załóż konto
         </Link>
       </p>

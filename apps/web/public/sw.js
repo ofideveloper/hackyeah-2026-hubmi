@@ -1,5 +1,5 @@
 /* MaloHUB — lekki service worker (offline shell + cache assetów). */
-const CACHE = "hubmi-v4";
+const CACHE = "hubmi-v5";
 const PRECACHE = [
   "/",
   "/manifest.json",
@@ -39,18 +39,17 @@ self.addEventListener("fetch", (event) => {
   // API / auth — zawsze sieć, bez cache
   if (url.pathname.startsWith("/api/")) return;
 
+  // Najpierw sieć, cache tylko offline — „cache first” podawał stary kod JS po zmianach
+  // (chunki w dev mają stałe nazwy), a po wdrożeniu starą stronę startową.
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const network = fetch(request)
-        .then((response) => {
-          if (response.ok && (url.pathname.startsWith("/_next/") || url.pathname === "/" || url.pathname.endsWith(".png") || url.pathname.endsWith(".webmanifest"))) {
-            const copy = response.clone();
-            void caches.open(CACHE).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    }),
+    fetch(request)
+      .then((response) => {
+        if (response.ok && (url.pathname.startsWith("/_next/static/") || url.pathname === "/" || url.pathname.endsWith(".png") || url.pathname.endsWith(".webmanifest"))) {
+          const copy = response.clone();
+          void caches.open(CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request).then((cached) => cached ?? Response.error())),
   );
 });

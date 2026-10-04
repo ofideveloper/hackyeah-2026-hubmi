@@ -6,23 +6,34 @@ import re
 import time
 import uuid
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Literal
 
 import httpx
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
-from sqlmodel import Session, select
+from sqlmodel import Session, col, func, select
 
 from ..config import get_settings
 from ..dependencies.db import SessionDep
 from ..dependencies.logger import get_logger
+from ..dependencies.rate_limit import ChatLimitDep
 from ..llm.suggestions import (
     NewProjectDraft,
     extract_new_project_draft,
     extract_project_ids,
 )
-from ..models import ActualProject, CategoriesOfProjects, ChatHistory, NeedSignal
+from ..models import (
+    ActualProject,
+    CategoriesOfProjects,
+    ChatHistory,
+    IdeaStage,
+    NeedSignal,
+    ProposalOfNewProject,
+    StatusEnum,
+)
 from ..scripts.scrape_rops import refresh_new_projects
+from ..similar import is_similar, keywords
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 logger = get_logger(__name__)
@@ -44,6 +55,15 @@ _PROVIDER_MODEL = {
 }
 
 
+# Cała rozmowa idzie do modelu przy każdej wiadomości — stąd limity długości.
+CHAT_MESSAGE_MAX = 2000
+CHAT_TURNS_MAX = 60  # wiadomości obu stron łącznie
+
+SIMILAR_DAYS = 30
+SIMILAR_IDEAS = 3
+SIMILAR_SCAN = 300  # tyle ostatnich wpisów porównujemy słowami kluczowymi
+
+
 class LLMError(Exception):
     pass
 
@@ -55,9 +75,13 @@ def _llm_config() -> tuple[str, str, str]:
     Wcześniej domyślnie szło na OpenRouter nawet przy kluczu OpenAI → „Missing Authentication header”.
     """
     settings = get_settings()
-    provider = (settings.llm_provider or os.getenv("LLM_PROVIDER") or "openai").strip().lower()
+    provider = (
+        (settings.llm_provider or os.getenv("LLM_PROVIDER") or "openai").strip().lower()
+    )
     key = (settings.llm_api_key or os.getenv("LLM_API_KEY") or "").strip()
-    base = (settings.llm_base_url or os.getenv("LLM_BASE_URL") or "").strip().rstrip("/")
+    base = (
+        (settings.llm_base_url or os.getenv("LLM_BASE_URL") or "").strip().rstrip("/")
+    )
     if not base:
         base = _PROVIDER_BASE.get(provider, _PROVIDER_BASE["openai"])
     model = (settings.llm_model or os.getenv("LLM_MODEL") or "").strip()
@@ -137,7 +161,7 @@ async def _ask_llm_once(
 
 
 class ChatRequest(BaseModel):
-    message: str = Field(min_length=1)
+    message: str = Field(min_length=1, max_length=CHAT_MESSAGE_MAX)
     chat_id: uuid.UUID | None = None
 
 
@@ -158,6 +182,21 @@ class NewProjectDraftPublic(BaseModel):
 ChatStatus = Literal["match", "clarify", "no-match"]
 
 
+class RelatedIdea(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: str
+    stage: IdeaStage
+
+
+class SimilarCases(BaseModel):
+    """Podobne przypadki — wyłącznie liczby i zatwierdzone fiszki, bez cudzych opisów."""
+
+    area_name: str | None = None
+    needs_last_30_days: int = 0
+    related_ideas: list[RelatedIdea] = Field(default_factory=list)
+
+
 class ChatReply(BaseModel):
     reply: str
     chat_id: uuid.UUID
@@ -165,6 +204,7 @@ class ChatReply(BaseModel):
     suggested_projects: list[SuggestedProject] = Field(default_factory=list)
     # Ustawione tylko przy „no-match” — FE otwiera okno zgłoszenia nowego projektu.
     new_project_draft: NewProjectDraftPublic | None = None
+    similar: SimilarCases | None = None
 
 
 PROMPT = """Jesteś asystentem MaloHUB. Pomagasz mieszkańcom, urzędnikom i organizacjom znaleźć gotowe rozwiązanie społeczne (projekt) pasujące do ich potrzeby. Prowadzisz jedną rozmowę z użytkownikiem — odpowiadając na kolejne wiadomości, uwzględniaj wszystko, co padło wcześniej. Pisz po polsku, zwięźle i życzliwie.
@@ -321,7 +361,7 @@ async def refresh_catalog() -> int:
 async def ask_about_catalog(
     session: Session, turns: list[dict[str, str]]
 ) -> tuple[Verdict, list[tuple[ActualProject, str]]]:
-    catalog = load_catalog(session)
+    catalog = await asyncio.to_thread(load_catalog, session)
     raw = await ask_llm(
         [{"role": "system", "content": build_system_prompt(catalog)}]
         + [{"role": turn["role"], "content": turn["text"]} for turn in turns]
@@ -341,6 +381,11 @@ async def continue_conversation(
     udanej odpowiedzi — nieudaną wiadomość można wysłać ponownie.
     """
     turns: list[dict[str, str]] = json.loads(chat.all_conversation) if chat else []
+    if len(turns) >= CHAT_TURNS_MAX:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ta rozmowa jest już bardzo długa — zacznij nową, żeby kontynuować.",
+        )
     turns.append({"role": "user", "text": message})
 
     verdict, catalog = await ask_about_catalog(session, turns)
@@ -388,8 +433,74 @@ def record_need(session: Session, chat_id: uuid.UUID, verdict: Verdict) -> None:
         session.commit()
 
 
+def _related_idea(idea: ProposalOfNewProject) -> RelatedIdea:
+    return RelatedIdea(
+        id=idea.id,
+        name=idea.name,
+        description=idea.description,
+        stage=idea.stage or IdeaStage.CONCEPT,
+    )
+
+
+def find_similar(
+    session: Session, chat_id: uuid.UUID, verdict: Verdict, area_name: str | None
+) -> SimilarCases | None:
+    """Ile podobnych potrzeb zgłoszono ostatnio i jakie pomysły już nad nimi pracują.
+
+    Dopasowanie → ten sam obszar katalogu. Brak dopasowania → wspólne słowa kluczowe
+    ze szkicem potrzeby. Bieżąca rozmowa nie liczy się sama do siebie.
+    """
+    since = (datetime.now() - timedelta(days=SIMILAR_DAYS)).isoformat()
+    approved = (
+        select(ProposalOfNewProject)
+        .where(ProposalOfNewProject.status == StatusEnum.APPROVED)
+        .order_by(col(ProposalOfNewProject.created_at).desc())
+    )
+    other_needs = (NeedSignal.created_at >= since, NeedSignal.chat_id != chat_id)
+
+    if verdict.status == "match":
+        category_id = verdict.projects[0].category_id
+        count = session.exec(
+            select(func.count())
+            .select_from(NeedSignal)
+            .where(NeedSignal.category_id == category_id, *other_needs)
+        ).one()
+        ideas = session.exec(
+            approved.where(ProposalOfNewProject.category_id == category_id).limit(
+                SIMILAR_IDEAS
+            )
+        ).all()
+    elif verdict.status == "no-match" and verdict.draft:
+        area_name = None
+        wanted = keywords(f"{verdict.draft.name} {verdict.draft.description}")
+        unmet = session.exec(
+            select(NeedSignal.summary)
+            .where(col(NeedSignal.category_id).is_(None), *other_needs)
+            .order_by(col(NeedSignal.created_at).desc())
+            .limit(SIMILAR_SCAN)
+        ).all()
+        count = sum(1 for summary in unmet if is_similar(wanted, keywords(summary)))
+        ideas = [
+            idea
+            for idea in session.exec(approved.limit(SIMILAR_SCAN)).all()
+            if is_similar(
+                wanted, keywords(f"{idea.name} {idea.description} {idea.essence or ''}")
+            )
+        ][:SIMILAR_IDEAS]
+    else:
+        return None
+
+    if not count and not ideas:
+        return None
+    return SimilarCases(
+        area_name=area_name,
+        needs_last_30_days=count,
+        related_ideas=[_related_idea(idea) for idea in ideas],
+    )
+
+
 @router.post("/", response_model=ChatReply)
-async def chat(payload: ChatRequest, session: SessionDep):
+async def chat(payload: ChatRequest, session: SessionDep, _: ChatLimitDep):
     start = time.time()
     history = None
     if payload.chat_id is not None:
@@ -421,6 +532,12 @@ async def chat(payload: ChatRequest, session: SessionDep):
     record_need(session, history.id, verdict)
     categories = {project.id: category for project, category in catalog}
     return ChatReply(
+        similar=find_similar(
+            session,
+            history.id,
+            verdict,
+            categories.get(verdict.projects[0].id) if verdict.projects else None,
+        ),
         reply=verdict.reply,
         chat_id=history.id,
         status=verdict.status,

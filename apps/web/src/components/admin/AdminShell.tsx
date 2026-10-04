@@ -1,23 +1,27 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { BrandLogo } from "@/components/BrandLogo";
 import { useRequireAdmin } from "@/hooks/useRequireAdmin";
+import { fetchAdminInbox, type AdminInbox } from "@/lib/api";
 
-const NAV: { href: string; label: string; exact?: boolean }[] = [
+const INBOX_POLL_MS = 30_000;
+
+/** Sekcja panelu → licznik rzeczy czekających na decyzję (`GET /admin/inbox`). */
+type NavItem = { href: string; label: string; exact?: boolean; inbox?: keyof AdminInbox };
+
+const NAV: NavItem[] = [
   { href: "/admin", label: "Przegląd", exact: true },
-  { href: "/admin/units", label: "Jednostki" },
-  { href: "/admin/projects", label: "Projekty" },
-  { href: "/admin/catalog", label: "Katalog projektów" },
-  { href: "/admin/proposals", label: "Propozycje" },
-  { href: "/admin/reports", label: "Sprawy" },
+  { href: "/admin/catalog", label: "Katalog innowacji" },
+  { href: "/admin/middleman", label: "Middleman Innowacji" },
+  { href: "/admin/proposals", label: "Propozycje", inbox: "proposals" },
   { href: "/admin/knowledge", label: "Zasobnik wiedzy" },
-  { href: "/admin/ideas", label: "Fiszki pomysłów" },
+  { href: "/admin/ideas", label: "Fiszki pomysłów", inbox: "ideas" },
   { href: "/admin/grants", label: "Nabory grantowe" },
-  { href: "/admin/testing", label: "Zgłoszenia testerów" },
-  { href: "/admin/messages", label: "Wiadomości" },
+  { href: "/admin/testing", label: "Zgłoszenia testerów", inbox: "tester_signups" },
+  { href: "/admin/messages", label: "Wiadomości", inbox: "messages" },
   { href: "/admin/trends", label: "Trendy potrzeb" },
   { href: "/admin/users", label: "Użytkownicy" },
 ];
@@ -31,6 +35,28 @@ type AdminShellProps = {
 export function AdminShell({ title, description, children }: AdminShellProps) {
   const router = useRouter();
   const gate = useRequireAdmin();
+  const [inbox, setInbox] = useState<AdminInbox | null>(null);
+  const ready = gate.status === "ready";
+
+  // Nowe zgłoszenia mają być widoczne bez odświeżania strony; po zmianie widoku liczymy od nowa.
+  useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+    const load = () =>
+      fetchAdminInbox()
+        .then((data) => {
+          if (!cancelled) setInbox(data);
+        })
+        .catch(() => {
+          // licznik jest dodatkiem — panel działa bez niego
+        });
+    void load();
+    const timer = window.setInterval(load, INBOX_POLL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [ready, router.pathname]);
 
   if (gate.status !== "ready") {
     return null;
@@ -59,6 +85,7 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
 
           <nav className="admin-nav" aria-label="Sekcje panelu">
             {NAV.map((item) => {
+              const waiting = item.inbox ? (inbox?.[item.inbox] ?? 0) : 0;
               const active = item.exact
                 ? router.pathname === item.href
                 : router.pathname === item.href || router.pathname.startsWith(`${item.href}/`);
@@ -70,6 +97,12 @@ export function AdminShell({ title, description, children }: AdminShellProps) {
                   aria-current={active ? "page" : undefined}
                 >
                   {item.label}
+                  {waiting > 0 && (
+                    <span className="admin-nav-badge">
+                      <span className="sr-only">, czeka: </span>
+                      {waiting}
+                    </span>
+                  )}
                 </Link>
               );
             })}

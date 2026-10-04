@@ -9,6 +9,9 @@
   --accent: #847362;
   --accent-hover: #6b5c4e;
   --accent-light: #a8927e;
+  /* Akcent jako kolor tekstu — #847362 nie daje 4.5:1 na tle strony (WCAG 1.4.3) */
+  --accent-text: #6b5c4e;
+  --focus: #12131a;
   --accent-soft: rgba(132, 115, 98, 0.14);
   --header-bg: #ada399;
   --danger: #c23b3b;
@@ -85,6 +88,13 @@ body {
   animation: soft-in 0.45s ease-out both;
 }
 
+/* Widoczny fokus klawiatury wszędzie (WCAG 2.4.7, 1.4.11). `:where` ma zerową
+   specyficzność, więc komponenty na ciemnym tle mogą nadpisać kolor obrysu. */
+:where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .font-display {
   font-family: var(--font-display), var(--font-body), sans-serif;
 }
@@ -99,9 +109,28 @@ body {
 }
 
 .field:focus {
-  outline: none;
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* Placeholder to też tekst — domyślny szary przeglądarki nie spełnia 4.5:1 */
+.field::placeholder,
+.chat-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .btn-primary {
@@ -475,7 +504,8 @@ body {
 }
 
 .project-suggest-card:focus-visible {
-  outline: none;
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
   box-shadow: 0 0 0 3px var(--ring);
 }
 
@@ -688,7 +718,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .project-modal-title {
@@ -787,7 +817,8 @@ body {
 }
 
 .chat-input:focus {
-  outline: none;
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
   border-color: var(--accent);
   background: #fff;
   box-shadow: 0 0 0 3px var(--ring);
@@ -825,7 +856,8 @@ body {
 }
 
 .chat-send:focus-visible {
-  outline: none;
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
   box-shadow: 0 0 0 3px var(--ring);
 }
 
@@ -1410,6 +1442,26 @@ body {
   font-weight: 600;
 }
 
+/* Druk karty usługi i innych widoków panelu — bez nawigacji */
+@media print {
+  .admin-sidebar {
+    display: none;
+  }
+}
+
+.admin-nav-badge {
+  margin-left: 0.5rem;
+  display: inline-block;
+  min-width: 1.375rem;
+  border-radius: 999px;
+  background: var(--text);
+  padding: 0.05rem 0.4rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+
 .admin-sidebar-footer {
   display: flex;
   flex-wrap: wrap;
@@ -1451,7 +1503,7 @@ body {
   }
 }
 
-/* —— Zasobnik wiedzy —— */
+/* Pierwszy element każdej strony — renderowany w `_app.tsx` */
 .skip-link {
   position: absolute;
   left: 1rem;
@@ -1480,7 +1532,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .kb-toolbar {
@@ -1570,7 +1622,7 @@ body {
 .kb-link {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -1624,7 +1676,7 @@ body {
 .kb-problem-answer {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .kb-dialog {
@@ -1659,7 +1711,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .kb-video-poster {

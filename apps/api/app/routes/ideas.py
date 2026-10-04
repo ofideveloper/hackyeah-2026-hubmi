@@ -13,11 +13,15 @@ from sqlmodel import Session, col, func, select
 from ..dependencies.auth import CurrentAdminDep, CurrentUserDep
 from ..dependencies.db import SessionDep
 from ..dependencies.logger import get_logger
+from ..dependencies.rate_limit import AiUserDep
 from ..models import (
     GRANT_ANSWER_MAX,
     IDEA_CANVAS_FIELD_MAX,
     IDEA_CANVAS_KEYS,
+    THREAD_SUBJECT_MAX,
     CategoriesOfProjects,
+    Conversation,
+    ConversationKind,
     GrantApplication,
     GrantApplicationPublic,
     GrantApplicationSave,
@@ -27,6 +31,7 @@ from ..models import (
     GrantCallSave,
     GrantQuestion,
     IdeaStage,
+    Message,
     ProposalOfNewProject,
     RoleEnum,
     SolutionReview,
@@ -68,15 +73,12 @@ def _load_json(raw: str, fallback):
         return fallback
 
 
-# --- Fiszki ---------------------------------------------------------------
-
-
 class IdeaInput(BaseModel):
     """Dane fiszki od autora. Tabela `ProposalOfNewProject` nie może być ciałem żądania —
     klient ustawiałby wtedy `author_id` i `status`."""
 
     name: str = Field(min_length=2, max_length=160)
-    description: str = Field(min_length=2, max_length=1000)  # krótki opis
+    description: str = Field(min_length=2, max_length=1000)
     essence: str = Field(default="", max_length=2000)
     audience: str = Field(default="", max_length=1000)
     stage: IdeaStage = IdeaStage.CONCEPT
@@ -114,6 +116,7 @@ class IdeaPublic(BaseModel):
 
 class IdeaDetail(IdeaPublic):
     canvas: dict[str, str] = Field(default_factory=dict)
+    admin_note: str = ""  # komentarz zespołu ROPS — tylko dla autora i admina
 
 
 def _author_label(user: User | None) -> str | None:
@@ -141,6 +144,7 @@ def _idea_detail(session: Session, idea: ProposalOfNewProject) -> IdeaDetail:
         created_at=idea.created_at,
         modified_at=idea.modified_at,
         canvas=_load_json(idea.canvas or "{}", {}),
+        admin_note=idea.admin_note or "",
     )
 
 
@@ -251,8 +255,53 @@ class IdeaAdmin(IdeaDetail):
     author_email: str | None = None
 
 
+IDEA_NOTE_MAX = 1000
+IDEA_DECISION = {
+    StatusEnum.APPROVED: "została zatwierdzona i jest widoczna dla innych",
+    StatusEnum.REJECTED: "nie została przyjęta",
+    StatusEnum.PENDING: "wróciła do oceny",
+}
+
+
 class IdeaStatusUpdate(BaseModel):
     status: StatusEnum
+    note: str = Field(default="", max_length=IDEA_NOTE_MAX)
+
+
+def _notify_author(session: Session, idea: ProposalOfNewProject, admin: User) -> None:
+    """Decyzja trafia do autora jako wiadomość od Zespołu ROPS w „Rozmowach”.
+
+    Wątek ma autora fiszki jako stronę pytającą, więc może on od razu odpisać;
+    kolejne decyzje o tej samej fiszce dopisują się do tego samego wątku.
+    """
+    subject = f"Fiszka: {idea.name}"[:THREAD_SUBJECT_MAX]
+    conversation = session.exec(
+        select(Conversation).where(
+            Conversation.kind == ConversationKind.QUESTION,
+            Conversation.author_id == idea.author_id,
+            Conversation.subject == subject,
+        )
+    ).first()
+    now = _now()
+    if conversation is None:
+        conversation = Conversation(
+            kind=ConversationKind.QUESTION,
+            subject=subject,
+            author_id=idea.author_id,
+            created_at=now,
+        )
+        session.add(conversation)
+        session.flush()
+    body = f"Twoja fiszka „{idea.name}” {IDEA_DECISION[idea.status]}."
+    if idea.admin_note:
+        body += f"\n\nKomentarz zespołu: {idea.admin_note}"
+    session.add(
+        Message(conversation_id=conversation.id, author_id=admin.id, body=body, created_at=now)
+    )
+    conversation.last_message_at = now
+    conversation.last_author_id = admin.id
+    conversation.recipient_read_at = now
+    session.add(conversation)
 
 
 def _idea_admin(session: Session, idea: ProposalOfNewProject) -> IdeaAdmin:
@@ -280,15 +329,18 @@ async def admin_set_idea_status(
     idea = session.get(ProposalOfNewProject, idea_id)
     if idea is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Brak pomysłu")
+    note = payload.note.strip()
+    changed = idea.status != payload.status or note != (idea.admin_note or "")
     idea.status = payload.status
+    idea.admin_note = note
     session.add(idea)
+    if changed and idea.author_id != admin.id:
+        _notify_author(session, idea, admin)
     session.commit()
     session.refresh(idea)
     logger.info("Fiszka %s → %s (admin %s)", idea.id, idea.status.value, admin.id)
     return _idea_admin(session, idea)
 
-
-# --- Asystent kreatora ----------------------------------------------------
 
 AssistantAction = Literal["develop", "unconventional", "canvas", "visualize", "ask"]
 
@@ -432,7 +484,7 @@ def _extract_svg(raw: str) -> str:
 
 
 @router.post("/ideas/assistant", response_model=AssistantReply)
-async def idea_assistant(payload: AssistantRequest, _: CurrentUserDep) -> AssistantReply:
+async def idea_assistant(payload: AssistantRequest, _: AiUserDep) -> AssistantReply:
     idea = payload.idea
     if not (idea.name.strip() or idea.description.strip() or idea.essence.strip()):
         raise HTTPException(
@@ -462,9 +514,6 @@ async def idea_assistant(payload: AssistantRequest, _: CurrentUserDep) -> Assist
     if payload.action == "canvas":
         return AssistantReply(reply="Propozycja wypełnienia canvy.", canvas=_split_canvas(raw))
     return AssistantReply(reply=raw.strip())
-
-
-# --- Nabory i wnioski -----------------------------------------------------
 
 
 def _is_open(call: GrantCall) -> bool:

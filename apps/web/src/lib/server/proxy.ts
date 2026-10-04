@@ -40,6 +40,14 @@ export async function forwardToApi(
   if (contentType) {
     headers.set("content-type", contentType);
   }
+  // Limity żądań w API liczą gości po adresie — samo API widzi tylko BFF.
+  const forwardedFor = req.headers["x-forwarded-for"];
+  const clientIp =
+    (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor)?.split(",")[0]?.trim() ||
+    req.socket.remoteAddress;
+  if (clientIp) {
+    headers.set("x-client-ip", clientIp);
+  }
   const accept = req.headers.accept;
   if (accept) {
     headers.set("accept", accept);

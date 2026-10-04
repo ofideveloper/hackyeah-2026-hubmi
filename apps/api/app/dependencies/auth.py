@@ -8,7 +8,7 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from ..config import get_settings
 from ..models import RoleEnum, User
@@ -38,7 +38,9 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 
 def get_user(session: Session, email: str) -> User | None:
-    return session.exec(select(User).where(User.email == email)).first()
+    # Rejestracja normalizuje domenę (EmailStr), login przychodzi surowy — porównuj bez wielkości liter
+    normalized = email.strip().lower()
+    return session.exec(select(User).where(func.lower(User.email) == normalized)).first()
 
 
 def authenticate_user(session: Session, email: str, password: str) -> User | None:

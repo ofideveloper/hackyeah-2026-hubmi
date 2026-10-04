@@ -106,7 +106,7 @@ export default function TesterPage() {
         <header className="animate-fade-up">
           <p className="kb-meta">Tester innowacji</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Sprawdź rozwiązanie i <span className="text-[var(--accent)]">powiedz, co poprawić</span>
+            Sprawdź rozwiązanie i <span className="text-[var(--accent-text)]">powiedz, co poprawić</span>
           </h1>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Zgłoś się do testów, a po nich oceń rozwiązanie i podpowiedz autorom, co warto

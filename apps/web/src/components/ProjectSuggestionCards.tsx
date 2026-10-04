@@ -21,7 +21,7 @@ export function ProjectSuggestionCards({ projects, onOpen }: ProjectSuggestionCa
             >
               <span className="project-suggest-card-top">
                 <span className="project-suggest-unit">
-                  {project.unit_name ?? "Jednostka"}
+                  {project.unit_name ?? "Innowacja"}
                 </span>
                 <span className="project-suggest-cta" aria-hidden>
                   Zobacz

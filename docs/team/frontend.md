@@ -42,7 +42,7 @@ Projekty / tworzenie spraw: under the hood (AI / API), nie UI mieszkańca.
 - `catalog` → karty PROJECT\|  
 - `report` → zbieranie + `report_offer` / `created_report` (bez sugestii projektów)  
 - `intake` → `project_proposal`  
-JWT opcjonalny. Admin: `/admin/proposals`, `/admin/reports`.
+JWT opcjonalny. Admin: `/admin/proposals`.
 
 **Rozmowy (`components/communication/`):** `ThreadList` + `ThreadView` są wspólne dla `/kontakt` i `/admin/messages`; `ComposeDialog` otwiera nową rozmowę. `ThreadView` odpytuje `GET /conversations/{id}` co 5 s (pauza, gdy karta jest w tle; stop po 401/404), a listę odświeża `hooks/useThreads.ts` co 15 s. Historia to `<ol role="log" aria-live="polite">`, każda wiadomość ma autora tekstem („Ty” / nazwa), treść renderowana jako czysty tekst (bez Markdown / HTML). Etykiety i limity: `lib/communication.ts`.
 
@@ -94,7 +94,7 @@ Motyw: **light**, szaro–czarny + ciepły brąz brand. Tokeny: `apps/web/src/st
 | `--border` `#d5dae3` | linie dekoracyjne, karty | - |
 | `--border-strong` `#7c8494` | granice pól, chipów, przycisków outline | 3.4:1 |
 | `--danger` `#a82a2a` / `--success` `#1f6b4a` | błędy / potwierdzenia | 6.3:1 / 5.9:1 |
-| `--focus` + `--focus-halo` | globalny `:focus-visible` (ciemny obrys + biała otoczka) | ≥ 3:1 wszędzie |
+| `--focus` `#12131a` | globalny `:focus-visible` (obrys 2 px); na ciemnym headerze biały obrys | ≥ 3:1 |
 | `.btn-primary` / `.btn-ghost` / `.field` / `.surface` | wspólne klasy UI | |
 
 - Fokus: **nie nadpisuj** `outline` lokalnie - globalny `:focus-visible` działa na jasnych i ciemnych tłach

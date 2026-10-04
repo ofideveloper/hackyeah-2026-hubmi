@@ -188,7 +188,7 @@ export default function KnowledgePage() {
           <p className="kb-meta">Zasobnik wiedzy · ROPS Kraków</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
             Co dzieje się w Małopolsce i{" "}
-            <span className="text-[var(--accent)]">co już działa</span>
+            <span className="text-[var(--accent-text)]">co już działa</span>
           </h1>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Wybierz obszar albo wpisz, czego szukasz — pokażemy wyzwania, sprawdzone innowacje

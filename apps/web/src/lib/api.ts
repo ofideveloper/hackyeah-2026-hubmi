@@ -16,30 +16,18 @@ export type User = {
   mentor_bio?: string | null;
 };
 
+/** Co czeka na decyzję zespołu — liczniki w nawigacji panelu admina. */
+export type AdminInbox = {
+  ideas: number;
+  tester_signups: number;
+  proposals: number;
+  messages: number;
+};
+
 export type AdminStats = {
   users_total: number;
   users_active: number;
   admins_total: number;
-  units_total: number;
-  reports_total: number;
-  projects_total: number;
-};
-
-export type OrganizationalUnit = {
-  id: string;
-  name: string;
-  territory: string;
-  competencies: string;
-  created_at: string;
-};
-
-export type Project = {
-  id: string;
-  unit_id: string;
-  unit_name: string | null;
-  name: string;
-  description: string;
-  created_at: string;
 };
 
 export type ProjectProposalStatus = "nowe" | "zaakceptowane" | "odrzucone";
@@ -49,28 +37,9 @@ export type ProjectProposal = {
   author_id: string;
   author_email: string | null;
   author_name: string | null;
-  suggested_unit_id: string | null;
-  suggested_unit_name: string | null;
   name: string;
   description: string;
   status: ProjectProposalStatus | string;
-  created_at: string;
-};
-
-export type ReportKind = "problem" | "wydarzenie" | "informacja";
-export type ReportStatus = "nowe" | "w_toku" | "zakonczone";
-
-export type Report = {
-  id: string;
-  author_id: string;
-  author_email?: string | null;
-  author_name?: string | null;
-  unit_id: string | null;
-  unit_name: string | null;
-  kind: ReportKind | string;
-  status: ReportStatus | string;
-  title: string;
-  description: string;
   created_at: string;
 };
 
@@ -178,189 +147,6 @@ export async function fetchAdminUsers(): Promise<User[]> {
   return res.json() as Promise<User[]>;
 }
 
-export async function fetchUnits(): Promise<OrganizationalUnit[]> {
-  const res = await fetch(`${API_BASE}/units`, {
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-
-  return res.json() as Promise<OrganizationalUnit[]>;
-}
-
-export async function createUnit(
-  payload: { name: string; territory: string; competencies: string },
-): Promise<OrganizationalUnit> {
-  const res = await fetch(`${API_BASE}/admin/units`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-
-  return res.json() as Promise<OrganizationalUnit>;
-}
-
-export async function updateUnit(
-  unitId: string,
-  payload: { name?: string; territory?: string; competencies?: string },
-): Promise<OrganizationalUnit> {
-  const res = await fetch(`${API_BASE}/admin/units/${unitId}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-
-  return res.json() as Promise<OrganizationalUnit>;
-}
-
-export async function deleteUnit(unitId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/units/${unitId}`, {
-    method: "DELETE",
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-}
-
-export async function fetchProjects(
-  unitId?: string,
-): Promise<Project[]> {
-  const query = unitId != null ? `?unit_id=${unitId}` : "";
-  const res = await fetch(`${API_BASE}/projects${query}`, {
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-
-  return res.json() as Promise<Project[]>;
-}
-
-export async function createProject(
-  payload: { unit_id: string; name: string; description: string },
-): Promise<Project> {
-  const res = await fetch(`${API_BASE}/admin/projects`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-
-  return res.json() as Promise<Project>;
-}
-
-export async function updateProject(
-  projectId: string,
-  payload: { unit_id?: string; name?: string; description?: string },
-): Promise<Project> {
-  const res = await fetch(`${API_BASE}/admin/projects/${projectId}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-
-  return res.json() as Promise<Project>;
-}
-
-export async function deleteProject(projectId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/projects/${projectId}`, {
-    method: "DELETE",
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-}
-
-export async function fetchMyReports(): Promise<Report[]> {
-  const res = await fetch(`${API_BASE}/reports`, {
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-
-  return res.json() as Promise<Report[]>;
-}
-
-export async function fetchAdminReports(): Promise<Report[]> {
-  const res = await fetch(`${API_BASE}/admin/reports`, {
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-
-  return res.json() as Promise<Report[]>;
-}
-
-export async function updateReportStatus(
-  reportId: string,
-  status: ReportStatus,
-): Promise<Report> {
-  const res = await fetch(`${API_BASE}/admin/reports/${reportId}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ status }),
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-
-  return res.json() as Promise<Report>;
-}
-
-export async function updateReportUnit(
-  reportId: string,
-  unitId: string | null,
-): Promise<Report> {
-  const res = await fetch(`${API_BASE}/admin/reports/${reportId}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ unit_id: unitId }),
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-
-  return res.json() as Promise<Report>;
-}
-
 export type ChatHistoryMessage = {
   role: "user" | "assistant";
   content: string;
@@ -371,23 +157,34 @@ export type LocationRequestKind = "area" | "gps";
 export type ChatMode = "clarify" | "report" | "catalog" | "intake";
 
 /** Projekt z katalogu polecony w czacie — `unit_name` niesie nazwę kategorii. */
-export type ChatProject = Pick<Project, "id" | "name" | "description" | "unit_name">;
+export type ChatProject = {
+  id: string;
+  name: string;
+  description: string;
+  unit_name: string | null;
+};
 
 export type NewProjectDraft = {
   name: string;
   description: string;
 };
 
+/** Podobne przypadki — tylko liczby i zatwierdzone fiszki, bez cudzych opisów. */
+export type SimilarCases = {
+  area_name: string | null;
+  needs_last_30_days: number;
+  related_ideas: { id: string; name: string; description: string; stage: IdeaStage }[];
+};
+
 export type ChatReply = {
   reply: string;
+  similar: SimilarCases | null;
   chat_id: string | null;
   mode: ChatMode;
   suggested_projects: ChatProject[];
   /** Brak dopasowania w bazie — UI otwiera okno zgłoszenia nowego projektu. */
   new_project_draft: NewProjectDraft | null;
   project_proposal: ProjectProposal | null;
-  created_report: Report | null;
-  report_offer: boolean;
   location_request: LocationRequestKind | null;
 };
 
@@ -425,13 +222,12 @@ export async function sendChatMessage(
       : "clarify";
   return {
     reply: data.reply,
+    similar: data.similar ?? null,
     chat_id: data.chat_id ?? null,
     new_project_draft: data.new_project_draft ?? null,
     mode: resolvedMode,
     suggested_projects: data.suggested_projects ?? [],
     project_proposal: data.project_proposal ?? null,
-    created_report: data.created_report ?? null,
-    report_offer: Boolean(data.report_offer),
     location_request:
       data.location_request === "area" || data.location_request === "gps"
         ? data.location_request
@@ -465,19 +261,14 @@ export async function fetchProjectProposals(): Promise<ProjectProposal[]> {
 
 export async function acceptProjectProposal(
   proposalId: string,
-  payload: { unit_id: string; name?: string; description?: string },
-): Promise<Project> {
+): Promise<ProjectProposal> {
   const res = await fetch(`${API_BASE}/admin/project-proposals/${proposalId}/accept`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     throw new Error(await parseError(res));
   }
-  return res.json() as Promise<Project>;
+  return res.json() as Promise<ProjectProposal>;
 }
 
 export async function rejectProjectProposal(
@@ -557,7 +348,8 @@ export type AreaTrend = {
 export type NeedTrends = {
   weeks: string[];
   areas: AreaTrend[];
-  unmet: { created_at: string; summary: string }[];
+  /** `similar` — ile innych potrzeb bez odpowiedzi dotyczy tego samego */
+  unmet: { created_at: string; summary: string; similar: number }[];
   total: number;
 };
 
@@ -640,7 +432,11 @@ export type Idea = Omit<IdeaInput, "canvas" | "category_id"> & {
 };
 
 /** Fiszka autora — razem z roboczą canvą. */
-export type MyIdea = Idea & { canvas: Record<string, string> };
+export type MyIdea = Idea & {
+  canvas: Record<string, string>;
+  /** Komentarz zespołu ROPS do decyzji o fiszce */
+  admin_note: string;
+};
 
 export type IdeaStatus = Idea["status"];
 
@@ -739,10 +535,41 @@ export async function fetchAdminIdeas(): Promise<AdminIdea[]> {
 export async function setIdeaStatus(
   ideaId: string,
   status: IdeaStatus,
+  note = "",
 ): Promise<AdminIdea> {
   return jsonOrThrow(
-    await fetch(`${API_BASE}/admin/ideas/${ideaId}`, jsonRequest("PATCH", { status })),
+    await fetch(`${API_BASE}/admin/ideas/${ideaId}`, jsonRequest("PATCH", { status, note })),
   );
+}
+
+export async function fetchAdminInbox(): Promise<AdminInbox> {
+  return jsonOrThrow(await fetch(`${API_BASE}/admin/inbox`, { cache: "no-store" }));
+}
+
+// --- Middleman Innowacji (`apps/api/app/routes/middleman.py`) ---
+
+export type InstitutionKind = "jst" | "cus" | "ops" | "ngo" | "pes" | "inna";
+
+export type AdaptInput = {
+  innovation_id: string;
+  institution_kind: InstitutionKind;
+  institution_name: string;
+  area: string;
+  audience: string;
+  resources: string;
+  budget: string;
+  constraints: string;
+};
+
+export type ServiceCard = {
+  innovation_id: string;
+  innovation_name: string;
+  /** Markdown */
+  service_card: string;
+};
+
+export async function adaptInnovation(payload: AdaptInput): Promise<ServiceCard> {
+  return jsonOrThrow(await fetch(`${API_BASE}/admin/middleman/adapt`, jsonRequest("POST", payload)));
 }
 
 export async function askIdeaAssistant(

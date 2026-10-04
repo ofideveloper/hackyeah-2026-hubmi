@@ -66,6 +66,26 @@ Dotyczy całego UI w `apps/web` (landing, auth, `/app`, `/admin`, czat, statusy 
 - [ ] `prefers-reduced-motion` respektowany przy nowych animacjach
 - [ ] `lang` i semantyka nagłówków OK na zmienionych widokach
 
+## Ostatni audyt automatyczny
+
+2026-10-04 · `@axe-core/cli` (axe 4.13), tagi `wcag2a, wcag2aa, wcag21a, wcag21aa`, build produkcyjny,
+szerokość okna domyślna (menu mobilne), bez logowania.
+
+| Strony | Wynik |
+|--------|-------|
+| `/`, `/wiedza`, `/kreator`, `/tester`, `/kontakt`, `/login`, `/register` | 0 naruszeń |
+
+Poprawione w tym przebiegu: biały tekst na headerze `#ada399` (2.5:1), fokus w zamkniętym panelu
+mobilnym (`inert`), kolor placeholderów, link odróżniony tylko kolorem na `/login`, tekst w kolorze
+`--accent` na tle strony, brak widocznego fokusu w polach formularzy i czacie, skip link na każdej stronie.
+
+Poza zakresem przebiegu (do sprawdzenia): widoki po zalogowaniu (`/app`, `/profil`), panel admina,
+otwarte dialogi, układ desktopowy. Axe wykrywa tylko część problemów — lista testów ręcznych niżej nadal obowiązuje.
+
+Powtórzenie: `npm run build -w @hubmi/web && npx next start -p 3011` (w `apps/web`), potem
+`npx @axe-core/cli http://localhost:3011/… --tags wcag2a,wcag2aa,wcag21a,wcag21aa --load-delay 2500`
+(opóźnienie, bo animacje wejścia fałszują pomiar kontrastu).
+
 ## Narzędzia
 
 - `npm run lint` — zawiera `jsx-a11y/recommended` (`apps/web/eslint.config.mjs`); build nie przejdzie z błędami a11y

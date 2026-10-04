@@ -100,4 +100,9 @@ Nie używaj na landingu / loginie copy o „panelu administracyjnym” ani stack
 | 2026-10 | Tester innowacji: opinie publiczne, zgłoszenia do testów zatwierdza admin | Pętla zwrotna dla innowacji i fiszek bez osobnych kampanii testów |
 | 2026-10 | Platforma komunikacji `/kontakt`: pytania do ROPS, mentorzy, ogłoszenia partnerskie na jednym modelu rozmowy | Bezpośredni dialog ROPS ↔ użytkownicy i partnerstwa międzysektorowe; uzupełnia czat AI, nie zastępuje go |
 | 2026-10 | Mentor = rola `specialist` nadawana przez admina | Bez osobnego procesu zgłoszeń; ROPS zna swoich ekspertów |
+| 2026-10 | Middleman Innowacji `/admin/middleman`: karta usługi z innowacji + kontekstu instytucji, bez zapisu w bazie; tylko admin | Moduł VII wyzwania; kartę przygotowuje zespół ROPS dla zgłaszającej się instytucji |
+| 2026-10 | Decyzja o fiszce = wiadomość od Zespołu ROPS w Rozmowach + komentarz przy fiszce | Autor dostaje odpowiedź tam, gdzie ma już licznik nieprzeczytanych |
+| 2026-10 | „Podobne przypadki” w czacie: tylko liczby i zatwierdzone fiszki | Cudze opisy potrzeb mogą zawierać dane osobowe |
+| 2026-10 | Limity wywołań AI liczone w bazie (gość po IP, zalogowany po koncie) | Koszt LLM; instancje serverless nie dzielą pamięci |
+| 2026-10 | Usunięte Jednostki, Projekty jednostek i Sprawy (widoki, endpointy, modele) | Pozostałość pierwszej koncepcji; nic ich już nie tworzyło. Propozycję z czatu admin akceptuje bez przypisywania jednostki |
 | 2026-10 | Nowe wiadomości przez odpytywanie co 5 s, nie WebSocket | Proxy BFF buforuje odpowiedzi; działa na Vercel bez zmian w infrastrukturze |

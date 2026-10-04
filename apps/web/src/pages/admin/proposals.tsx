@@ -5,7 +5,7 @@ export default function AdminProposalsPage() {
   return (
     <AdminShell
       title="Propozycje projektów"
-      description="Opiekun zbiera z rozmowy materiał pod nowy projekt — Ty przydzielasz jednostkę i zatwierdzasz."
+      description="Potrzeby z czatu, na które baza nie miała odpowiedzi — zaakceptuj je albo odrzuć."
     >
       <AdminProposalsView />
     </AdminShell>

@@ -146,7 +146,7 @@ export default function RegisterPage() {
 
             <p className="mt-5 text-center text-sm text-[var(--muted)]">
               Masz już konto?{" "}
-              <Link href="/login" className="text-[var(--accent)] underline underline-offset-2">
+              <Link href="/login" className="text-[var(--accent-text)] underline underline-offset-2">
                 Zaloguj się
               </Link>
             </p>

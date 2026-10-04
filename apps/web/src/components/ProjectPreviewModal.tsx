@@ -7,7 +7,7 @@ type ProjectPreviewModalProps = {
 };
 
 /**
- * Podgląd propozycji opiekuna — ten sam układ co innowacja w `/wiedza`
+ * Podgląd propozycji interaktywnego asystenta — ten sam układ co innowacja w `/wiedza`
  * (sekcje opisu, film, folder PDF, strona ROPS).
  */
 export function ProjectPreviewModal({ project, onClose }: ProjectPreviewModalProps) {
@@ -15,7 +15,7 @@ export function ProjectPreviewModal({ project, onClose }: ProjectPreviewModalPro
     <InnovationDialog
       innovationId={project.id}
       name={project.name}
-      badge="Propozycja opiekuna"
+      badge="Propozycja interaktywnego asystenta"
       fallbackDescription={project.description}
       onClose={onClose}
     />

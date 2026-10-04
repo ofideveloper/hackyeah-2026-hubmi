@@ -10,9 +10,9 @@ import { useAuth } from "@/hooks/useAuth";
 const steps = [
   {
     number: "01",
-    title: "Napisz do opiekuna",
+    title: "Napisz do interaktywnego asystenta",
     description:
-      "Opisz sprawę własnymi słowami — nawet bez konta. Opiekun podpowie sensowny kierunek.",
+      "Opisz sprawę własnymi słowami — nawet bez konta. Interaktywny asystent podpowie sensowny kierunek.",
   },
   {
     number: "02",
@@ -51,8 +51,8 @@ const destinations = [
   },
   {
     href: "/app",
-    title: "Zapytaj opiekuna",
-    description: "Opisz potrzebę — opiekun wskaże pasujące innowacje.",
+    title: "Zapytaj interaktywnego asystenta",
+    description: "Opisz potrzebę — interaktywny asystent wskaże pasujące innowacje.",
   },
 ];
 
@@ -99,7 +99,7 @@ export default function HomePage() {
         <title>MaloHUB — Twoja sprawa ma znaczenie</title>
         <meta
           name="description"
-          content="Opisz sprawę opiekunowi, przeglądaj wiedzę i innowacje społeczne. Prosto i w jednym miejscu."
+          content="Opisz sprawę interaktywnemu asystentowi, przeglądaj wiedzę i innowacje społeczne. Prosto i w jednym miejscu."
         />
       </Head>
 
@@ -114,20 +114,28 @@ export default function HomePage() {
                 Twoja sprawa w jednym miejscu
               </p>
               <h1 className="font-display max-w-2xl text-4xl font-semibold leading-[1.1] tracking-tight text-[var(--text)] sm:text-5xl lg:text-6xl">
-                Zgłaszaj to, co{" "}
-                <span className="text-[var(--accent-text)]">ważne</span> dla Twojej
-                okolicy.
+                Opisz problem. Dopasujemy{" "}
+                <span className="text-[var(--accent-text)]">sprawdzone</span>{" "}
+                rozwiązanie.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8">
-                Problem, wydarzenie albo pomysł? Opisz go opiekunowi albo zajrzyj do
-                zasobnika wiedzy i gotowych rozwiązań — bez zgadywania, od czego zacząć.
+                Interaktywny asystent Małopolskiego Hubu Innowacji Społecznych połączy Twoje
+                zgłoszenie z podobnymi sprawami i gotowymi innowacjami. Możesz
+                też zgłosić własny pomysł, wziąć udział w testach albo zapytać
+                zespół ROPS i mentorów.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <a href="#opiekun" className="btn-primary gap-2 px-5 py-3 text-base">
-                  Porozmawiaj z opiekunem
+                <a
+                  href="#opiekun"
+                  className="btn-primary gap-2 px-5 py-3 text-base"
+                >
+                  Porozmawiaj z interaktywnym asystentem
                   <span aria-hidden="true">→</span>
                 </a>
-                <Link href="/wiedza" className="btn-ghost px-5 py-3 text-base">
+                <Link
+                  href="/wiedza"
+                  className="btn-ghost px-5 py-3 text-base font-extrabold"
+                >
                   Zasobnik wiedzy
                 </Link>
               </div>
@@ -208,8 +216,8 @@ export default function HomePage() {
                   Mniej szukania. Więcej działania.
                 </h2>
                 <p className="mt-4 leading-7 text-[var(--muted)]">
-                  MaloHUB pomaga przejść od zauważonej potrzeby do sprawdzonego rozwiązania
-                  w kilku prostych krokach.
+                  MaloHUB pomaga przejść od zauważonej potrzeby do sprawdzonego
+                  rozwiązania w kilku prostych krokach.
                 </p>
               </div>
 
@@ -250,14 +258,15 @@ export default function HomePage() {
                           Co chcesz zrobić dalej?
                         </h2>
                         <p className="mt-2 text-sm leading-6 text-[var(--text)]/75 sm:text-base">
-                          Wybierz obszar albo wróć do rozmowy z opiekunem.
+                          Wybierz obszar albo wróć do rozmowy z interaktywnym
+                          asystentem.
                         </p>
                       </div>
                       <Link
                         href="/app#opiekun"
                         className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--text)] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-hover)]"
                       >
-                        Zapytaj opiekuna
+                        Zapytaj interaktywnego asystenta
                         <span aria-hidden="true">→</span>
                       </Link>
                     </div>
@@ -272,7 +281,9 @@ export default function HomePage() {
                               {String(index + 1).padStart(2, "0")}
                             </span>
                             <span className="mt-4 flex items-start justify-between gap-2">
-                              <span className="font-semibold leading-snug">{item.title}</span>
+                              <span className="font-semibold leading-snug">
+                                {item.title}
+                              </span>
                               <span
                                 className="translate-x-0 text-[var(--accent-hover)] opacity-60 transition duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
                                 aria-hidden="true"
@@ -313,16 +324,25 @@ export default function HomePage() {
         </main>
 
         <footer className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-7 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-10">
-          <Link href="/" className="font-display font-semibold text-[var(--text)]">
+          <Link
+            href="/"
+            className="font-display font-semibold text-[var(--text)]"
+          >
             MaloHUB
           </Link>
           <p>Twoja sprawa ma znaczenie.</p>
           {loggedIn ? (
-            <Link href="/app" className="transition hover:text-[var(--accent-text)]">
-              Zapytaj opiekuna
+            <Link
+              href="/app"
+              className="transition hover:text-[var(--accent-text)]"
+            >
+              Zapytaj interaktywnego asystenta
             </Link>
           ) : (
-            <Link href="/login" className="transition hover:text-[var(--accent-text)]">
+            <Link
+              href="/login"
+              className="transition hover:text-[var(--accent-text)]"
+            >
               Zaloguj się
             </Link>
           )}

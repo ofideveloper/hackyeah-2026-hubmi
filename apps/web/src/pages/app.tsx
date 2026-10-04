@@ -70,8 +70,14 @@ export default function AppHomePage() {
 
   if (status === "loading" || status === "anonymous" || !user || loadingData) {
     return (
-      <main id="tresc" tabIndex={-1} className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
-        <p className="text-[var(--muted)]" role="status">Ładowanie…</p>
+      <main
+        id="tresc"
+        tabIndex={-1}
+        className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6"
+      >
+        <p className="text-[var(--muted)]" role="status">
+          Ładowanie…
+        </p>
       </main>
     );
   }
@@ -87,17 +93,20 @@ export default function AppHomePage() {
         actions={<AppNav current="app" unreadKontakt={unread} />}
       />
 
-      <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-3xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
+      <main
+        id="tresc"
+        tabIndex={-1}
+        className="kb-page mx-auto max-w-3xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14"
+      >
         <header className="animate-fade-up">
           <p className="kb-meta">Twoja przestrzeń</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Opisz potrzebę i{" "}
-            <span className="text-[var(--accent-text)]">znajdź rozwiązanie</span>
+            Opisz potrzebę i <span>znajdź rozwiązanie!</span>
           </h1>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
             Witaj
-            {user.name ? `, ${user.name}` : ""}. Opisz sprawę poniżej — opiekun wskaże sprawdzone
-            innowacje albo przekaże potrzebę zespołowi ROPS.
+            {user.name ? `, ${user.name}` : ""}. Opisz sprawę poniżej — interaktywny asystent
+            wskaże sprawdzone innowacje albo przekaże potrzebę zespołowi ROPS.
           </p>
         </header>
 
@@ -107,7 +116,6 @@ export default function AppHomePage() {
             userName={user.full_name || `${user.name} ${user.surname}`.trim()}
           />
         </section>
-
       </main>
     </>
   );

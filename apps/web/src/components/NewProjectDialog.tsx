@@ -1,5 +1,5 @@
 /**
- * Okno zgłoszenia nowego projektu - otwierane, gdy opiekun nie znalazł
+ * Okno zgłoszenia nowego projektu - otwierane, gdy interaktywny asystent nie znalazł
  * dopasowania w bazie. Szkic z czatu można poprawić przed wysłaniem.
  */
 import Link from "next/link";

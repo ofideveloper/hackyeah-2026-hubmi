@@ -112,7 +112,7 @@ function NavContent({
           }
         }}
       >
-        Zapytaj opiekuna
+        Zapytaj interaktywnego asystenta
       </Link>
 
       {variant === "desktop" && loggedIn && <UserMenu user={user} isAdmin={isAdmin} />}

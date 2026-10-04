@@ -11,7 +11,7 @@ ROPS Kraków ma blisko 200 sprawdzonych innowacji społecznych, a w regionie dzi
 ## Jak to działa
 
 1. Mieszkaniec, NGO albo urzędnik opisuje potrzebę własnymi słowami — bez formularza, także bez konta.
-2. Opiekun AI wskazuje pasujące innowacje z Biblioteki ROPS i pokazuje, ile podobnych potrzeb zgłoszono oraz jakie pomysły już nad nimi pracują.
+2. Interaktywny asystent wskazuje pasujące innowacje z Biblioteki ROPS i pokazuje, ile podobnych potrzeb zgłoszono oraz jakie pomysły już nad nimi pracują.
 3. Gdy nic nie pasuje, potrzeba trafia do zespołu ROPS jako propozycja, a w panelu admina buduje trend.
 4. Dalej prowadzą moduły: Kreator pomysłów, Tester innowacji i bezpośrednia rozmowa z ROPS lub mentorem. Instytucji, która chce wdrożyć innowację, zespół ROPS przygotowuje kartę usługi w Middlemanie.
 

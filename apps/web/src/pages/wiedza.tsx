@@ -38,7 +38,24 @@ function normalize(text: string): string {
 }
 
 // końcówki fleksyjne (już bez ogonków), od najdłuższych
-const ENDINGS = ["osciami", "osciach", "oscia", "osci", "ami", "ach", "ow", "om", "em", "ia", "a", "e", "i", "o", "u", "y"];
+const ENDINGS = [
+  "osciami",
+  "osciach",
+  "oscia",
+  "osci",
+  "ami",
+  "ach",
+  "ow",
+  "om",
+  "em",
+  "ia",
+  "a",
+  "e",
+  "i",
+  "o",
+  "u",
+  "y",
+];
 const MIN_STEM = 4;
 
 /** Prymitywny stemming: „praca” → „prac” łapie też „pracy”, „autyzmem” → „autyzm”. */
@@ -78,7 +95,9 @@ function ResourceCard({
       <p className="kb-meta">
         {[resource.format, areaName].filter(Boolean).join(" · ") || "Zasób"}
       </p>
-      <h3 className="font-display text-base font-semibold leading-snug">{resource.title}</h3>
+      <h3 className="font-display text-base font-semibold leading-snug">
+        {resource.title}
+      </h3>
       {resource.summary && (
         <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--muted)]">
           {resource.summary}
@@ -121,7 +140,9 @@ export default function KnowledgePage() {
     fetchKnowledge()
       .then(setData)
       .catch((err: unknown) =>
-        setError(err instanceof Error ? err.message : "Nie udało się pobrać zasobów"),
+        setError(
+          err instanceof Error ? err.message : "Nie udało się pobrać zasobów",
+        ),
       );
   }, []);
 
@@ -165,11 +186,16 @@ export default function KnowledgePage() {
     .filter((area) => !areaId || area.id === areaId)
     .map((area) => ({
       ...area,
-      problems: innovations.filter((item) => item.category_id === area.id && item.problem),
-      matched: innovations.filter((item) => item.category_id === area.id).length,
+      problems: innovations.filter(
+        (item) => item.category_id === area.id && item.problem,
+      ),
+      matched: innovations.filter((item) => item.category_id === area.id)
+        .length,
     }))
     .filter((area) => !query.trim() || area.problems.length > 0);
-  const videoCount = (data?.innovations ?? []).filter((item) => item.has_video).length;
+  const videoCount = (data?.innovations ?? []).filter(
+    (item) => item.has_video,
+  ).length;
 
   return (
     <>
@@ -183,7 +209,11 @@ export default function KnowledgePage() {
 
       <SiteHeader width="full" actions={<AppNav current="wiedza" />} />
 
-      <main id="tresc" tabIndex={-1} className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
+      <main
+        id="tresc"
+        tabIndex={-1}
+        className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14"
+      >
         <header className="animate-fade-up">
           <p className="kb-meta">Zasobnik wiedzy · ROPS Kraków</p>
           <h1 className="font-display mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
@@ -191,12 +221,15 @@ export default function KnowledgePage() {
             <span className="text-[var(--accent-text)]">co już działa</span>
           </h1>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">
-            Wybierz obszar albo wpisz, czego szukasz — pokażemy wyzwania, sprawdzone innowacje
-            społeczne i materiały, które ich dotyczą.
+            Wybierz obszar albo wpisz, czego szukasz — pokażemy wyzwania,
+            sprawdzone innowacje społeczne i materiały, które ich dotyczą.
           </p>
 
           <div className="mt-7 max-w-2xl">
-            <label htmlFor={searchId} className="mb-1.5 block text-sm font-medium">
+            <label
+              htmlFor={searchId}
+              className="mb-1.5 block text-sm font-medium"
+            >
               Szukaj w zasobniku
             </label>
             <input
@@ -212,7 +245,10 @@ export default function KnowledgePage() {
           {data && (
             <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
               {[
-                { label: "Innowacji w bibliotece", value: data.innovations.length },
+                {
+                  label: "Innowacji w bibliotece",
+                  value: data.innovations.length,
+                },
                 { label: "Obszarów wsparcia", value: areas.length },
                 { label: "Innowacji z filmem", value: videoCount },
               ].map((stat) => (
@@ -258,33 +294,47 @@ export default function KnowledgePage() {
                       type="button"
                       className="kb-chip"
                       aria-pressed={areaId === area.id}
-                      onClick={() => setAreaId(areaId === area.id ? null : area.id)}
+                      onClick={() =>
+                        setAreaId(areaId === area.id ? null : area.id)
+                      }
                     >
                       {area.name}
                     </button>
                   ))}
                 </div>
               </fieldset>
-              <nav aria-label="Sekcje zasobnika" className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+              <nav
+                aria-label="Sekcje zasobnika"
+                className="mt-4 flex flex-wrap gap-x-5 gap-y-2"
+              >
                 {SECTIONS.map((section) => (
-                  <a key={section.id} href={`#${section.id}`} className="kb-link">
+                  <a
+                    key={section.id}
+                    href={`#${section.id}`}
+                    className="kb-link"
+                  >
                     {section.label}
                   </a>
                 ))}
               </nav>
               <p className="sr-only" role="status">
-                Znaleziono: {innovations.length} innowacji, {challenges.length + materials.length}{" "}
-                materiałów.
+                Znaleziono: {innovations.length} innowacji,{" "}
+                {challenges.length + materials.length} materiałów.
               </p>
             </div>
 
-            <section id="wyzwania" aria-labelledby="wyzwania-h" className="kb-section">
+            <section
+              id="wyzwania"
+              aria-labelledby="wyzwania-h"
+              className="kb-section"
+            >
               <h2 id="wyzwania-h" className="kb-section-title font-display">
                 Wyzwania społeczne Małopolski
               </h2>
               <p className="kb-section-lead">
-                Problemy, na które odpowiadają innowacje przetestowane w regionie — pogrupowane
-                według tego, kogo dotyczą. Kliknij problem, żeby zobaczyć rozwiązanie.
+                Problemy, na które odpowiadają innowacje przetestowane w
+                regionie — pogrupowane według tego, kogo dotyczą. Kliknij
+                problem, żeby zobaczyć rozwiązanie.
               </p>
 
               {shownAreas.length === 0 && (
@@ -297,7 +347,10 @@ export default function KnowledgePage() {
                   const inArea = area.problems;
                   const limit = areaId ? inArea.length : PROBLEMS_PER_AREA;
                   return (
-                    <li key={area.id} className={`kb-card ${areaId ? "md:col-span-2" : ""}`}>
+                    <li
+                      key={area.id}
+                      className={`kb-card ${areaId ? "md:col-span-2" : ""}`}
+                    >
                       <div className="flex items-baseline justify-between gap-3">
                         <h3 className="font-display text-lg font-semibold leading-snug">
                           {area.name}
@@ -306,13 +359,18 @@ export default function KnowledgePage() {
                           <span className="font-display text-xl font-semibold tabular-nums text-[var(--text)]">
                             {area.matched}
                           </span>{" "}
-                          {area.matched !== area.innovations && `z ${area.innovations} `}
+                          {area.matched !== area.innovations &&
+                            `z ${area.innovations} `}
                           innowacji
                         </p>
                       </div>
                       {/* udział obszaru w bibliotece — liczba obok niesie tę samą informację */}
                       <div className="kb-bar mt-3" aria-hidden>
-                        <span style={{ width: `${(area.matched / maxCount) * 100}%` }} />
+                        <span
+                          style={{
+                            width: `${(area.matched / maxCount) * 100}%`,
+                          }}
+                        />
                       </div>
 
                       {inArea.length === 0 ? (
@@ -344,7 +402,10 @@ export default function KnowledgePage() {
                           onClick={() => setAreaId(area.id)}
                         >
                           Pokaż wszystkie ({inArea.length})
-                          <span className="sr-only"> w obszarze {area.name}</span>
+                          <span className="sr-only">
+                            {" "}
+                            w obszarze {area.name}
+                          </span>
                         </button>
                       )}
                     </li>
@@ -370,15 +431,26 @@ export default function KnowledgePage() {
               )}
             </section>
 
-            <section id="biblioteka" aria-labelledby="biblioteka-h" className="kb-section">
+            <section
+              id="biblioteka"
+              aria-labelledby="biblioteka-h"
+              className="kb-section"
+            >
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <h2 id="biblioteka-h" className="kb-section-title font-display">
+                  <h2
+                    id="biblioteka-h"
+                    className="kb-section-title font-display"
+                  >
                     Biblioteka Innowacji Społecznych
                   </h2>
                   <p className="kb-section-lead">
-                    Sprawdzone rozwiązania gotowe do wdrożenia — {innovations.length}{" "}
-                    {areaId || query || onlyVideo ? "pasujących do filtrów" : "w bibliotece"}.
+                    Sprawdzone rozwiązania gotowe do wdrożenia —{" "}
+                    {innovations.length}{" "}
+                    {areaId || query || onlyVideo
+                      ? "pasujących do filtrów"
+                      : "w bibliotece"}
+                    .
                   </p>
                 </div>
                 <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
@@ -396,7 +468,7 @@ export default function KnowledgePage() {
                 <p className="kb-card mt-6 text-sm text-[var(--muted)]">
                   Nic nie pasuje do tych filtrów. Zmień wyszukiwanie albo{" "}
                   <Link href={caretakerHref(loggedIn)} className="kb-link">
-                    opisz potrzebę opiekunowi
+                    opisz potrzebę interaktywnemu asystentowi
                   </Link>
                   .
                 </p>
@@ -411,7 +483,9 @@ export default function KnowledgePage() {
                       >
                         <span className="kb-meta flex items-center justify-between gap-2">
                           <span>{areaNames.get(item.category_id)}</span>
-                          {item.has_video && <span className="kb-badge">▶ Film</span>}
+                          {item.has_video && (
+                            <span className="kb-badge">▶ Film</span>
+                          )}
                         </span>
                         <span className="font-display text-base font-semibold leading-snug">
                           {item.name}
@@ -437,13 +511,17 @@ export default function KnowledgePage() {
               )}
             </section>
 
-            <section id="materialy" aria-labelledby="materialy-h" className="kb-section">
+            <section
+              id="materialy"
+              aria-labelledby="materialy-h"
+              className="kb-section"
+            >
               <h2 id="materialy-h" className="kb-section-title font-display">
                 Materiały edukacyjne
               </h2>
               <p className="kb-section-lead">
-                Publikacje, poradniki i filmy o innowacjach społecznych i problemach, które
-                rozwiązują.
+                Publikacje, poradniki i filmy o innowacjach społecznych i
+                problemach, które rozwiązują.
               </p>
               {materials.length === 0 ? (
                 <p className="kb-card mt-6 text-sm text-[var(--muted)]">
@@ -464,16 +542,19 @@ export default function KnowledgePage() {
 
             <aside className="mt-16 flex flex-col justify-between gap-5 rounded-2xl bg-[var(--text)] px-6 py-7 text-white sm:flex-row sm:items-center sm:px-8">
               <div>
-                <h2 className="font-display text-xl font-semibold">Nie ma tu Twojej sprawy?</h2>
+                <h2 className="font-display text-xl font-semibold">
+                  Nie ma tu Twojej sprawy?
+                </h2>
                 <p className="mt-1.5 text-sm text-white/75">
-                  Opisz ją opiekunowi — dobierze rozwiązanie albo przekaże potrzebę zespołowi.
+                  Opisz ją interaktywnemu asystentowi — dobierze rozwiązanie albo przekaże
+                  potrzebę zespołowi.
                 </p>
               </div>
               <Link
                 href={caretakerHref(loggedIn)}
                 className="inline-flex shrink-0 items-center justify-center rounded-lg bg-white px-5 py-3 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--accent-light)]"
               >
-                Porozmawiaj z opiekunem
+                Porozmawiaj z interaktywnym asystentem
               </Link>
             </aside>
           </>

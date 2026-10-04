@@ -3,7 +3,13 @@
  * Bez export / import / zapisu rozmowy.
  */
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 
 import { ChatMarkdown } from "@/components/ChatMarkdown";
 import { LocationRequestCard } from "@/components/LocationRequestCard";
@@ -35,7 +41,7 @@ export type ChatMessage = {
   locationResolved?: boolean;
 };
 
-const CARETAKER = "Twój opiekun";
+const CARETAKER = "Twój interaktywny asystent";
 
 /** Deterministic HH:MM - avoids Node vs browser `toLocaleTimeString` mismatches. */
 function formatClock(date: Date): string {
@@ -46,24 +52,34 @@ function formatClock(date: Date): string {
 
 function needsLabel(count: number): string {
   if (count === 1) return "1 podobną potrzebę";
-  const few = count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14);
+  const few =
+    count % 10 >= 2 &&
+    count % 10 <= 4 &&
+    (count % 100 < 12 || count % 100 > 14);
   return `${count} ${few ? "podobne potrzeby" : "podobnych potrzeb"}`;
 }
 
 /** Podobne przypadki: ile osób zgłosiło to samo i jakie pomysły już nad tym pracują. */
 function SimilarCasesNote({ similar }: { similar: SimilarCases }) {
   return (
-    <div className="project-draft-note" role="group" aria-label="Podobne przypadki">
+    <div
+      className="project-draft-note"
+      role="group"
+      aria-label="Podobne przypadki"
+    >
       <p className="project-draft-note-label">Podobne przypadki</p>
       {similar.needs_last_30_days > 0 && (
         <p className="project-draft-note-text mt-1.5">
-          W ostatnich 30 dniach inni zgłosili {needsLabel(similar.needs_last_30_days)}
+          W ostatnich 30 dniach inni zgłosili{" "}
+          {needsLabel(similar.needs_last_30_days)}
           {similar.area_name ? ` w obszarze „${similar.area_name}”` : ""}.
         </p>
       )}
       {similar.related_ideas.length > 0 && (
         <>
-          <p className="project-draft-note-text mt-1.5">Pomysły, nad którymi ktoś już pracuje:</p>
+          <p className="project-draft-note-text mt-1.5">
+            Pomysły, nad którymi ktoś już pracuje:
+          </p>
           <ul className="mt-1 list-disc space-y-1 pl-5 text-[0.8125rem] leading-snug">
             {similar.related_ideas.map((idea) => (
               <li key={idea.id}>
@@ -72,7 +88,10 @@ function SimilarCasesNote({ similar }: { similar: SimilarCases }) {
               </li>
             ))}
           </ul>
-          <Link href="/kreator#pomysly" className="kb-link mt-2 inline-block text-[0.8125rem]">
+          <Link
+            href="/kreator#pomysly"
+            className="kb-link mt-2 inline-block text-[0.8125rem]"
+          >
             Zobacz pomysły w Kreatorze
           </Link>
         </>
@@ -83,7 +102,10 @@ function SimilarCasesNote({ similar }: { similar: SimilarCases }) {
 
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-1.5 py-0.5" aria-label={`${CARETAKER} pisze`}>
+    <div
+      className="flex items-center gap-1.5 py-0.5"
+      aria-label={`${CARETAKER} pisze`}
+    >
       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--accent)] [animation-delay:-0.3s]" />
       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--accent)] [animation-delay:-0.15s]" />
       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--accent)]" />
@@ -99,7 +121,13 @@ function CaretakerMark({ size = "md" }: { size?: "sm" | "md" }) {
       className={`chat-caretaker-avatar flex shrink-0 items-center justify-center rounded-full ${dim}`}
       aria-hidden
     >
-      <svg className={icon} viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false">
+      <svg
+        className={icon}
+        viewBox="0 0 32 32"
+        fill="none"
+        aria-hidden="true"
+        focusable="false"
+      >
         <circle cx="11" cy="11" r="3.2" fill="currentColor" opacity="0.95" />
         <circle cx="21" cy="11" r="3.2" fill="currentColor" opacity="0.95" />
         <path
@@ -139,7 +167,7 @@ function welcomeMessage(guestMode: boolean): ChatMessage {
     role: "assistant",
     content: guestMode
       ? `Miło Cię widzieć. Opisz sprawę własnymi słowami — pomogę znaleźć kierunek albo gotowe rozwiązanie.`
-      : `Miło Cię widzieć. Jestem Twoim opiekunem. Opisz, co się dzieje — razem pomyślimy nad rozwiązaniem.`,
+      : `Miło Cię widzieć. Jestem Twoim interaktywnym asystentem. Opisz, co się dzieje — razem pomyślimy nad rozwiązaniem.`,
     timestamp: new Date(),
   };
 }
@@ -151,7 +179,9 @@ export function AssistantChat({
 }: AssistantChatProps) {
   const { canUseSession } = useAuth();
   const displayName = userName?.trim() || "mieszkańcu";
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage(guestMode)]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
+    welcomeMessage(guestMode),
+  ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -256,7 +286,10 @@ export function AssistantChat({
         {
           id: `e-${Date.now()}`,
           role: "error",
-          content: err instanceof Error ? err.message : "Nie udało się uzyskać odpowiedzi",
+          content:
+            err instanceof Error
+              ? err.message
+              : "Nie udało się uzyskać odpowiedzi",
           timestamp: new Date(),
         },
       ]);
@@ -267,7 +300,9 @@ export function AssistantChat({
 
   function markLocationResolved(messageId: string) {
     setMessages((prev) =>
-      prev.map((m) => (m.id === messageId ? { ...m, locationResolved: true } : m)),
+      prev.map((m) =>
+        m.id === messageId ? { ...m, locationResolved: true } : m,
+      ),
     );
   }
 
@@ -279,7 +314,8 @@ export function AssistantChat({
         {
           id: `e-${Date.now()}`,
           role: "error",
-          content: "To urządzenie nie obsługuje udostępniania lokalizacji - wpisz adres ręcznie.",
+          content:
+            "To urządzenie nie obsługuje udostępniania lokalizacji - wpisz adres ręcznie.",
           timestamp: new Date(),
         },
       ]);
@@ -343,7 +379,9 @@ export function AssistantChat({
               {CARETAKER}
             </p>
             <h2 className="font-display mt-1.5 text-2xl font-semibold tracking-tight text-[var(--text)] sm:text-3xl">
-              {guestMode ? "Cześć - w czym mogę pomóc?" : `Witaj, ${displayName}`}
+              {guestMode
+                ? "Cześć - w czym mogę pomóc?"
+                : `Witaj, ${displayName}`}
             </h2>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--muted)]">
               {guestMode
@@ -363,9 +401,14 @@ export function AssistantChat({
           const isCaretaker = message.role !== "user";
           const showMark = isCaretaker && (!prev || prev.role === "user");
           const hasProjects =
-            message.role === "assistant" && (message.suggestedProjects?.length ?? 0) > 0;
+            message.role === "assistant" &&
+            (message.suggestedProjects?.length ?? 0) > 0;
           return (
-            <div key={message.id} data-role={message.role} className="animate-soft-in">
+            <div
+              key={message.id}
+              data-role={message.role}
+              className="animate-soft-in"
+            >
               <div
                 className={`flex items-end gap-2.5 ${
                   message.role === "user" ? "justify-end" : "justify-start"
@@ -410,12 +453,19 @@ export function AssistantChat({
                     />
                   )}
 
-                  {message.similar && <SimilarCasesNote similar={message.similar} />}
+                  {message.similar && (
+                    <SimilarCasesNote similar={message.similar} />
+                  )}
 
                   {message.newProjectDraft && !message.projectProposal && (
-                    <div className="report-offer-card" role="group" aria-label="Nowy projekt">
+                    <div
+                      className="report-offer-card"
+                      role="group"
+                      aria-label="Nowy projekt"
+                    >
                       <p className="report-offer-text">
-                        Nie znalazłem tego w bazie - możesz zgłosić propozycję nowego projektu.
+                        Nie znalazłem tego w bazie - możesz zgłosić propozycję
+                        nowego projektu.
                       </p>
                       <button
                         type="button"
@@ -434,12 +484,15 @@ export function AssistantChat({
 
                   {message.projectProposal && (
                     <div className="project-draft-note" role="status">
-                      <p className="project-draft-note-label">Propozycja dla zespołu</p>
+                      <p className="project-draft-note-label">
+                        Propozycja dla zespołu
+                      </p>
                       <p className="font-display project-draft-note-title">
                         {message.projectProposal.name}
                       </p>
                       <p className="project-draft-note-text">
-                        Przekazałem to zespołowi ROPS - odezwie się, gdy oceni propozycję.
+                        Przekazałem to zespołowi ROPS - odezwie się, gdy oceni
+                        propozycję.
                       </p>
                     </div>
                   )}
@@ -448,7 +501,9 @@ export function AssistantChat({
                     <LocationRequestCard
                       kind={message.locationRequest}
                       busy={locatingId === message.id || busy}
-                      onShareGps={() => void shareGps(message.id, message.locationRequest!)}
+                      onShareGps={() =>
+                        void shareGps(message.id, message.locationRequest!)
+                      }
                       onSkip={() => markLocationResolved(message.id)}
                     />
                   )}
@@ -477,7 +532,10 @@ export function AssistantChat({
         )}
       </div>
 
-      <form onSubmit={onSubmit} className="chat-composer border-t border-[var(--border)] px-4 py-4 sm:px-6">
+      <form
+        onSubmit={onSubmit}
+        className="chat-composer border-t border-[var(--border)] px-4 py-4 sm:px-6"
+      >
         <div className="flex items-start gap-2">
           <label className="min-w-0 flex-1">
             <span className="sr-only">Twoja wiadomość</span>
@@ -546,7 +604,10 @@ export function AssistantChat({
       </form>
 
       {preview && (
-        <ProjectPreviewModal project={preview} onClose={() => setPreview(null)} />
+        <ProjectPreviewModal
+          project={preview}
+          onClose={() => setPreview(null)}
+        />
       )}
 
       {draftDialog && (
@@ -557,7 +618,9 @@ export function AssistantChat({
           onCreated={(proposal) => {
             const { messageId } = draftDialog;
             setMessages((prev) =>
-              prev.map((m) => (m.id === messageId ? { ...m, projectProposal: proposal } : m)),
+              prev.map((m) =>
+                m.id === messageId ? { ...m, projectProposal: proposal } : m,
+              ),
             );
             setDraftDialog(null);
           }}

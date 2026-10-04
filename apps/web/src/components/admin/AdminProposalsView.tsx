@@ -6,7 +6,6 @@ import {
   rejectProjectProposal,
   type ProjectProposal,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 const STATUS_LABEL: Record<string, string> = {
   nowe: "Nowe",
@@ -21,7 +20,6 @@ export function AdminProposalsView() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
     fetchProjectProposals()
       .then(setProposals)
       .catch((err: unknown) =>
@@ -31,7 +29,6 @@ export function AdminProposalsView() {
   }, []);
 
   async function onAccept(proposal: ProjectProposal) {
-    if (!hasSessionHint()) return;
     setBusyId(proposal.id);
     setError(null);
     try {
@@ -45,7 +42,6 @@ export function AdminProposalsView() {
   }
 
   async function onReject(proposal: ProjectProposal) {
-    if (!hasSessionHint()) return;
     if (!window.confirm("Odrzucić tę propozycję?")) return;
     setBusyId(proposal.id);
     setError(null);

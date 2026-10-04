@@ -9,7 +9,6 @@ import {
   type GrantCall,
   type GrantCallInput,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 import { formatDate } from "@/lib/ideas";
 
 const EMPTY_QUESTION = { key: "", label: "", hint: "" };
@@ -41,7 +40,6 @@ export function AdminGrantCallsView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!hasSessionHint()) return;
     fetchAdminGrantCalls()
       .then(setCalls)
       .catch((err: unknown) =>
@@ -80,7 +78,6 @@ export function AdminGrantCallsView() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint()) return;
     setError(null);
     setNotice(null);
     setBusy(true);
@@ -107,7 +104,6 @@ export function AdminGrantCallsView() {
   }
 
   async function onDelete(call: GrantCall) {
-    if (!hasSessionHint()) return;
     if (!window.confirm(`Usunąć nabór „${call.title}” razem ze szkicami wniosków?`)) return;
     try {
       await deleteGrantCall(call.id);
@@ -123,7 +119,6 @@ export function AdminGrantCallsView() {
       setOpened(null);
       return;
     }
-    if (!hasSessionHint()) return;
     try {
       setOpened({ callId: call.id, rows: await fetchGrantApplications(call.id) });
     } catch (err) {

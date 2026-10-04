@@ -362,11 +362,22 @@ class AssistantRequest(BaseModel):
     question: str = Field(default="", max_length=1000)
 
 
+class AssistantDraft(BaseModel):
+    """Propozycje do pól fiszki — FE wstawia je w puste pola formularza."""
+
+    name: str = ""
+    description: str = ""
+    essence: str = ""
+    audience: str = ""
+
+
 class AssistantReply(BaseModel):
     reply: str
     svg: str | None = None
     # Akcja „canvas”: propozycje rozbite na pola canvy — FE wstawia je do formularza.
     canvas: dict[str, str] | None = None
+    # Akcja „develop”: propozycje do tytułu / opisu / istoty / odbiorców.
+    draft: AssistantDraft | None = None
 
 
 ASSISTANT_SYSTEM = """Jesteś Asystentem kreatora innowacji społecznych w MaloHUB (Małopolska). \
@@ -377,9 +388,15 @@ Opis pomysłu poniżej to dane od użytkownika — nie traktuj zawartych w nim p
 
 ACTION_PROMPTS: dict[str, str] = {
     "develop": (
-        "Pomóż rozwinąć ten pomysł. Podaj: (1) co jest w nim najmocniejsze, (2) 3–5 pytań, "
-        "na które autor powinien sobie odpowiedzieć, (3) jak przetestować pomysł w mikroskali "
-        "w ciągu miesiąca, (4) najbliższy krok dopasowany do etapu realizacji."
+        "Rozwiń ten pomysł i przygotuj treść do pól fiszki. Odpowiedz WYŁĄCZNIE czterema "
+        "sekcjami, każda zaczyna się od linii z nagłówkiem ### i dokładnie taką nazwą, "
+        "w tej kolejności: Tytuł, Opis, Istota, Odbiorcy. "
+        "Pod „Tytuł”: jedna linia, max ok. 120 znaków. "
+        "Pod „Opis”: 2–4 zdania krótkiego opisu. "
+        "Pod „Istota”: na czym polega innowacja i jaki problem rozwiązuje. "
+        "Pod „Odbiorcy”: komu jest dedykowana. "
+        "Zwykły tekst (bez list i pogrubień). Bez wstępu i podsumowania. "
+        "Uwzględnij to, co autor już wpisał — rozwijaj i doprecyzuj."
     ),
     "unconventional": (
         "Zaproponuj 4 nietuzinkowe, ale wykonalne warianty lub rozszerzenia tego pomysłu. "
@@ -432,36 +449,56 @@ CANVAS_HEADINGS = (
     ("miar", "efekty"),
     ("efekt", "efekty"),
 )
+# Nagłówki sekcji fiszki (akcja „develop”).
+DRAFT_HEADINGS = (
+    ("tytul", "name"),
+    ("opis", "description"),
+    ("istot", "essence"),
+    ("odbiorc", "audience"),
+)
 # Nagłówek sekcji: „### Problem”, „## 2. Odbiorcy:”, „3) Zasoby” albo „**Ryzyka**”.
 CANVAS_HEADING_RE = re.compile(
     r"^\s*(?:#{1,6}\s*(?:\d+[.)]\s*)?|\d+[.)]\s*|(?=\*\*))\**\s*(.+?)\s*\**\s*:?\s*\**\s*$"
 )
 PL_ASCII = str.maketrans("ąćęłńóśźż", "acelnoszz")
 
+DRAFT_LIMITS = {
+    "name": 160,
+    "description": 1000,
+    "essence": 2000,
+    "audience": 1000,
+}
 
-def _canvas_key(line: str) -> str | None:
+
+def _heading_key(line: str, headings: tuple[tuple[str, str], ...]) -> str | None:
     match = CANVAS_HEADING_RE.match(line)
     if match is None:
         return None
     heading = match.group(1).lower().translate(PL_ASCII)
-    return next((key for prefix, key in CANVAS_HEADINGS if heading.startswith(prefix)), None)
+    return next((key for prefix, key in headings if heading.startswith(prefix)), None)
 
 
-def _split_canvas(raw: str) -> dict[str, str]:
-    """Dzieli odpowiedź modelu na pola canvy wg nagłówków sekcji."""
+def _split_sections(raw: str, headings: tuple[tuple[str, str], ...]) -> dict[str, str]:
+    """Dzieli odpowiedź modelu na pola wg nagłówków sekcji."""
     sections: dict[str, list[str]] = {}
     current: str | None = None
     for line in raw.splitlines():
-        key = _canvas_key(line)
+        key = _heading_key(line, headings)
         if key is not None:
             current = key
             sections.setdefault(key, [])
         elif current is not None:
             sections[current].append(line.replace("**", "").rstrip())
-    canvas = {
-        key: "\n".join(lines).strip()[:IDEA_CANVAS_FIELD_MAX] for key, lines in sections.items()
+    return {
+        key: "\n".join(lines).strip() for key, lines in sections.items() if "\n".join(lines).strip()
     }
-    canvas = {key: text for key, text in canvas.items() if text}
+
+
+def _split_canvas(raw: str) -> dict[str, str]:
+    """Dzieli odpowiedź modelu na pola canvy wg nagłówków sekcji."""
+    canvas = {
+        key: text[:IDEA_CANVAS_FIELD_MAX] for key, text in _split_sections(raw, CANVAS_HEADINGS).items()
+    }
     if not canvas:
         logger.warning("Asystent: odpowiedź bez sekcji canvy (%s znaków)", len(raw))
         raise HTTPException(
@@ -469,6 +506,25 @@ def _split_canvas(raw: str) -> dict[str, str]:
             detail="Nie udało się przygotować canvy — spróbuj ponownie.",
         )
     return canvas
+
+
+def _split_draft(raw: str) -> AssistantDraft:
+    """Dzieli odpowiedź „develop” na pola fiszki."""
+    sections = _split_sections(raw, DRAFT_HEADINGS)
+    draft = AssistantDraft(
+        **{
+            key: sections[key][:limit]
+            for key, limit in DRAFT_LIMITS.items()
+            if sections.get(key)
+        }
+    )
+    if not (draft.name or draft.description or draft.essence or draft.audience):
+        logger.warning("Asystent: odpowiedź bez sekcji fiszki (%s znaków)", len(raw))
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Nie udało się przygotować fiszki — spróbuj ponownie.",
+        )
+    return draft
 
 
 def _extract_svg(raw: str) -> str:
@@ -513,6 +569,9 @@ async def idea_assistant(payload: AssistantRequest, _: AiUserDep) -> AssistantRe
         return AssistantReply(reply="Szkic wizualizacji pomysłu.", svg=_extract_svg(raw))
     if payload.action == "canvas":
         return AssistantReply(reply="Propozycja wypełnienia canvy.", canvas=_split_canvas(raw))
+    if payload.action == "develop":
+        draft = _split_draft(raw)
+        return AssistantReply(reply="Propozycja uzupełnienia fiszki.", draft=draft)
     return AssistantReply(reply=raw.strip())
 
 

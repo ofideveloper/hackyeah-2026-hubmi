@@ -9,7 +9,6 @@ import {
   type KnowledgeResource,
   type KnowledgeResourceInput,
 } from "@/lib/api";
-import { hasSessionHint } from "@/lib/auth";
 
 const KIND_LABEL: Record<KnowledgeResource["kind"], string> = {
   wyzwanie: "Wyzwania (raporty, diagnozy)",
@@ -74,7 +73,6 @@ export function AdminKnowledgeView() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!hasSessionHint()) return;
     setError(null);
     setNotice(null);
     setBusy(true);
@@ -98,7 +96,6 @@ export function AdminKnowledgeView() {
   }
 
   async function onDelete(resource: KnowledgeResource) {
-    if (!hasSessionHint()) return;
     if (!window.confirm(`Usunąć „${resource.title}” z Zasobnika wiedzy?`)) return;
     try {
       await deleteKnowledgeResource(resource.id);
@@ -110,7 +107,6 @@ export function AdminKnowledgeView() {
   }
 
   async function onRefresh() {
-    if (!hasSessionHint()) return;
     setError(null);
     setNotice(null);
     setRefreshing(true);

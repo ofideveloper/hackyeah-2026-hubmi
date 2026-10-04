@@ -32,7 +32,7 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 | POST / PATCH / DELETE | `/ideas`, `/ideas/{id}` | Fiszka (`name`, `description`, `essence`, `audience`, `stage`, `category_id`, `canvas{}`) — edycja tylko autor; usuwa autor lub admin |
 | GET | `/admin/ideas` | Wszystkie fiszki (admin): pełny autor, e-mail, canva, także odrzucone |
 | PATCH | `/admin/ideas/{id}` | Zmiana statusu fiszki (admin): `{ status: pending\|approved\|rejected }`; `rejected` ukrywa ją publicznie |
-| POST | `/ideas/assistant` | Asystent kreatora (zalogowany): `{ action: develop\|unconventional\|canvas\|visualize\|ask, idea, question? }` → `{ reply, svg? }` |
+| POST | `/ideas/assistant` | Asystent kreatora (zalogowany): `{ action: develop\|unconventional\|canvas\|visualize\|ask, idea, question? }` → `{ reply, svg?, canvas?, draft? }` (`develop` → `draft` do pól fiszki, `canvas` → pola canvy) |
 | GET | `/grant-calls` | Publicznie tylko **trwające** nabory (z pytaniami wniosku) |
 | GET / PUT | `/grant-calls/{id}/application` | Wniosek zalogowanego w naborze: szkic lub `submit: true`; po złożeniu / po terminie → 409 |
 | GET / POST / PATCH / DELETE | `/admin/grant-calls[/{id}]` | Nabory (admin): terminy + lista pytań; DELETE → 409, gdy są złożone wnioski |

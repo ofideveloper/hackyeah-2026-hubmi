@@ -9,7 +9,8 @@ Bez argumentów pobiera wszystkie kategorie z `CATEGORY_SLUGS`. Kategoria
 nie ma. Ponowne uruchomienie aktualizuje opisy zamiast dublować projekty.
 
 Przy starcie API pusta Biblioteka wypełnia się sama (`seed_innovation_library` w
-`app/seed.py`, wyłącznik: `SCRAPE_ON_STARTUP=false`).
+`app/seed.py`): ze zrzutu `app/seed_data/innovation_library.json`, a gdy go brak —
+tym scraperem (wyłącznik: `SCRAPE_ON_STARTUP=false`).
 """
 
 import argparse

@@ -78,6 +78,7 @@ Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProj
 - FastAPI zna tylko nagłówek Bearer; cookie sesji obsługuje BFF w `apps/web` (`/api/auth/login`, `/api/auth/logout` — ten drugi istnieje tylko w BFF)
 - Role: `admin` | `user` | `specialist` (`specialist` = mentor; nadaje ją admin przez `PATCH /admin/users/{id}`)
 - Przy starcie `seed_admin_user` (`app/seed.py`) tworzy admina z `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_FULL_NAME` (domyślnie `admin@malohub.dev`); istniejący user z tym emailem dostaje `role=admin`
+- `seed_demo_user` tworzy zwykłe konto z `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` / `DEMO_USER_FULL_NAME` (domyślnie `user@example.com`); pusty email wyłącza seed
 - `/categories` i `/projects` wymagają zalogowania (dowolna rola)
 
 [UZUPEŁNIJ — reguły haseł, expiry, refresh?]

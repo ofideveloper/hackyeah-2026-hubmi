@@ -48,6 +48,28 @@ def seed_admin_user(session: Session) -> None:
         logger.warning("Admin ma domyślne hasło — ustaw ADMIN_PASSWORD przed wdrożeniem")
 
 
+def seed_demo_user(session: Session) -> None:
+    """Zwykłe konto do pokazu ścieżki mieszkańca; pusty `DEMO_USER_EMAIL` je wyłącza."""
+    settings = get_settings()
+    email = settings.demo_user_email.strip().lower()
+    if not email or get_user(session, email) is not None:
+        return
+
+    parts = settings.demo_user_full_name.strip().split(None, 1)
+    session.add(
+        User(
+            email=email,
+            hashed_password=hash_password(settings.demo_user_password),
+            name=parts[0] if parts else "User",
+            surname=parts[1] if len(parts) > 1 else "Example",
+            phone_number=None,
+            role=RoleEnum.USER,
+        )
+    )
+    session.commit()
+    logger.info("Utworzono konto demo użytkownika (seed)")
+
+
 # Działy serwisu rops.krakow.pl — punkt startowy Zasobnika wiedzy; admin redaguje je w panelu.
 ROPS_URL = "https://rops.krakow.pl"
 KNOWLEDGE_SEED: tuple[tuple[KnowledgeResourceKind, str, str, str], ...] = (

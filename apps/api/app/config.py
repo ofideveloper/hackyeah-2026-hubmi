@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     admin_email: str = "admin@malohub.dev"
     admin_password: str = "admin12345"
     admin_full_name: str = "MaloHUB Admin"
+    demo_user_email: str = "user@example.com"
+    demo_user_password: str = "user12345"
+    demo_user_full_name: str = "User Example"
     log_level: str = "INFO"
     scrape_on_startup: bool = True
     chat_rate_guest: int = 10

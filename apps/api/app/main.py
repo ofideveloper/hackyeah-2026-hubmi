@@ -20,7 +20,12 @@ from .routes import (
     testing,
     users,
 )
-from .seed import seed_admin_user, seed_innovation_library, seed_knowledge_resources
+from .seed import (
+    seed_admin_user,
+    seed_demo_user,
+    seed_innovation_library,
+    seed_knowledge_resources,
+)
 
 setup_logging()
 logger = get_logger(__name__)
@@ -84,6 +89,7 @@ async def on_startup():
     create_db_and_tables()
     with Session(engine) as session:
         seed_admin_user(session)
+        seed_demo_user(session)
         seed_knowledge_resources(session)
         seed_innovation_library(session)
     logger.info("API gotowe")

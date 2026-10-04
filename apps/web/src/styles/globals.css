@@ -37,9 +37,9 @@ body {
   background-image:
     linear-gradient(
       180deg,
-      rgba(243, 245, 248, 0.55) 0%,
-      rgba(243, 245, 248, 0.72) 45%,
-      rgba(243, 245, 248, 0.82) 100%
+      rgba(243, 245, 248, 0.22) 0%,
+      rgba(243, 245, 248, 0.32) 45%,
+      rgba(243, 245, 248, 0.42) 100%
     ),
     url("/background.png");
   /* Kafelki od środka u góry; scrolluje wraz ze stroną */

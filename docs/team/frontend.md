@@ -56,6 +56,7 @@ Browser  →  fetch("/api/...")  →  pages/api/[...path].ts  →  process.env.A
 
 - Klient tylko przez `@/lib/api.ts` i ścieżki `/api/...`
 - Token JWT w kliencie przez `@/lib/auth.ts` (localStorage)
+- Sesja użytkownika: `AuthProvider` + `useAuth` (`hooks/useAuth.tsx`) w `_app` — jeden `fetchMe` na start, cache między widokami (bez migania inicjałów w `UserMenu`)
 
 **Nie rób**
 
@@ -73,7 +74,7 @@ src/
   styles/       # globals
 ```
 
-- Wspólny header: `SiteHeader`
+- Wspólny header: `SiteHeader` + `AppNav` (desktop od `lg`, poniżej hamburger / drawer — gość i zalogowany)
 - Admin: `AdminShell` + `useRequireAdmin` (JWT + role); podwidoki w `pages/admin/*`
 - PWA: `public/manifest.json`, `public/favicons/`, `public/browserconfig.xml`, `public/sw.js`
 

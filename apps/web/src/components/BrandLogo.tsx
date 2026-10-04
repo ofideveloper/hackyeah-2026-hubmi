@@ -2,13 +2,11 @@ import Link from "next/link";
 
 type BrandLogoSize = "sm" | "md" | "lg";
 
-const SIZE: Record<
-  BrandLogoSize,
-  { className: string; width: number; height: number }
-> = {
-  sm: { className: "h-9 w-auto", width: 200, height: 44 },
-  md: { className: "h-11 w-auto sm:h-12", width: 240, height: 52 },
-  lg: { className: "h-12 w-auto sm:h-14", width: 280, height: 60 },
+/** Native asset: 566×162 — max-height w CSS skaluje, ratio z atrybutów. */
+const SIZE: Record<BrandLogoSize, string> = {
+  sm: "brand-logo-img brand-logo-img-sm",
+  md: "brand-logo-img brand-logo-img-md",
+  lg: "brand-logo-img brand-logo-img-lg",
 };
 
 type BrandLogoProps = {
@@ -26,28 +24,29 @@ export function BrandLogo({
   className = "",
   label = "MaloHUB - strona główna",
 }: BrandLogoProps) {
-  const dim = SIZE[size];
   const mark = (
     <span className="brand-logo-mark">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/malohub-logo.png"
         alt="MaloHUB"
-        className={dim.className}
-        width={dim.width}
-        height={dim.height}
+        className={SIZE[size]}
+        width={566}
+        height={162}
       />
     </span>
   );
 
   if (href == null) {
-    return <span className={`inline-flex items-center ${className}`.trim()}>{mark}</span>;
+    return (
+      <span className={`brand-logo brand-logo-static ${className}`.trim()}>{mark}</span>
+    );
   }
 
   return (
     <Link
       href={href}
-      className={`inline-flex items-center transition-opacity hover:opacity-80 ${className}`.trim()}
+      className={`brand-logo transition-opacity hover:opacity-80 ${className}`.trim()}
       aria-label={label}
     >
       {mark}

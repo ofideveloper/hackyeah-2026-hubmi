@@ -11,6 +11,7 @@ import { ThreadList } from "@/components/communication/ThreadList";
 import { ThreadView } from "@/components/communication/ThreadView";
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
 import { Toast } from "@/components/Toast";
+import { useAuth } from "@/hooks/useAuth";
 import { useThreads } from "@/hooks/useThreads";
 import {
   contactListingAuthor,
@@ -18,7 +19,6 @@ import {
   createListing,
   deleteListing,
   fetchListings,
-  fetchMe,
   fetchMentors,
   updateMyProfile,
   type Listing,
@@ -27,7 +27,7 @@ import {
   type Sector,
   type User,
 } from "@/lib/api";
-import { clearToken, getToken } from "@/lib/auth";
+import { getToken } from "@/lib/auth";
 import {
   LISTING_KIND_LABEL,
   MENTOR_BIO_MAX,
@@ -228,7 +228,7 @@ function ListingForm({ onCreated }: { onCreated: () => void }) {
 
 export default function ContactPage() {
   const tabsId = useId();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, token, setUser } = useAuth();
   const [tab, setTab] = useState<Tab>("rozmowy");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mentors, setMentors] = useState<Mentor[] | null>(null);
@@ -245,16 +245,11 @@ export default function ContactPage() {
     const fail = (err: unknown) =>
       setError(err instanceof Error ? err.message : "Nie udało się pobrać danych");
     fetchMentors().then(setMentors).catch(fail);
-    fetchListings(getToken()).then(setListings).catch(fail);
-  }, []);
+    fetchListings(token).then(setListings).catch(fail);
+  }, [token]);
 
   useEffect(() => {
     reloadBoard();
-    const token = getToken();
-    if (!token) return;
-    fetchMe(token)
-      .then(setUser)
-      .catch(() => clearToken());
   }, [reloadBoard]);
 
   const shownListings = useMemo(
@@ -271,7 +266,6 @@ export default function ContactPage() {
   const unread = unreadCount(threads ?? []);
 
   async function onCompose(target: Compose, values: { subject: string; body: string }) {
-    const token = getToken();
     if (!token) return;
     const created =
       target.type === "ogloszenie"
@@ -290,7 +284,6 @@ export default function ContactPage() {
   }
 
   async function onDeleteListing(listing: Listing) {
-    const token = getToken();
     if (!token) return;
     if (!window.confirm(`Usunąć ogłoszenie „${listing.title}”?`)) return;
     setError(null);

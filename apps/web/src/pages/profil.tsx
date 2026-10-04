@@ -3,13 +3,12 @@ import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
-import { changeMyPassword, fetchMe, type User } from "@/lib/api";
-import { clearToken, getToken } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
+import { changeMyPassword } from "@/lib/api";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { status, user, token } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -18,19 +17,12 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
+    // Dopiero po bootstrapie AuthProvider — unikaj redirectu przy statusie przejściowym
+    if (status === "loading") return;
+    if (status === "anonymous") {
       void router.replace("/login");
-      return;
     }
-    fetchMe(token)
-      .then(setUser)
-      .catch(() => {
-        clearToken();
-        void router.replace("/login");
-      })
-      .finally(() => setLoading(false));
-  }, [router]);
+  }, [status, router]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,7 +38,6 @@ export default function ProfilePage() {
       return;
     }
 
-    const token = getToken();
     if (!token) {
       void router.replace("/login");
       return;
@@ -66,7 +57,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading || !user) {
+  if (status === "loading" || status === "anonymous" || !user) {
     return (
       <main className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
         <p className="text-[var(--muted)]">Ładowanie…</p>
@@ -83,12 +74,7 @@ export default function ProfilePage() {
       <a href="#tresc" className="skip-link">
         Przejdź do treści
       </a>
-      <SiteHeader
-        width="full"
-        actions={
-          <AppNav current="profil" isAdmin={user.role === "admin"} user={user} />
-        }
-      />
+      <SiteHeader width="full" actions={<AppNav current="profil" />} />
 
       <main id="tresc" className="kb-page mx-auto max-w-7xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
         <header className="animate-fade-up">

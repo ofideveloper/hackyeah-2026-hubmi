@@ -1,8 +1,8 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
-import { fetchMe, type User } from "@/lib/api";
-import { clearToken, getToken } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
+import type { User } from "@/lib/api";
 
 type AdminGate =
   | { status: "loading"; admin: null; error: null }
@@ -12,9 +12,11 @@ type AdminGate =
 /**
  * Chroni podwidoki `/admin/*` — wymaga JWT + role=admin.
  * User bez uprawnień → `/app`, brak tokena → `/login`.
+ * Korzysta z globalnego AuthProvider (bez ponownego fetchMe przy każdej podstronie).
  */
 export function useRequireAdmin() {
   const router = useRouter();
+  const { status, user, logout: authLogout } = useAuth();
   const [gate, setGate] = useState<AdminGate>({
     status: "loading",
     admin: null,
@@ -22,37 +24,34 @@ export function useRequireAdmin() {
   });
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
+    // Czekaj na bootstrap AuthProvider — `anonymous` przed sprawdzeniem tokena = fałszywy logout
+    if (status === "loading") {
+      setGate({ status: "loading", admin: null, error: null });
+      return;
+    }
+
+    if (status === "anonymous") {
+      setGate({ status: "denied", admin: null, error: "Sesja wygasła" });
       void router.replace("/login");
       return;
     }
 
-    let cancelled = false;
-    fetchMe(token)
-      .then((me) => {
-        if (cancelled) return;
-        if (me.role !== "admin") {
-          setGate({ status: "denied", admin: null, error: "Brak uprawnień administratora" });
-          void router.replace("/app");
-          return;
-        }
-        setGate({ status: "ready", admin: me, error: null });
-      })
-      .catch(() => {
-        if (cancelled) return;
-        clearToken();
-        setGate({ status: "denied", admin: null, error: "Sesja wygasła" });
-        void router.replace("/login");
-      });
+    if (!user) {
+      setGate({ status: "loading", admin: null, error: null });
+      return;
+    }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
+    if (user.role !== "admin") {
+      setGate({ status: "denied", admin: null, error: "Brak uprawnień administratora" });
+      void router.replace("/app");
+      return;
+    }
+
+    setGate({ status: "ready", admin: user, error: null });
+  }, [status, user, router]);
 
   function logout() {
-    clearToken();
+    authLogout();
     void router.push("/login");
   }
 

@@ -26,7 +26,7 @@ BFF: `src/pages/api/[...path].ts` → `process.env.API_URL`.
 
 ## Wzorce
 
-- Auth token: `@/lib/auth.ts`
+- Auth token: `@/lib/auth.ts`; sesja usera: `useAuth` / `AuthProvider` (nie wołaj `fetchMe` na każdym widoku)
 - Formularze / panele: `src/components/`
 - Menu zalogowanego: `AppNav` / `LoggedInMenu` (`current=…`) — CTA „Zapytaj opiekuna”, konto w `UserMenu` (profil / admin / wyloguj); strona `/profil`
 - Admin: `AdminShell` + `useRequireAdmin` na `/admin/*` (role=admin); podwidoki w `components/admin/`

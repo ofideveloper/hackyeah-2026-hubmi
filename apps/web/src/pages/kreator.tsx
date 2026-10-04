@@ -11,11 +11,11 @@ import { GrantApplicationForm } from "@/components/creator/GrantApplicationForm"
 import { IdeaAssistant } from "@/components/creator/IdeaAssistant";
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
 import { Toast } from "@/components/Toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
   deleteIdea,
   fetchIdeas,
   fetchKnowledge,
-  fetchMe,
   fetchMyIdeas,
   fetchOpenGrantCalls,
   saveIdea,
@@ -25,9 +25,8 @@ import {
   type IdeaStage,
   type KnowledgeArea,
   type MyIdea,
-  type User,
 } from "@/lib/api";
-import { clearToken, getToken } from "@/lib/auth";
+import { getToken } from "@/lib/auth";
 import { CANVAS_FIELDS, EMPTY_IDEA, formatDate, STAGE_LABEL } from "@/lib/ideas";
 
 const STAGES = Object.keys(STAGE_LABEL) as IdeaStage[];
@@ -63,8 +62,7 @@ function IdeaCard({ idea, children }: { idea: Idea; children?: React.ReactNode }
 }
 
 export default function IdeaCreatorPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
+  const { status, user, token } = useAuth();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [myIdeas, setMyIdeas] = useState<MyIdea[]>([]);
   const [calls, setCalls] = useState<GrantCall[]>([]);
@@ -76,6 +74,7 @@ export default function IdeaCreatorPage() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const closeToast = useCallback(() => setToast(null), []);
+  const authChecked = status !== "loading";
 
   useEffect(() => {
     const fail = (err: unknown) =>
@@ -86,20 +85,19 @@ export default function IdeaCreatorPage() {
     fetchKnowledge()
       .then((data) => setAreas(data.areas))
       .catch(() => undefined);
+  }, []);
 
-    const token = getToken();
-    if (!token) {
-      setAuthChecked(true);
+  useEffect(() => {
+    if (status !== "authenticated" || !token) {
+      setMyIdeas([]);
       return;
     }
-    fetchMe(token)
-      .then(async (me) => {
-        setUser(me);
-        setMyIdeas(await fetchMyIdeas(token));
-      })
-      .catch(() => clearToken())
-      .finally(() => setAuthChecked(true));
-  }, []);
+    fetchMyIdeas(token)
+      .then(setMyIdeas)
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : "Nie udało się pobrać Twoich pomysłów"),
+      );
+  }, [status, token]);
 
   function resetForm() {
     setForm(EMPTY_IDEA);

@@ -2,6 +2,7 @@ import type { AppProps } from "next/app";
 import { Manrope, Sora } from "next/font/google";
 import { useEffect } from "react";
 
+import { AuthProvider } from "@/hooks/useAuth";
 import "@/styles/globals.css";
 
 const body = Manrope({
@@ -29,7 +30,9 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <div className={`${body.variable} ${display.variable}`}>
-      <Component {...pageProps} />
+      <AuthProvider>
+        <Component {...pageProps} />
+      </AuthProvider>
     </div>
   );
 }

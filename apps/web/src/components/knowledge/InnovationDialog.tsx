@@ -9,10 +9,20 @@ type InnovationDialogProps = {
   /** Nazwa znana z listy — nagłówek widać, zanim dojdą szczegóły */
   name: string;
   onClose: () => void;
+  /** Np. „Propozycja opiekuna” — nad kategorią */
+  badge?: string;
+  /** Opis z czatu, gdy szczegół z API jeszcze nie doszedł albo zawiódł */
+  fallbackDescription?: string;
 };
 
 /** Natywny `<dialog>`: pułapka fokusu, Escape i powrót fokusu do karty bez własnego kodu. */
-export function InnovationDialog({ innovationId, name, onClose }: InnovationDialogProps) {
+export function InnovationDialog({
+  innovationId,
+  name,
+  onClose,
+  badge,
+  fallbackDescription,
+}: InnovationDialogProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [detail, setDetail] = useState<InnovationDetail | null>(null);
@@ -40,27 +50,28 @@ export function InnovationDialog({ innovationId, name, onClose }: InnovationDial
     };
   }, [innovationId]);
 
+  const kicker = detail?.category_name || (badge ? null : "Innowacja społeczna");
+
   return (
     <dialog
       ref={dialogRef}
       className="kb-dialog"
       aria-labelledby={titleId}
       onCancel={(event) => {
-        // Escape — zamykamy przez stan rodzica, nie przez zdarzenie `close`
         event.preventDefault();
         onClose();
       }}
       onClick={(event) => {
-        // klik w tło (sam element dialog, nie jego zawartość) zamyka okno
         if (event.target === dialogRef.current) onClose();
       }}
     >
       <div className="kb-dialog-body">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="project-modal-kicker">{detail?.category_name || "Innowacja społeczna"}</p>
+            {badge && <p className="project-modal-badge-inline">{badge}</p>}
+            {kicker && <p className="project-modal-kicker">{kicker}</p>}
             <h2 id={titleId} className="font-display project-modal-title">
-              {name}
+              {detail?.name || name}
             </h2>
           </div>
           <button type="button" className="btn-ghost shrink-0" onClick={onClose}>
@@ -68,21 +79,21 @@ export function InnovationDialog({ innovationId, name, onClose }: InnovationDial
           </button>
         </div>
 
-        {error && (
+        {error && !detail && !fallbackDescription && (
           <p className="text-sm text-[var(--danger)]" role="alert">
             {error}
           </p>
         )}
-        {!detail && !error && (
+        {!detail && !error && !fallbackDescription && (
           <p className="text-sm text-[var(--muted)]" role="status">
             Ładowanie opisu…
           </p>
         )}
 
-        {detail && (
+        {detail ? (
           <>
             {detail.video_url && (
-              <div className="mb-5">
+              <div className="mb-5 mt-4">
                 <VideoEmbed url={detail.video_url} title={detail.name} />
               </div>
             )}
@@ -129,6 +140,19 @@ export function InnovationDialog({ innovationId, name, onClose }: InnovationDial
               </ul>
             )}
           </>
+        ) : (
+          fallbackDescription && (
+            <>
+              {!error && (
+                <p className="mt-2 text-xs text-[var(--muted)]" role="status">
+                  Ładowanie pełnego opisu…
+                </p>
+              )}
+              <p className="mt-3 whitespace-pre-line text-[0.9375rem] leading-relaxed">
+                {fallbackDescription}
+              </p>
+            </>
+          )
         )}
       </div>
     </dialog>

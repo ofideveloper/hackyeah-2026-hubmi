@@ -2,11 +2,12 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 
-import { fetchMe, loginUser } from "@/lib/api";
-import { setToken } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
+import { loginUser } from "@/lib/api";
 
 export function LoginForm() {
   const router = useRouter();
+  const { establishSession } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +20,7 @@ export function LoginForm() {
 
     try {
       const token = await loginUser(email, password);
-      setToken(token);
-      const me = await fetchMe(token);
+      const me = await establishSession(token);
       await router.push(me.role === "admin" ? "/admin" : "/app");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Logowanie nie powiodło się");
@@ -78,10 +78,6 @@ export function LoginForm() {
         Nie masz konta?{" "}
         <Link href="/register" className="text-[var(--accent)] hover:underline">
           Załóż konto
-        </Link>
-        {" · "}
-        <Link href="/" className="text-[var(--accent)] hover:underline">
-          Start
         </Link>
       </p>
     </form>

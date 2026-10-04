@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
-import { HeaderLoginLink } from "@/components/HeaderAuthLinks";
+import { HeaderLoginLink, HeaderRegisterLink } from "@/components/HeaderAuthLinks";
 import { UserMenu } from "@/components/UserMenu";
+import { useAuth } from "@/hooks/useAuth";
 import { fetchConversations, type User } from "@/lib/api";
-import { getToken } from "@/lib/auth";
 import { unreadCount } from "@/lib/communication";
 
 /** Strony z wspólnym menu produktowym — `current` podświetla aktywną pozycję. */
@@ -21,8 +23,119 @@ function navLinkClass(active: boolean): string {
   return active ? "site-header-link site-header-link-active" : "site-header-link";
 }
 
+function drawerLinkClass(active: boolean): string {
+  return active ? "site-header-drawer-link site-header-drawer-link-active" : "site-header-drawer-link";
+}
+
+type NavContentProps = {
+  current?: AppNavPage;
+  unread: number;
+  loggedIn: boolean;
+  isAdmin?: boolean;
+  user?: User | null;
+  onNavigate?: () => void;
+  /** desktop = poziomy pasek; drawer = panel mobilny */
+  variant: "desktop" | "drawer";
+};
+
+function NavContent({
+  current,
+  unread,
+  loggedIn,
+  isAdmin,
+  user,
+  onNavigate,
+  variant,
+}: NavContentProps) {
+  const router = useRouter();
+  const { logout } = useAuth();
+  const linkClass = variant === "drawer" ? drawerLinkClass : navLinkClass;
+  const caretakerHref = loggedIn ? "/app" : "/#opiekun";
+  const caretakerActive = current === "app";
+
+  function handleLogout() {
+    logout();
+    onNavigate?.();
+    void router.push("/");
+  }
+
+  return (
+    <>
+      {NAV_ITEMS.map((item) => {
+        const active = item.id === current;
+        return (
+          <Link
+            key={item.id}
+            href={item.href}
+            className={linkClass(active)}
+            aria-current={active ? "page" : undefined}
+            onClick={onNavigate}
+          >
+            {item.label}
+            {item.id === "kontakt" && unread > 0 ? ` (nowe: ${unread})` : ""}
+          </Link>
+        );
+      })}
+
+      <Link
+        href={caretakerHref}
+        className={
+          variant === "drawer"
+            ? `btn-primary site-header-drawer-cta${caretakerActive ? " site-header-cta-active" : ""}`
+            : caretakerActive
+              ? "btn-primary site-header-cta site-header-cta-active"
+              : "btn-primary site-header-cta"
+        }
+        aria-current={caretakerActive ? "page" : undefined}
+        onClick={onNavigate}
+      >
+        Zapytaj opiekuna
+      </Link>
+
+      {variant === "desktop" && loggedIn && <UserMenu user={user} isAdmin={isAdmin} />}
+
+      {variant === "desktop" && !loggedIn && <HeaderLoginLink />}
+
+      {variant === "drawer" && !loggedIn && (
+        <div className="site-header-drawer-auth">
+          <HeaderLoginLink className="site-header-drawer-auth-btn" />
+          <HeaderRegisterLink className="site-header-drawer-auth-btn" />
+        </div>
+      )}
+
+      {variant === "drawer" && loggedIn && (
+        <div className="site-header-drawer-account">
+          {user && (
+            <p className="site-header-drawer-user">
+              <span className="site-header-drawer-user-name">
+                {user.name} {user.surname}
+              </span>
+              <span className="site-header-drawer-user-email">{user.email}</span>
+            </p>
+          )}
+          <Link
+            href="/profil"
+            className={drawerLinkClass(current === "profil")}
+            aria-current={current === "profil" ? "page" : undefined}
+            onClick={onNavigate}
+          >
+            Profil
+          </Link>
+          {isAdmin && (
+            <Link href="/admin" className="site-header-drawer-link" onClick={onNavigate}>
+              Panel admina
+            </Link>
+          )}
+          <button type="button" className="site-header-drawer-link" onClick={handleLogout}>
+            Wyloguj się
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
 type LoggedInMenuProps = {
-  /** Którą pozycję podświetlić; pomiń na landingu */
   current?: AppNavPage;
   isAdmin?: boolean;
   unreadKontakt?: number;
@@ -30,8 +143,8 @@ type LoggedInMenuProps = {
 };
 
 /**
- * Wspólne menu zalogowanego użytkownika.
- * Linki → wyróżnione „Zapytaj opiekuna” → kółko konta z dropdownem.
+ * Wspólne menu zalogowanego (desktop) — zachowane dla kompatybilności.
+ * Preferuj `AppNav`, które dodaje też wariant mobilny.
  */
 export function LoggedInMenu({
   current,
@@ -39,6 +152,7 @@ export function LoggedInMenu({
   unreadKontakt: unreadProp,
   user,
 }: LoggedInMenuProps) {
+  const { token } = useAuth();
   const [unread, setUnread] = useState(unreadProp ?? 0);
 
   useEffect(() => {
@@ -47,79 +161,25 @@ export function LoggedInMenu({
 
   useEffect(() => {
     if (unreadProp !== undefined) return;
-    const token = getToken();
     if (!token) return;
     fetchConversations(token)
       .then((threads) => setUnread(unreadCount(threads)))
       .catch(() => undefined);
-  }, [unreadProp]);
+  }, [unreadProp, token]);
 
   return (
-    <>
-      {NAV_ITEMS.map((item) => {
-        const active = item.id === current;
-        return (
-          <Link
-            key={item.id}
-            href={item.href}
-            className={navLinkClass(active)}
-            aria-current={active ? "page" : undefined}
-          >
-            {item.label}
-            {item.id === "kontakt" && unread > 0 ? ` (nowe: ${unread})` : ""}
-          </Link>
-        );
-      })}
-      <Link
-        href="/app"
-        className={
-          current === "app" ? "btn-primary site-header-cta site-header-cta-active" : "btn-primary site-header-cta"
-        }
-        aria-current={current === "app" ? "page" : undefined}
-      >
-        Zapytaj opiekuna
-      </Link>
-      <UserMenu user={user} isAdmin={isAdmin} />
-    </>
-  );
-}
-
-type GuestProductNavProps = {
-  current?: AppNavPage;
-};
-
-/** Te same linki produktowe dla gościa — opiekun wyróżniony, potem logowanie. */
-function GuestProductNav({ current }: GuestProductNavProps) {
-  return (
-    <>
-      {NAV_ITEMS.map((item) => {
-        const active = item.id === current;
-        return (
-          <Link
-            key={item.id}
-            href={item.href}
-            className={navLinkClass(active)}
-            aria-current={active ? "page" : undefined}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
-      <Link
-        href="/#opiekun"
-        className={
-          current === "app" ? "btn-primary site-header-cta site-header-cta-active" : "btn-primary site-header-cta"
-        }
-      >
-        Zapytaj opiekuna
-      </Link>
-      <HeaderLoginLink />
-    </>
+    <NavContent
+      current={current}
+      unread={unread}
+      loggedIn
+      isAdmin={isAdmin}
+      user={user}
+      variant="desktop"
+    />
   );
 }
 
 type AppNavProps = {
-  /** Którą pozycję podświetlić; pomiń gdy żadna (np. landing) */
   current?: AppNavPage;
   isAdmin?: boolean;
   unreadKontakt?: number;
@@ -127,27 +187,164 @@ type AppNavProps = {
 };
 
 /**
- * Menu w `SiteHeader` na stronach produktowych i landingu po zalogowaniu.
- * Sam wybiera wariant gość / zalogowany.
+ * Menu produktowe w `SiteHeader` — desktop + hamburger na mobile.
+ * Wariant gość / zalogowany z AuthProvider.
  */
 export function AppNav({ current, isAdmin, unreadKontakt, user }: AppNavProps) {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const router = useRouter();
+  const drawerId = useId();
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const drawerRootRef = useRef<HTMLDivElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { status, user: authUser, isAdmin: authIsAdmin, token } = useAuth();
+
+  const showLoggedIn = status === "authenticated" || (status === "loading" && Boolean(token));
+  const resolvedUser = user ?? authUser;
+  const resolvedAdmin = isAdmin ?? authIsAdmin;
+  const [unread, setUnread] = useState(unreadKontakt ?? 0);
 
   useEffect(() => {
-    setLoggedIn(Boolean(getToken()));
+    setMounted(true);
   }, []);
 
-  if (!loggedIn) {
-    return <GuestProductNav current={current} />;
-  }
+  useEffect(() => {
+    if (unreadKontakt !== undefined) setUnread(unreadKontakt);
+  }, [unreadKontakt]);
+
+  useEffect(() => {
+    if (unreadKontakt !== undefined) return;
+    if (!token || !showLoggedIn) return;
+    fetchConversations(token)
+      .then((threads) => setUnread(unreadCount(threads)))
+      .catch(() => undefined);
+  }, [unreadKontakt, token, showLoggedIn]);
+
+  useEffect(() => {
+    function close() {
+      setOpen(false);
+    }
+    router.events.on("routeChangeStart", close);
+    return () => {
+      router.events.off("routeChangeStart", close);
+    };
+  }, [router.events]);
+
+  useEffect(() => {
+    const root = drawerRootRef.current;
+    if (root) {
+      if (open) root.removeAttribute("inert");
+      else root.setAttribute("inert", "");
+    }
+
+    if (!open) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        menuBtnRef.current?.focus({ preventScroll: true });
+      }
+    }
+
+    // Blokada scrolla bez przesuwania layoutu (scrollbar-gutter: stable na html)
+    document.documentElement.classList.add("nav-drawer-open");
+    document.addEventListener("keydown", onKeyDown);
+
+    const focusable = drawerRef.current?.querySelector<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    focusable?.focus({ preventScroll: true });
+
+    return () => {
+      document.documentElement.classList.remove("nav-drawer-open");
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const shared = {
+    current,
+    unread,
+    loggedIn: showLoggedIn,
+    isAdmin: resolvedAdmin,
+    user: resolvedUser,
+  };
+
+  const drawer =
+    mounted &&
+    createPortal(
+      <div
+        ref={drawerRootRef}
+        className={`site-header-drawer-root${open ? " is-open" : ""}`}
+        aria-hidden={!open}
+      >
+        <button
+          type="button"
+          className="site-header-drawer-backdrop"
+          aria-label="Zamknij menu"
+          tabIndex={open ? 0 : -1}
+          onClick={() => {
+            setOpen(false);
+            menuBtnRef.current?.focus({ preventScroll: true });
+          }}
+        />
+        <div
+          ref={drawerRef}
+          id={drawerId}
+          className="site-header-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu nawigacji"
+        >
+          <div className="site-header-drawer-head">
+            <p className="site-header-drawer-title">Menu</p>
+            <button
+              type="button"
+              className="site-header-drawer-close"
+              aria-label="Zamknij menu"
+              onClick={() => {
+                setOpen(false);
+                menuBtnRef.current?.focus({ preventScroll: true });
+              }}
+            >
+              <span className="site-header-drawer-close-icon" aria-hidden="true" />
+            </button>
+          </div>
+          <nav className="site-header-drawer-nav" aria-label="Menu mobilne">
+            <NavContent {...shared} variant="drawer" onNavigate={() => setOpen(false)} />
+          </nav>
+        </div>
+      </div>,
+      document.body,
+    );
 
   return (
-    <LoggedInMenu
-      current={current}
-      isAdmin={isAdmin}
-      unreadKontakt={unreadKontakt}
-      user={user}
-    />
+    <>
+      <div className="site-header-desktop">
+        <NavContent {...shared} variant="desktop" />
+      </div>
+
+      <div className="site-header-mobile">
+        {showLoggedIn && <UserMenu user={resolvedUser} isAdmin={resolvedAdmin} />}
+        <button
+          ref={menuBtnRef}
+          type="button"
+          className="site-header-menu-btn"
+          aria-expanded={open}
+          aria-controls={drawerId}
+          aria-label={open ? "Zamknij menu" : "Otwórz menu"}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <span className="site-header-menu-icon" aria-hidden="true" data-open={open || undefined}>
+            <span />
+            <span />
+            <span />
+          </span>
+        </button>
+      </div>
+
+      {drawer}
+    </>
   );
 }
 

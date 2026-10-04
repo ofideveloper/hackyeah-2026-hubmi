@@ -4,14 +4,8 @@ import { useEffect, useState } from "react";
 
 import { AssistantChat } from "@/components/AssistantChat";
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
-import {
-  fetchConversations,
-  fetchMe,
-  fetchMyReports,
-  type Report,
-  type User,
-} from "@/lib/api";
-import { clearToken, getToken } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
+import { fetchConversations, fetchMyReports, type Report } from "@/lib/api";
 import { unreadCount } from "@/lib/communication";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -28,36 +22,42 @@ function statusClass(status: string): string {
 
 export default function AppHomePage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { status, user, token } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
   const [unread, setUnread] = useState(0);
   const [focusChat, setFocusChat] = useState(false);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
+    if (status === "loading") return;
+    if (status === "anonymous") {
       void router.replace("/login");
       return;
     }
+    if (!token) return;
 
-    fetchMe(token)
-      .then(async (me) => {
-        setUser(me);
-        const nextReports = await fetchMyReports(token).catch(() => [] as Report[]);
+    let cancelled = false;
+    setLoadingData(true);
+    Promise.all([
+      fetchMyReports(token).catch(() => [] as Report[]),
+      fetchConversations(token).catch(() => []),
+    ])
+      .then(([nextReports, threads]) => {
+        if (cancelled) return;
         setReports(nextReports);
-        const threads = await fetchConversations(token).catch(() => []);
         setUnread(unreadCount(threads));
       })
-      .catch(() => {
-        clearToken();
-        void router.replace("/login");
-      })
-      .finally(() => setLoading(false));
-  }, [router]);
+      .finally(() => {
+        if (!cancelled) setLoadingData(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, token, router]);
 
   useEffect(() => {
-    if (!router.isReady || loading) return;
+    if (!router.isReady || status !== "authenticated" || loadingData) return;
     const hash = router.asPath.includes("#")
       ? router.asPath.slice(router.asPath.indexOf("#") + 1)
       : "";
@@ -69,9 +69,9 @@ export default function AppHomePage() {
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
-  }, [router.isReady, router.asPath, loading]);
+  }, [router.isReady, router.asPath, status, loadingData]);
 
-  if (loading || !user) {
+  if (status === "loading" || status === "anonymous" || !user || loadingData) {
     return (
       <main className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6">
         <p className="text-[var(--muted)]">Ładowanie…</p>
@@ -90,14 +90,7 @@ export default function AppHomePage() {
       </a>
       <SiteHeader
         width="full"
-        actions={
-          <AppNav
-            current="app"
-            isAdmin={user.role === "admin"}
-            unreadKontakt={unread}
-            user={user}
-          />
-        }
+        actions={<AppNav current="app" unreadKontakt={unread} />}
       />
 
       <main className="kb-page mx-auto max-w-3xl px-6 pb-20 pt-10 sm:px-10 sm:pt-14">
@@ -120,7 +113,6 @@ export default function AppHomePage() {
             userName={user.full_name || `${user.name} ${user.surname}`.trim()}
             onReportCreated={(report) => {
               setReports((prev) => [report, ...prev.filter((r) => r.id !== report.id)]);
-              const token = getToken();
               if (token) {
                 void fetchMyReports(token)
                   .then(setReports)

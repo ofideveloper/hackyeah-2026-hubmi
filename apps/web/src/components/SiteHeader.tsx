@@ -19,7 +19,7 @@ const WIDTH: Record<SiteHeaderWidth, string> = {
 
 /**
  * Wspólny pasek nawigacji MaloHUB — ten sam układ na LP, auth i w aplikacji.
- * Menu: `AppNav` / `LoggedInMenu` albo `GuestHeaderActions`.
+ * Menu: zwykle `AppNav` (desktop + hamburger); na auth może być `GuestHeaderActions`.
  */
 export function SiteHeader({
   actions,
@@ -28,13 +28,9 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   return (
     <header className="site-header">
-      <div
-        className={`mx-auto flex w-full items-center justify-between gap-3 px-6 py-4 sm:px-10 ${WIDTH[width]}`}
-      >
+      <div className={`site-header-inner mx-auto w-full ${WIDTH[width]}`}>
         <BrandLogo size={logoSize} />
-        <nav className="flex flex-wrap items-center justify-end gap-2" aria-label="Główne">
-          {actions}
-        </nav>
+        <div className="site-header-nav">{actions}</div>
       </div>
     </header>
   );

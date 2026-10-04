@@ -8,16 +8,14 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { AppNav, SiteHeader } from "@/components/SiteHeader";
 import { SolutionDialog } from "@/components/tester/SolutionDialog";
 import { Toast } from "@/components/Toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
-  fetchMe,
   fetchMyTesting,
   fetchTestSolutions,
   type MyTesting,
   type TestSolution,
   type TestTargetKind,
-  type User,
 } from "@/lib/api";
-import { clearToken, getToken } from "@/lib/auth";
 import { formatDate } from "@/lib/ideas";
 import {
   KIND_LABEL,
@@ -39,7 +37,7 @@ const NO_TESTING: MyTesting = { signups: [], reviews: [] };
 
 export default function TesterPage() {
   const searchId = useId();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, token } = useAuth();
   const [solutions, setSolutions] = useState<TestSolution[] | null>(null);
   const [mine, setMine] = useState<MyTesting>(NO_TESTING);
   const [query, setQuery] = useState("");
@@ -54,17 +52,15 @@ export default function TesterPage() {
     const fail = (err: unknown) =>
       setError(err instanceof Error ? err.message : "Nie udało się pobrać danych");
     fetchTestSolutions().then(setSolutions).catch(fail);
-    const token = getToken();
-    if (token) fetchMyTesting(token).then(setMine).catch(fail);
-  }, []);
+    if (token) {
+      fetchMyTesting(token).then(setMine).catch(fail);
+    } else {
+      setMine(NO_TESTING);
+    }
+  }, [token]);
 
   useEffect(() => {
     reload();
-    const token = getToken();
-    if (!token) return;
-    fetchMe(token)
-      .then(setUser)
-      .catch(() => clearToken());
   }, [reload]);
 
   // zmiana filtrów zaczyna listę od początku

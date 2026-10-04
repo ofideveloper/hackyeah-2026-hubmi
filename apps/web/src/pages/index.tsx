@@ -4,9 +4,8 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 import { AssistantChat } from "@/components/AssistantChat";
-import { AppNav, GuestHeaderActions, SiteHeader } from "@/components/SiteHeader";
-import { fetchMe } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { AppNav, SiteHeader } from "@/components/SiteHeader";
+import { useAuth } from "@/hooks/useAuth";
 
 const steps = [
   {
@@ -68,18 +67,12 @@ function isOpiekunHash(asPath: string): boolean {
 
 export default function HomePage() {
   const router = useRouter();
+  const { status, user, token } = useAuth();
   const [focusChat, setFocusChat] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [userName, setUserName] = useState<string | null>(null);
-
-  useEffect(() => {
-    const token = getToken();
-    setLoggedIn(Boolean(token));
-    if (!token) return;
-    fetchMe(token)
-      .then((me) => setUserName(me.full_name || `${me.name} ${me.surname}`.trim()))
-      .catch(() => undefined);
-  }, []);
+  const loggedIn = status === "authenticated" || (status === "loading" && Boolean(token));
+  const userName = user
+    ? user.full_name || `${user.name} ${user.surname}`.trim()
+    : null;
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -111,11 +104,7 @@ export default function HomePage() {
       </Head>
 
       <div className="min-h-screen overflow-hidden">
-        <SiteHeader
-          width="full"
-          logoSize="lg"
-          actions={loggedIn ? <AppNav /> : <GuestHeaderActions />}
-        />
+        <SiteHeader width="full" logoSize="lg" actions={<AppNav />} />
 
         <main id="tresc" tabIndex={-1}>
           <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-12 sm:px-10 sm:pb-28 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">

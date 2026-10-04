@@ -2,8 +2,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { fetchMe, type User } from "@/lib/api";
-import { clearToken, getToken } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
+import type { User } from "@/lib/api";
 
 function initials(user: User): string {
   const a = (user.name || "").trim().charAt(0);
@@ -13,7 +13,7 @@ function initials(user: User): string {
 }
 
 type UserMenuProps = {
-  /** Jeśli strona już ma użytkownika — unikamy drugiego fetcha */
+  /** Opcjonalny override — domyślnie bierze z AuthProvider */
   user?: User | null;
   isAdmin?: boolean;
 };
@@ -28,26 +28,10 @@ export function UserMenu({ user: userProp, isAdmin: isAdminProp }: UserMenuProps
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(userProp ?? null);
-  const [isAdmin, setIsAdmin] = useState(Boolean(isAdminProp ?? userProp?.role === "admin"));
+  const { user: authUser, isAdmin: authIsAdmin, logout: authLogout } = useAuth();
 
-  useEffect(() => {
-    if (userProp) {
-      setUser(userProp);
-      setIsAdmin(userProp.role === "admin");
-      return;
-    }
-    if (isAdminProp !== undefined) setIsAdmin(isAdminProp);
-
-    const token = getToken();
-    if (!token) return;
-    fetchMe(token)
-      .then((me) => {
-        setUser(me);
-        if (isAdminProp === undefined) setIsAdmin(me.role === "admin");
-      })
-      .catch(() => undefined);
-  }, [userProp, isAdminProp]);
+  const user = userProp ?? authUser;
+  const isAdmin = isAdminProp ?? authIsAdmin;
 
   useEffect(() => {
     if (!open) return;
@@ -75,7 +59,7 @@ export function UserMenu({ user: userProp, isAdmin: isAdminProp }: UserMenuProps
   }, [open]);
 
   function logout() {
-    clearToken();
+    authLogout();
     setOpen(false);
     void router.push("/");
   }

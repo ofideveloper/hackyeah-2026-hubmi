@@ -348,12 +348,57 @@ AssistantAction = Literal["develop", "unconventional", "canvas", "visualize", "a
 class IdeaDraft(BaseModel):
     """Stan formularza — fiszka nie musi być jeszcze zapisana."""
 
-    name: str = Field(default="", max_length=160)
-    description: str = Field(default="", max_length=1000)
-    essence: str = Field(default="", max_length=2000)
-    audience: str = Field(default="", max_length=1000)
+    name: str = Field(default="")
+    description: str = Field(default="")
+    essence: str = Field(default="")
+    audience: str = Field(default="")
     stage: IdeaStage = IdeaStage.CONCEPT
     canvas: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("name")
+    @classmethod
+    def _name_len(cls, value: str) -> str:
+        if len(value) > 160:
+            raise ValueError("Tytuł może mieć co najwyżej 160 znaków.")
+        return value
+
+    @field_validator("description")
+    @classmethod
+    def _description_len(cls, value: str) -> str:
+        if len(value) > 1000:
+            raise ValueError("Krótki opis może mieć co najwyżej 1000 znaków.")
+        return value
+
+    @field_validator("essence")
+    @classmethod
+    def _essence_len(cls, value: str) -> str:
+        if len(value) > 2000:
+            raise ValueError(
+                "Istota pomysłu może mieć co najwyżej 2000 znaków — "
+                "skróć pole albo nie wstawiaj całej długiej odpowiedzi asystenta."
+            )
+        return value
+
+    @field_validator("audience")
+    @classmethod
+    def _audience_len(cls, value: str) -> str:
+        if len(value) > 1000:
+            raise ValueError("Pole „Dla kogo” może mieć co najwyżej 1000 znaków.")
+        return value
+
+    @field_validator("canvas")
+    @classmethod
+    def _canvas_fields(cls, value: dict[str, str]) -> dict[str, str]:
+        cleaned: dict[str, str] = {}
+        for key, text in value.items():
+            if key not in IDEA_CANVAS_KEYS:
+                continue
+            if len(text) > IDEA_CANVAS_FIELD_MAX:
+                raise ValueError(
+                    f"Pole canvy może mieć co najwyżej {IDEA_CANVAS_FIELD_MAX} znaków."
+                )
+            cleaned[key] = text
+        return cleaned
 
 
 class AssistantRequest(BaseModel):

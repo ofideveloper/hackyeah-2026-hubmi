@@ -29,9 +29,32 @@ def test_admin_adds_innovation_to_catalog(admin_client, category, db):
     )
 
     assert response.status_code == 201
-    stored = db.get(m.ActualProject, uuid.UUID(response.json()["id"]))
+    body = response.json()
+    stored = db.get(m.ActualProject, uuid.UUID(body["id"]))
     assert stored.name == "Teleopieka"
     assert stored.category_id == category.id
+    assert stored.brief  # przy LLM_PROVIDER=fake — heurystyka z opisu
+    assert "Opaska SOS" in stored.brief
+
+
+def test_admin_create_uses_llm_brief_when_available(admin_client, category, db, llm, settings):
+    settings(llm_provider="openai")
+    llm.reply("Dla seniorów samotnych. Problem: brak szybkiej pomocy. Rozwiązanie: opaska SOS.")
+
+    response = admin_client.post(
+        "/actual-projects",
+        json={
+            "category_id": str(category.id),
+            "name": "Teleopieka",
+            "description": "Długi opis innowacji o opiece zdalnej dla osób starszych w domu.",
+        },
+    )
+
+    assert response.status_code == 201
+    stored = db.get(m.ActualProject, uuid.UUID(response.json()["id"]))
+    assert "opaska SOS" in stored.brief
+    assert len(llm.calls) == 1
+    assert "Teleopieka" in llm.calls[0][1]["content"]
 
 
 def test_innovation_needs_existing_category(admin_client):

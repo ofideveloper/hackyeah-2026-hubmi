@@ -22,7 +22,11 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 | PATCH | `/categories/{id}` | Zmień nazwę |
 | DELETE | `/categories/{id}` | Usuń (409, gdy używana przez projekt / propozycję) |
 | POST | `/projects/` | Utwórz projekt (`category_id`, `name`, `description`) — zalogowany |
-| POST | `/chat` | Body: `{ message, chat_id? }` → `{ reply, chat_id, status, suggested_projects[], new_project_draft?, similar? }` (JWT opcjonalny; limit wywołań) |
+| POST | `/actual-projects` | Dodaj innowację do katalogu (admin); serwer buduje `brief` (LLM lub heurystyka) do promptu czatu |
+| POST | `/chat` | Body: `{ message, chat_id? }` → `{ reply, chat_id, status, suggested_projects[], suggested_ideas[], new_project_draft?, similar? }`. `suggested_ideas` = zatwierdzone fiszki Kreatora dobrane po słowach kluczowych (+ bonus kategorii); `similar` = tylko liczby podobnych potrzeb |
+
+| POST | `/chat/interest` | Podbicie zainteresowania `{ idea_id \| project_id, chat_id? }` → `{ interest_count, already_boosted }` (JWT opcjonalny; bez konta wymagane `chat_id`) |
+| POST | `/chat/personalize` | Rozbudowana sugestia AI („Dla Ciebie”) do modala czatu: `{ project_id, chat_id? }` → `{ advice }` (Markdown: sytuacja, dopasowanie, scenariusze, kroki, ograniczenia; wyższa temperatura niż match katalogu; limit jak czat) |
 | POST | `/project-proposals` | Propozycja z czatu, gdy baza nie ma odpowiedzi (zalogowany) |
 | GET / POST | `/admin/project-proposals`, `…/{id}/accept`, `…/{id}/reject` | Kolejka propozycji (admin); akceptacja i odrzucenie zmieniają tylko status |
 | GET | `/admin/inbox` | Liczniki rzeczy czekających na decyzję (admin) |
@@ -64,7 +68,9 @@ Stack: FastAPI + SQLModel w `apps/api/app` (`main.py`, `models.py`, `routes/`, `
 
 **LLM:** `/chat/` woła API zgodne z OpenAI (`LLM_BASE_URL` + `LLM_API_KEY` + `LLM_MODEL`; domyślnie OpenRouter). Na Vercel klucz musi być w env serwisu **api**. Pakiet `app/llm/` i router `app/routes/llm.py` to **legacy**.
 
-Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProject`, `ProposalOfNewProject`, `Benefice`, `ProjectBenefices`, `ChatHistory`, `GrantCall`, `GrantApplication`, `TesterSignup`, `SolutionReview`, `Conversation`, `Message`, `PartnershipListing`.
+Modele (`app/models.py`, id = UUID): `User`, `CategoriesOfProjects`, `ActualProject` (`description` = pełny opis; `brief` = skrót do promptu czatu), `ProposalOfNewProject`, `Benefice`, `ProjectBenefices`, `ChatHistory`, `GrantCall`, `GrantApplication`, `TesterSignup`, `SolutionReview`, `Conversation`, `Message`, `PartnershipListing`.
+
+**Czat / katalog:** `POST /chat/` dokleja do system promptu wyłącznie `brief` (nazwa, ID, kategoria, skrót), **posortowane wg słów kluczowych z rozmowy** (max ~40). Pełny `description` wraca w `suggested_projects` po `match`. Przy `POST /actual-projects` i scrapie serwer buduje `brief` (LLM przy prawdziwym kluczu, inaczej heurystyka z sekcji ROPS); start API uzupełnia puste `brief` (`backfill_project_briefs`).
 
 **Kreator pomysłów** (`app/routes/ideas.py`): fiszka to wiersz `ProposalOfNewProject` (`name` = tytuł, `description` = krótki opis) z dopisanymi kolumnami `essence`, `audience`, `stage`, `canvas` (dokładane przy starcie w `_add_missing_columns`); schematy wejścia/wyjścia są lokalne w routerze. Asystent używa `ask_llm` z `routes/chat.py` (te same `LLM_*`). Wizualizacja to SVG z modelu tekstowego — API przepuszcza tylko pojedynczy `<svg>` bez skryptów / linków / obrazów, FE renderuje go wyłącznie w `<img>` (data URI). Pola canvy: `IDEA_CANVAS_KEYS` w `models.py` (etykiety w `apps/web/src/lib/ideas.ts`).
 

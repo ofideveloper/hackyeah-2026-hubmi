@@ -52,7 +52,7 @@ function getErrorMessage(error: AuthError): string {
     return error.detail;
   }
   if (Array.isArray(error.detail) && error.detail[0]?.msg) {
-    return error.detail[0].msg;
+    return error.detail[0].msg.replace(/^Value error,\s*/i, "");
   }
   return "Something went wrong";
 }
@@ -204,6 +204,7 @@ export type ChatProject = {
   name: string;
   description: string;
   unit_name: string | null;
+  interest_count?: number;
 };
 
 export type NewProjectDraft = {
@@ -211,11 +212,20 @@ export type NewProjectDraft = {
   description: string;
 };
 
-/** Podobne przypadki — tylko liczby i zatwierdzone fiszki, bez cudzych opisów. */
+/** Zatwierdzona fiszka z Kreatora — sugerowana w czacie do podbicia. */
+export type ChatIdea = {
+  id: string;
+  name: string;
+  description: string;
+  stage: IdeaStage;
+  interest_count: number;
+};
+
+/** Podobne przypadki — liczby potrzeb (fiszki są w `suggested_ideas`). */
 export type SimilarCases = {
   area_name: string | null;
   needs_last_30_days: number;
-  related_ideas: { id: string; name: string; description: string; stage: IdeaStage }[];
+  related_ideas: ChatIdea[];
 };
 
 export type ChatReply = {
@@ -224,6 +234,7 @@ export type ChatReply = {
   chat_id: string | null;
   mode: ChatMode;
   suggested_projects: ChatProject[];
+  suggested_ideas: ChatIdea[];
   /** Brak dopasowania w bazie — UI otwiera okno zgłoszenia nowego projektu. */
   new_project_draft: NewProjectDraft | null;
   project_proposal: ProjectProposal | null;
@@ -264,17 +275,77 @@ export async function sendChatMessage(
       : "clarify";
   return {
     reply: data.reply,
-    similar: data.similar ?? null,
+    similar: data.similar
+      ? {
+          area_name: data.similar.area_name ?? null,
+          needs_last_30_days: data.similar.needs_last_30_days ?? 0,
+          related_ideas: (data.similar.related_ideas ?? []).map((idea) => ({
+            ...idea,
+            interest_count: idea.interest_count ?? 0,
+          })),
+        }
+      : null,
     chat_id: data.chat_id ?? null,
     new_project_draft: data.new_project_draft ?? null,
     mode: resolvedMode,
     suggested_projects: data.suggested_projects ?? [],
+    suggested_ideas: (data.suggested_ideas ?? []).map((idea) => ({
+      ...idea,
+      interest_count: idea.interest_count ?? 0,
+    })),
     project_proposal: data.project_proposal ?? null,
     location_request:
       data.location_request === "area" || data.location_request === "gps"
         ? data.location_request
         : null,
   };
+}
+
+export type InterestBoostReply = {
+  target_kind: "idea" | "project";
+  target_id: string;
+  interest_count: number;
+  already_boosted: boolean;
+};
+
+/** Podbicie zainteresowania projektem katalogu albo fiszką z podobnych przypadków. */
+export async function boostChatInterest(input: {
+  chat_id?: string | null;
+  idea_id?: string;
+  project_id?: string;
+}): Promise<InterestBoostReply> {
+  const res = await fetch(`${API_BASE}/chat/interest`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...(input.chat_id ? { chat_id: input.chat_id } : {}),
+      ...(input.idea_id ? { idea_id: input.idea_id } : {}),
+      ...(input.project_id ? { project_id: input.project_id } : {}),
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+  return (await res.json()) as InterestBoostReply;
+}
+
+/** Sugestia AI: jak projekt pasuje do sytuacji z tej rozmowy (modal czatu). */
+export async function personalizeChatProject(input: {
+  project_id: string;
+  chat_id?: string | null;
+}): Promise<{ advice: string }> {
+  const res = await fetch(`${API_BASE}/chat/personalize`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project_id: input.project_id,
+      ...(input.chat_id ? { chat_id: input.chat_id } : {}),
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+  return (await res.json()) as { advice: string };
 }
 
 export async function createProjectProposal(
@@ -628,10 +699,27 @@ export async function askIdeaAssistant(
   draft: IdeaInput,
   question = "",
 ): Promise<IdeaAssistantReply> {
-  const { name, description, essence, audience, stage, canvas } = draft;
-  const idea = { name, description, essence, audience, stage, canvas };
+  // Limity jak w `IdeaDraft` API — wstawienie długiej odpowiedzi AI do „Istoty”
+  // omija maxLength inputu (setState), więc tu przycinamy przed żądaniem.
+  const idea = {
+    name: draft.name.slice(0, 160),
+    description: draft.description.slice(0, 1000),
+    essence: draft.essence.slice(0, 2000),
+    audience: draft.audience.slice(0, 1000),
+    stage: draft.stage,
+    canvas: Object.fromEntries(
+      Object.entries(draft.canvas).map(([key, value]) => [key, value.slice(0, 1500)]),
+    ),
+  };
   return jsonOrThrow(
-    await fetch(`${API_BASE}/ideas/assistant`, jsonRequest("POST", { action, idea, question })),
+    await fetch(
+      `${API_BASE}/ideas/assistant`,
+      jsonRequest("POST", {
+        action,
+        idea,
+        question: question.slice(0, 1000),
+      }),
+    ),
   );
 }
 

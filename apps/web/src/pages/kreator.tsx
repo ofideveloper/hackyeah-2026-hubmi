@@ -28,7 +28,7 @@ import {
   type KnowledgeArea,
   type MyIdea,
 } from "@/lib/api";
-import { CANVAS_FIELDS, EMPTY_IDEA, formatDate, STAGE_LABEL } from "@/lib/ideas";
+import { CANVAS_FIELDS, EMPTY_IDEA, IDEA_FIELD_MAX, formatDate, STAGE_LABEL } from "@/lib/ideas";
 
 const STAGES = Object.keys(STAGE_LABEL) as IdeaStage[];
 
@@ -169,7 +169,10 @@ export default function IdeaCreatorPage() {
     const patch = Object.fromEntries(
       keys
         .filter((key) => suggested[key]?.trim() && !form[key]?.trim())
-        .map((key) => [key, suggested[key]!.trim()]),
+        .map((key) => [
+          key,
+          suggested[key]!.trim().slice(0, IDEA_FIELD_MAX[key]),
+        ]),
     ) as Partial<IdeaInput>;
     const filled = Object.keys(patch).length;
     if (filled > 0) {
@@ -181,7 +184,9 @@ export default function IdeaCreatorPage() {
         const next = { ...prev };
         for (const key of keys) {
           const value = suggested[key]?.trim();
-          if (value && !prev[key]?.trim()) next[key] = value;
+          if (value && !prev[key]?.trim()) {
+            next[key] = value.slice(0, IDEA_FIELD_MAX[key]);
+          }
         }
         return next;
       });
@@ -207,7 +212,10 @@ export default function IdeaCreatorPage() {
           ...Object.fromEntries(
             CANVAS_FIELDS.filter(
               (field) => suggested[field.key]?.trim() && !prev.canvas[field.key]?.trim(),
-            ).map((field) => [field.key, suggested[field.key]]),
+            ).map((field) => [
+              field.key,
+              suggested[field.key]!.slice(0, IDEA_FIELD_MAX.canvas),
+            ]),
           ),
         },
       }));

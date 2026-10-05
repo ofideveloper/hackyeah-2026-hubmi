@@ -7,6 +7,16 @@ export const STAGE_LABEL: Record<IdeaStage, string> = {
   dobra_praktyka: "Dobra praktyka",
 };
 
+/** Limity pól fiszki — zgodne z `IdeaDraft` / `IdeaInput` w API. */
+export const IDEA_FIELD_MAX = {
+  name: 160,
+  description: 1000,
+  essence: 2000,
+  audience: 1000,
+  canvas: 1500,
+  question: 1000,
+} as const;
+
 /** Pola Canvy innowacji społecznej — klucze zgodne z `IDEA_CANVAS_KEYS` w API. */
 export const CANVAS_FIELDS: { key: string; label: string; hint: string }[] = [
   { key: "problem", label: "Problem", hint: "Jaką trudność i czyją chcesz rozwiązać?" },
@@ -28,6 +38,23 @@ export const EMPTY_IDEA: IdeaInput = {
   category_id: null,
   canvas: {},
 };
+
+/** Przycina fiszkę do limitów API — np. po wstawieniu długiej odpowiedzi asystenta. */
+export function clipIdeaForApi(idea: IdeaInput): IdeaInput {
+  return {
+    ...idea,
+    name: idea.name.slice(0, IDEA_FIELD_MAX.name),
+    description: idea.description.slice(0, IDEA_FIELD_MAX.description),
+    essence: idea.essence.slice(0, IDEA_FIELD_MAX.essence),
+    audience: idea.audience.slice(0, IDEA_FIELD_MAX.audience),
+    canvas: Object.fromEntries(
+      Object.entries(idea.canvas).map(([key, value]) => [
+        key,
+        value.slice(0, IDEA_FIELD_MAX.canvas),
+      ]),
+    ),
+  };
+}
 
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("pl-PL");

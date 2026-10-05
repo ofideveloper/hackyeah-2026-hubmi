@@ -2,8 +2,10 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from ..config import get_settings
 from ..dependencies.auth import CurrentAdminDep, CurrentUserDep, get_current_user
 from ..dependencies.db import SessionDep
+from ..dependencies.logger import get_logger
 from ..models import (
     ActualProject,
     ActualProjectCreate,
@@ -12,11 +14,27 @@ from ..models import (
     ProjectProposalCreate,
     ProjectProposalPublic,
 )
+from ..project_brief import brief_from_description, refine_brief_with_llm
+from .chat import ask_llm
 
 router = APIRouter(
     tags=["projects"],
     dependencies=[Depends(get_current_user)],
 )
+logger = get_logger(__name__)
+
+
+async def _brief_for_new_project(name: str, description: str) -> str:
+    """Skrót do czatu: LLM przy prawdziwym kluczu, inaczej szybka heurystyka."""
+    heuristic = brief_from_description(name, description)
+    settings = get_settings()
+    provider = (settings.llm_provider or "").strip().lower()
+    key = (settings.llm_api_key or "").strip()
+    if provider == "fake" or not key:
+        return heuristic
+    return await refine_brief_with_llm(
+        ask_llm, name, description, fallback=heuristic
+    )
 
 
 @router.post(
@@ -31,7 +49,7 @@ async def create_actual_project(
 ):
     """Dodaje innowację do katalogu ActualProject (obok scrapera).
 
-    Tylko admin: opisy z katalogu trafiają do promptu czatu.
+    Tylko admin: skrót `brief` trafia do promptu czatu, pełny opis — do kart FE.
     """
     if session.get(CategoriesOfProjects, payload.category_id) is None:
         raise HTTPException(
@@ -39,6 +57,8 @@ async def create_actual_project(
             detail="Kategoria projektu nie istnieje",
         )
     project = ActualProject.model_validate(payload)
+    # Klient może przesłać pusty brief — zawsze budujemy po stronie serwera.
+    project.brief = await _brief_for_new_project(project.name, project.description)
     session.add(project)
     session.commit()
     session.refresh(project)

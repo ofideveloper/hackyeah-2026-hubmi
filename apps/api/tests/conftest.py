@@ -220,8 +220,12 @@ def make_project(db, make_category):
     def factory(
         category: m.CategoriesOfProjects | None = None, **fields
     ) -> m.ActualProject:
+        from app.project_brief import brief_from_description
+
         fields.setdefault("name", f"Innowacja {uuid.uuid4().hex[:6]}")
         fields.setdefault("description", "1. Na czym polega\nOpis rozwiązania.")
+        if "brief" not in fields:
+            fields["brief"] = brief_from_description(fields["name"], fields["description"])
         return _save(
             db, m.ActualProject(category_id=(category or make_category()).id, **fields)
         )
@@ -405,7 +409,9 @@ class FakeLLM:
         self.replies.extend(replies)
         return self
 
-    async def __call__(self, messages: list[dict[str, str]]) -> str:
+    async def __call__(
+        self, messages: list[dict[str, str]], **_kwargs: object
+    ) -> str:
         self.calls.append(messages)
         answer = self.replies.popleft() if self.replies else self.default
         if isinstance(answer, Exception):
@@ -417,7 +423,12 @@ class FakeLLM:
 def llm(monkeypatch) -> FakeLLM:
     """Podmienia model we wszystkich modułach, które importują `ask_llm` po nazwie."""
     fake = FakeLLM()
-    for module in ("app.routes.chat", "app.routes.ideas", "app.routes.middleman"):
+    for module in (
+        "app.routes.chat",
+        "app.routes.ideas",
+        "app.routes.middleman",
+        "app.routes.projects",
+    ):
         monkeypatch.setattr(f"{module}.ask_llm", fake)
     return fake
 

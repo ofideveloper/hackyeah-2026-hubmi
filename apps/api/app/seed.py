@@ -15,6 +15,7 @@ from .models import (
     RoleEnum,
     User,
 )
+from .project_brief import brief_from_description
 from .scripts.scrape_rops import refresh_new_projects
 
 logger = get_logger(__name__)
@@ -128,10 +129,30 @@ def _load_innovation_seed(session: Session) -> int:
             session.add(category)
             session.flush()
         for project in entry["projects"]:
-            session.add(ActualProject(category_id=category.id, **project))
+            data = dict(project)
+            if not (data.get("brief") or "").strip():
+                data["brief"] = brief_from_description(
+                    data.get("name", ""), data.get("description", "")
+                )
+            session.add(ActualProject(category_id=category.id, **data))
             added += 1
     session.commit()
     return added
+
+
+def backfill_project_briefs(session: Session) -> int:
+    """Uzupełnia puste `brief` heurystyką (bez LLM) — istniejące bazy po migracji kolumny."""
+    updated = 0
+    for project in session.exec(select(ActualProject)).all():
+        if (project.brief or "").strip():
+            continue
+        project.brief = brief_from_description(project.name, project.description)
+        session.add(project)
+        updated += 1
+    if updated:
+        session.commit()
+        logger.info("Uzupełniono skróty brief dla %s projektów", updated)
+    return updated
 
 
 def _scrape_innovation_library() -> None:

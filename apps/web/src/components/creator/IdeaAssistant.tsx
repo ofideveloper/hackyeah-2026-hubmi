@@ -10,6 +10,7 @@ import {
   type IdeaAssistantReply,
   type IdeaInput,
 } from "@/lib/api";
+import { IDEA_FIELD_MAX } from "@/lib/ideas";
 
 const ACTIONS: {
   action: IdeaAssistantAction;
@@ -341,15 +342,18 @@ export function IdeaAssistant({
   function applyReplyToEssence() {
     const text = result?.reply?.trim();
     if (!text) return;
+    const clipped = text.slice(0, IDEA_FIELD_MAX.essence);
     const filled = onDraft({
       name: "",
       description: "",
-      essence: text,
+      essence: clipped,
       audience: "",
     });
     setNotice(
       filled > 0
-        ? "Wstawiono odpowiedź asystenta do pola „Istota pomysłu”. Możesz to cofnąć."
+        ? text.length > IDEA_FIELD_MAX.essence
+          ? `Wstawiono początek odpowiedzi do „Istoty pomysłu” (max ${IDEA_FIELD_MAX.essence} znaków). Możesz to cofnąć.`
+          : "Wstawiono odpowiedź asystenta do pola „Istota pomysłu”. Możesz to cofnąć."
         : "Pole „Istota pomysłu” jest już wypełnione — wyczyść je, aby wstawić odpowiedź.",
     );
     if (filled > 0) setCanDismissResult(false);

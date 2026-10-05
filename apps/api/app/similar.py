@@ -6,13 +6,15 @@ PL_ASCII = str.maketrans("ąćęłńóśźż", "acelnoszz")
 WORD_RE = re.compile(r"[a-z]{4,}")
 # Rdzeń = pierwsze znaki słowa: wystarcza, by zrównać polskie odmiany („seniorów” ~ „seniorzy”).
 STEM_LEN = 5
-MIN_SHARED = 2
+MIN_SHARED = 3
 STOPWORDS = frozenset(
     stem[:STEM_LEN]
     for stem in (
         "ktory ktora ktore jest beda bedzie oraz albo tylko takze rowniez bardzo "
         "przez przed jako jego jeszcze moze mozna potrzeba potrzebuje problem pomoc "
-        "wsparcie osoba osoby osob ludzie brak dotyczy sprawa projekt rozwiazanie"
+        "wsparcie osoba osoby osob ludzie brak dotyczy sprawa projekt rozwiazanie "
+        "codzien codziennie opieka opiece opiekun zdrow zdrowie choroba chorob "
+        "uzytkownik zglaszam szukam szuka "
     ).split()
 )
 

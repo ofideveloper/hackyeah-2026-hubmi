@@ -138,6 +138,8 @@ class ActualProjectBase(SQLModel):
     category_id: uuid.UUID = Field(foreign_key="categoriesofprojects.id")
     name: str = Field(min_length=1)
     description: str = Field(sa_type=Text)
+    # Skrót do promptu czatu (dla kogo / problem / rozwiązanie); pełny opis zostaje w `description`.
+    brief: str = Field(default="", sa_type=Text)
     # Uzupełniane przez scraper: strona źródłowa, film i folder (PDF) o innowacji.
     source_url: str | None = None
     video_url: str | None = None
@@ -204,6 +206,24 @@ class ChatHistory(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     first_question: str = Field(sa_type=Text)
     all_conversation: str = Field(sa_type=Text)
+
+
+class InterestBoost(SQLModel, table=True):
+    """Podbicie zainteresowania projektem katalogu albo fiszką — priority z czatu."""
+
+    __tablename__: str = "interest_boost"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: str = Field(
+        default_factory=lambda: datetime.now().isoformat(), index=True
+    )
+    chat_id: uuid.UUID | None = Field(
+        default=None, foreign_key="chathistory.id", index=True
+    )
+    user_id: uuid.UUID | None = Field(default=None, foreign_key="user.id", index=True)
+    # "project" = ActualProject, "idea" = ProposalOfNewProject
+    target_kind: str = Field(max_length=16, index=True)
+    target_id: uuid.UUID = Field(index=True)
 
 
 class RateHit(SQLModel, table=True):

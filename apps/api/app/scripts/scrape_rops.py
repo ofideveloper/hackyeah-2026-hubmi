@@ -26,6 +26,7 @@ from sqlmodel import Session, select
 from ..dependencies.db import create_db_and_tables, engine
 from ..dependencies.logger import get_logger
 from ..models import ActualProject, CategoriesOfProjects
+from ..project_brief import brief_from_description
 
 logger = get_logger(__name__)
 
@@ -237,8 +238,10 @@ def save(category_name: str, projects: list[ScrapedProject]) -> tuple[int, int]:
                     ActualProject.name == scraped.name,
                 )
             ).first()
+            brief = brief_from_description(scraped.name, scraped.description)
             fields = {
                 "description": scraped.description,
+                "brief": brief,
                 "source_url": scraped.url,
                 "video_url": scraped.video_url,
                 "folder_url": scraped.folder_url,

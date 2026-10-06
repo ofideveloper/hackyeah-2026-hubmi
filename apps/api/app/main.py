@@ -21,6 +21,7 @@ from .routes import (
     users,
 )
 from .seed import (
+    backfill_project_briefs,
     seed_admin_user,
     seed_demo_user,
     seed_innovation_library,
@@ -92,6 +93,7 @@ async def on_startup():
         seed_demo_user(session)
         seed_knowledge_resources(session)
         seed_innovation_library(session)
+        backfill_project_briefs(session)
     logger.info("API gotowe")
 
 

@@ -75,16 +75,33 @@ def extract_project_ids(content: str) -> tuple[str, list[str]]:
 
 
 def extract_new_project_draft(content: str) -> tuple[str, NewProjectDraft | None]:
-    """Wyciąga pierwszy blok nowej propozycji projektu i czyści tekst dla UI."""
-    match = NEW_PROJECT_BLOCK_RE.search(content)
-    if not match:
-        return content, None
+    """Wyciąga pierwszy blok nowej propozycji projektu i czyści tekst dla UI.
 
-    body = match.group(1).strip()
-    draft = _parse_new_project_body(body)
-    cleaned = NEW_PROJECT_BLOCK_RE.sub("", content, count=1)
-    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
-    return cleaned, draft
+    Akceptuje pełny marker `[[hubmi-new-project]]…[[/hubmi-new-project]]` albo
+    luźne pola NAME:/DESCRIPTION: (modele często gubią znaczniki).
+    """
+    match = NEW_PROJECT_BLOCK_RE.search(content)
+    if match:
+        body = match.group(1).strip()
+        draft = _parse_new_project_body(body)
+        cleaned = NEW_PROJECT_BLOCK_RE.sub("", content, count=1)
+        cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+        return cleaned, draft
+
+    # Luźny format bez znaczników — tylko gdy widać oba pola.
+    if re.search(r"(?im)^name\s*:", content) and re.search(
+        r"(?im)^description\s*:", content
+    ):
+        draft = _parse_new_project_body(content)
+        if draft is not None:
+            cleaned = re.sub(r"(?im)^name\s*:.*$", "", content)
+            cleaned = re.sub(r"(?im)^description\s*:.*$", "", cleaned)
+            # Opis bywa wieloliniowy — obetnij linie aż do następnego „nagłówka”/końca.
+            # _parse już zebrał opis; z tekstu UI usuń typowe linie pól.
+            cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+            return cleaned, draft
+
+    return content, None
 
 
 def _parse_new_project_body(body: str) -> NewProjectDraft | None:

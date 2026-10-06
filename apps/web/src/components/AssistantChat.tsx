@@ -18,7 +18,9 @@ import { ProjectPreviewModal } from "@/components/ProjectPreviewModal";
 import { ProjectSuggestionCards } from "@/components/ProjectSuggestionCards";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  boostChatInterest,
   sendChatMessage,
+  type ChatIdea,
   type ChatProject,
   type LocationRequestKind,
   type NewProjectDraft,
@@ -34,11 +36,14 @@ export type ChatMessage = {
   content: string;
   timestamp: Date;
   suggestedProjects?: ChatProject[];
+  suggestedIdeas?: ChatIdea[];
   similar?: SimilarCases | null;
   newProjectDraft?: NewProjectDraft | null;
   projectProposal?: ProjectProposal | null;
   locationRequest?: LocationRequestKind | null;
   locationResolved?: boolean;
+  /** Treść ostatniej wiadomości użytkownika — do „Spróbuj ponownie” przy błędzie API. */
+  retryText?: string;
 };
 
 const CARETAKER = "Twój interaktywny asystent";
@@ -59,8 +64,129 @@ function needsLabel(count: number): string {
   return `${count} ${few ? "podobne potrzeby" : "podobnych potrzeb"}`;
 }
 
-/** Podobne przypadki: ile osób zgłosiło to samo i jakie pomysły już nad tym pracują. */
-function SimilarCasesNote({ similar }: { similar: SimilarCases }) {
+/** Zasugerowane projekty z przyciskiem podbicia — bez dublowania w „podobnych”. */
+function SuggestedProjectsWithBoost({
+  projects,
+  chatId,
+  onOpen,
+  onProjectsChange,
+}: {
+  projects: ChatProject[];
+  chatId: string | null;
+  onOpen: (project: ChatProject) => void;
+  onProjectsChange: (next: ChatProject[]) => void;
+}) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function boost(projectId: string) {
+    if (busyId) return;
+    setBusyId(projectId);
+    try {
+      const result = await boostChatInterest({
+        chat_id: chatId,
+        project_id: projectId,
+      });
+      onProjectsChange(
+        projects.map((project) =>
+          project.id === result.target_id
+            ? { ...project, interest_count: result.interest_count }
+            : project,
+        ),
+      );
+    } catch {
+      // cicho — podbicie jest opcjonalne; błąd nie blokuje przeglądania
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <ProjectSuggestionCards
+      projects={projects}
+      onOpen={onOpen}
+      busyId={busyId}
+      onBoost={boost}
+    />
+  );
+}
+
+/** Zatwierdzone pomysły z Kreatora — podbicie bez otwierania katalogu ROPS. */
+function SuggestedIdeasWithBoost({
+  ideas,
+  chatId,
+  onIdeasChange,
+}: {
+  ideas: ChatIdea[];
+  chatId: string | null;
+  onIdeasChange: (next: ChatIdea[]) => void;
+}) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!ideas.length) return null;
+
+  async function boost(ideaId: string) {
+    if (busyId) return;
+    setBusyId(ideaId);
+    setError(null);
+    try {
+      const result = await boostChatInterest({
+        chat_id: chatId,
+        idea_id: ideaId,
+      });
+      onIdeasChange(
+        ideas.map((idea) =>
+          idea.id === result.target_id
+            ? { ...idea, interest_count: result.interest_count }
+            : idea,
+        ),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nie udało się podbić");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div className="w-full">
+      <ProjectSuggestionCards
+        projects={ideas.map((idea) => ({
+          id: idea.id,
+          name: idea.name,
+          description: idea.description,
+          unit_name: "Pomysł z Kreatora",
+          interest_count: idea.interest_count,
+        }))}
+        label="Zatwierdzone pomysły"
+        busyId={busyId}
+        onBoost={boost}
+      />
+      <Link
+        href="/kreator#pomysly"
+        className="kb-link mt-2 inline-block text-[0.8125rem]"
+      >
+        Zobacz pomysły w Kreatorze
+      </Link>
+      {error && (
+        <p className="mt-2 text-[0.8125rem] text-[var(--danger, #b42318)]" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Podobne przypadki — kompaktowo: liczba potrzeb (fiszki są w osobnej sekcji). */
+function SimilarCasesNote({
+  similar,
+}: {
+  similar: SimilarCases;
+}) {
+  if (similar.needs_last_30_days <= 0) {
+    return null;
+  }
+
   return (
     <div
       className="project-draft-note"
@@ -68,34 +194,10 @@ function SimilarCasesNote({ similar }: { similar: SimilarCases }) {
       aria-label="Podobne przypadki"
     >
       <p className="project-draft-note-label">Podobne przypadki</p>
-      {similar.needs_last_30_days > 0 && (
-        <p className="project-draft-note-text mt-1.5">
-          W ostatnich 30 dniach inni zgłosili{" "}
-          {needsLabel(similar.needs_last_30_days)}
-          {similar.area_name ? ` w obszarze „${similar.area_name}”` : ""}.
-        </p>
-      )}
-      {similar.related_ideas.length > 0 && (
-        <>
-          <p className="project-draft-note-text mt-1.5">
-            Pomysły, nad którymi ktoś już pracuje:
-          </p>
-          <ul className="mt-1 list-disc space-y-1 pl-5 text-[0.8125rem] leading-snug">
-            {similar.related_ideas.map((idea) => (
-              <li key={idea.id}>
-                <span className="font-semibold">{idea.name}</span>
-                {idea.description ? ` — ${idea.description.slice(0, 120)}` : ""}
-              </li>
-            ))}
-          </ul>
-          <Link
-            href="/kreator#pomysly"
-            className="kb-link mt-2 inline-block text-[0.8125rem]"
-          >
-            Zobacz pomysły w Kreatorze
-          </Link>
-        </>
-      )}
+      <p className="project-draft-note-text mt-1.5">
+        W ostatnich 30 dniach: {needsLabel(similar.needs_last_30_days)}
+        {similar.area_name ? ` w obszarze „${similar.area_name}”` : ""}.
+      </p>
     </div>
   );
 }
@@ -166,8 +268,8 @@ function welcomeMessage(guestMode: boolean): ChatMessage {
     id: "welcome",
     role: "assistant",
     content: guestMode
-      ? `Miło Cię widzieć. Opisz sprawę własnymi słowami — pomogę znaleźć kierunek albo gotowe rozwiązanie.`
-      : `Miło Cię widzieć. Jestem Twoim interaktywnym asystentem. Opisz, co się dzieje — razem pomyślimy nad rozwiązaniem.`,
+      ? `Miło Cię widzieć. Opisz sprawę własnymi słowami - pomogę znaleźć kierunek albo gotowe rozwiązanie.`
+      : `Miło Cię widzieć. Jestem Twoim interaktywnym asystentem. Opisz, co się dzieje - razem pomyślimy nad rozwiązaniem.`,
     timestamp: new Date(),
   };
 }
@@ -228,7 +330,6 @@ export function AssistantChat({
   async function submitMessage(text: string) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-
     if (!guestMode && !canUseSession) return;
 
     const history = messages
@@ -252,12 +353,56 @@ export function AssistantChat({
     };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
-    setBusy(true);
+    await requestAssistantReply(trimmed, history);
+  }
 
+  /** Ponawia ostatnią nieudaną wiadomość — bez nowego bąbelka usera i bez resetu chat_id. */
+  async function retryFailed(errorId: string) {
+    if (busy) return;
+    if (!guestMode && !canUseSession) return;
+
+    const errorMsg = messages.find((m) => m.id === errorId);
+    const retryText = errorMsg?.retryText?.trim();
+    if (!retryText) return;
+
+    const withoutError = messages.filter((m) => m.id !== errorId);
+    let lastUserIndex = -1;
+    for (let i = withoutError.length - 1; i >= 0; i -= 1) {
+      const row = withoutError[i];
+      if (row.role === "user" && row.content === retryText) {
+        lastUserIndex = i;
+        break;
+      }
+    }
+    const historySource =
+      lastUserIndex >= 0 ? withoutError.slice(0, lastUserIndex) : withoutError;
+    const history = historySource
+      .filter(
+        (m) =>
+          m.id !== "welcome" &&
+          (m.role === "user" || m.role === "assistant") &&
+          m.content.trim(),
+      )
+      .slice(-24)
+      .map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
+
+    setMessages(withoutError);
+    await requestAssistantReply(retryText, history);
+  }
+
+  async function requestAssistantReply(
+    trimmed: string,
+    history: { role: "user" | "assistant"; content: string }[],
+  ) {
+    setBusy(true);
     try {
       const {
         reply,
         suggested_projects,
+        suggested_ideas,
         project_proposal,
         location_request,
         chat_id,
@@ -265,15 +410,15 @@ export function AssistantChat({
         similar,
       } = await sendChatMessage(trimmed, history, null, chatId);
       setChatId(chat_id);
-      const replyId = `a-${Date.now()}`;
       setMessages((prev) => [
         ...prev,
         {
-          id: replyId,
+          id: `a-${Date.now()}`,
           role: "assistant",
           content: reply,
           timestamp: new Date(),
           suggestedProjects: suggested_projects,
+          suggestedIdeas: suggested_ideas,
           similar,
           newProjectDraft: new_project_draft,
           projectProposal: project_proposal,
@@ -291,6 +436,7 @@ export function AssistantChat({
               ? err.message
               : "Nie udało się uzyskać odpowiedzi",
           timestamp: new Date(),
+          retryText: trimmed,
         },
       ]);
     } finally {
@@ -403,6 +549,9 @@ export function AssistantChat({
           const hasProjects =
             message.role === "assistant" &&
             (message.suggestedProjects?.length ?? 0) > 0;
+          const hasIdeas =
+            message.role === "assistant" &&
+            (message.suggestedIdeas?.length ?? 0) > 0;
           return (
             <div
               key={message.id}
@@ -446,10 +595,47 @@ export function AssistantChat({
                     />
                   </div>
 
+                  {message.role === "error" && message.retryText && (
+                    <button
+                      type="button"
+                      className="btn-ghost mt-2 self-start text-[0.8125rem]"
+                      disabled={busy}
+                      onClick={() => void retryFailed(message.id)}
+                    >
+                      Spróbuj ponownie
+                    </button>
+                  )}
+
                   {hasProjects && (
-                    <ProjectSuggestionCards
+                    <SuggestedProjectsWithBoost
                       projects={message.suggestedProjects!}
+                      chatId={chatId}
                       onOpen={setPreview}
+                      onProjectsChange={(next) => {
+                        setMessages((prev) =>
+                          prev.map((row) =>
+                            row.id === message.id
+                              ? { ...row, suggestedProjects: next }
+                              : row,
+                          ),
+                        );
+                      }}
+                    />
+                  )}
+
+                  {hasIdeas && (
+                    <SuggestedIdeasWithBoost
+                      ideas={message.suggestedIdeas!}
+                      chatId={chatId}
+                      onIdeasChange={(next) => {
+                        setMessages((prev) =>
+                          prev.map((row) =>
+                            row.id === message.id
+                              ? { ...row, suggestedIdeas: next }
+                              : row,
+                          ),
+                        );
+                      }}
                     />
                   )}
 
@@ -606,6 +792,7 @@ export function AssistantChat({
       {preview && (
         <ProjectPreviewModal
           project={preview}
+          chatId={chatId}
           onClose={() => setPreview(null)}
         />
       )}

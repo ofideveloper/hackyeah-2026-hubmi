@@ -452,7 +452,10 @@ def test_assistant_needs_something_to_work_with(user_client, llm, changes, detai
     [
         pytest.param({"action": "translate"}, id="nieznana-akcja"),
         pytest.param({"question": "x" * 1001}, id="pytanie-za-dlugie"),
-        pytest.param({"idea": {"name": "x" * 161}}, id="tytul-za-dlugi"),
+        pytest.param({"idea": {**DRAFT, "name": "x" * 161}}, id="tytul-za-dlugi"),
+        pytest.param(
+            {"idea": {**DRAFT, "essence": "x" * 2001}}, id="istota-za-dluga"
+        ),
     ],
 )
 def test_assistant_rejects_invalid_payload(user_client, llm, changes):
@@ -461,6 +464,9 @@ def test_assistant_rejects_invalid_payload(user_client, llm, changes):
     )
 
     assert response.status_code == 422
+    if changes.get("idea", {}).get("essence") == "x" * 2001:
+        detail = str(response.json()["detail"])
+        assert "2000" in detail
 
 
 def test_assistant_calls_are_rate_limited_per_user(user_client, other_client, llm, settings):

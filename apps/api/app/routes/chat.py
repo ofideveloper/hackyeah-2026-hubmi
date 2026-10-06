@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, col, func, select
 
 from ..config import get_settings
+from ..dependencies.auth import OptionalUserDep
 from ..dependencies.db import SessionDep
 from ..dependencies.logger import get_logger
 from ..dependencies.rate_limit import ChatLimitDep
@@ -23,17 +24,19 @@ from ..llm.suggestions import (
     extract_new_project_draft,
     extract_project_ids,
 )
+from ..project_brief import brief_from_description
+from ..similar import is_similar, keywords
 from ..models import (
     ActualProject,
     CategoriesOfProjects,
     ChatHistory,
     IdeaStage,
+    InterestBoost,
     NeedSignal,
     ProposalOfNewProject,
     StatusEnum,
 )
 # from ..scripts.scrape_rops import refresh_new_projects
-from ..similar import is_similar, keywords
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 logger = get_logger(__name__)
@@ -62,6 +65,11 @@ CHAT_TURNS_MAX = 60  # wiadomości obu stron łącznie
 SIMILAR_DAYS = 30
 SIMILAR_IDEAS = 3
 SIMILAR_SCAN = 300  # tyle ostatnich wpisów porównujemy słowami kluczowymi
+# Fiszki bywają krótkie („zajęcia seniorzy Wieliczka”) — próg niższy niż przy potrzebach.
+IDEA_MIN_SHARED = 2
+
+# Do promptu: najpierw trafienia słów kluczowych, maks. tyle wpisów (reszta i tak w bazie).
+CATALOG_PROMPT_MAX = 40
 
 
 class LLMError(Exception):
@@ -90,7 +98,9 @@ def _llm_config() -> tuple[str, str, str]:
     return base, key, model
 
 
-async def ask_llm(messages: list[dict[str, str]]) -> str:
+async def ask_llm(
+    messages: list[dict[str, str]], *, temperature: float = 0.2
+) -> str:
     """Pyta model; przy błędzie czeka 3–7 s i ponawia (łącznie 1 + LLM_RETRIES prób)."""
     base, key, model = _llm_config()
     if not key:
@@ -102,7 +112,9 @@ async def ask_llm(messages: list[dict[str, str]]) -> str:
 
     for attempt in range(LLM_RETRIES + 1):
         try:
-            return await _ask_llm_once(messages, base=base, key=key, model=model)
+            return await _ask_llm_once(
+                messages, base=base, key=key, model=model, temperature=temperature
+            )
         except LLMError as exc:
             if attempt == LLM_RETRIES:
                 logger.warning(
@@ -128,15 +140,24 @@ async def ask_llm(messages: list[dict[str, str]]) -> str:
 
 
 async def _ask_llm_once(
-    messages: list[dict[str, str]], *, base: str, key: str, model: str
+    messages: list[dict[str, str]],
+    *,
+    base: str,
+    key: str,
+    model: str,
+    temperature: float = 0.2,
 ) -> str:
     try:
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(
                 f"{base}/chat/completions",
                 headers={"Authorization": f"Bearer {key}"},
-                # Niska temperatura: odpowiedzi mają trzymać się katalogu.
-                json={"model": model, "messages": messages, "temperature": 0.2},
+                # Domyślnie niska temperatura (katalog czatu); personalizacja może podnieść.
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "temperature": temperature,
+                },
             )
     except httpx.HTTPError as exc:
         raise LLMError(f"brak połączenia z {base} ({type(exc).__name__})") from exc
@@ -172,6 +193,7 @@ class SuggestedProject(BaseModel):
     unit_name: str | None = (
         None  # kategoria katalogu — FE pokazuje ją w miejscu jednostki
     )
+    interest_count: int = 0
 
 
 class NewProjectDraftPublic(BaseModel):
@@ -187,10 +209,11 @@ class RelatedIdea(BaseModel):
     name: str
     description: str
     stage: IdeaStage
+    interest_count: int = 0
 
 
 class SimilarCases(BaseModel):
-    """Podobne przypadki — wyłącznie liczby i zatwierdzone fiszki, bez cudzych opisów."""
+    """Podobne przypadki — liczby i zatwierdzone fiszki (bez dublowania kart katalogu)."""
 
     area_name: str | None = None
     needs_last_30_days: int = 0
@@ -202,6 +225,8 @@ class ChatReply(BaseModel):
     chat_id: uuid.UUID
     status: ChatStatus = "clarify"
     suggested_projects: list[SuggestedProject] = Field(default_factory=list)
+    # Zatwierdzone fiszki z Kreatora dopasowane do rozmowy (osobno od katalogu ROPS).
+    suggested_ideas: list[RelatedIdea] = Field(default_factory=list)
     # Ustawione tylko przy „no-match” — FE otwiera okno zgłoszenia nowego projektu.
     new_project_draft: NewProjectDraftPublic | None = None
     similar: SimilarCases | None = None
@@ -223,20 +248,29 @@ Zanim oznaczysz odpowiedź jako DOPASOWANIE, sprawdź projekt względem potrzeby
    - Mama, tata, dorosły, senior, pracownik ≠ dziecko, uczeń, młodzież, przedszkole.
    - „Rodzina” w nazwie kategorii NIE usprawiedliwia polecenia programu dla dzieci, gdy sprawa dotyczy dorosłego (np. „moja mama ma autyzm”).
    - Opiekun/rodzic szukający wsparcia dla siebie albo dla dorosłego bliskiego ≠ warsztaty językowe / zajęcia dla dzieci.
+   - Choroba / stan zdrowia wymieniony przez użytkownika (np. cukrzyca) = ta sama grupa, jeśli katalog wprost mówi o osobach z tą chorobą / tym stanem.
 2. **Ten sam problem / potrzeba** — nie wystarczy luźne podobieństwo (niepełnosprawność, „wsparcie”, „rodzina”, edukacja). Opis projektu musi realnie adresować zgłoszoną sytuację.
-3. W razie wątpliwości wybierz BRAK W BAZIE albo DOPRECYZOWANIE — nigdy „prawie pasuje”.
+   - Gdy użytkownik mówi ogólnikowo „mam problemy z X” / „choruję na X”, a w katalogu jest projekt dla osób z X (albo rozwiązujący typowy problem przy X, np. przechowywanie insuliny przy cukrzycy) — to jest DOPASOWANIE, nie brak w bazie.
+3. W razie wątpliwości: jeśli w katalogu widać wyraźne trafienie słowne (ta sama choroba, lek, grupa) — wybierz DOPASOWANIE. Jeśli nie ma żadnego takiego trafienia i nie wiadomo, czego szuka użytkownik — DOPRECYZOWANIE. BRAK W BAZIE tylko wtedy, gdy potrzeba jest jasna, a katalog naprawdę nie ma odpowiedzi.
 
 Przykłady błędów (zakazane):
 - „mama ma autyzm” → program dla dzieci / młodzieży / logopedia szkolna
 - samotny senior → klub młodzieżowy
 - przemoc domowa wobec dorosłej → projekt wyłącznie o dzieciach w kryzysie szkolnym
 
+Przykłady poprawne:
+- „mam problemy z cukrzycą” → projekt dla osób z cukrzycą / na insulinę / chłodzenie leków
+- „senior samotny w domu” → teleopieka / klub dla seniorów (nie dla młodzieży)
+
 ## Trzy możliwe odpowiedzi
 Każda Twoja odpowiedź należy do dokładnie jednego z trzech przypadków.
 
-1. DOPASOWANIE — w katalogu jest projekt spełniający **oba** kryteria powyżej (odbiorcy + problem). Wskaż od 1 do 3 projektów, od najlepiej dopasowanego. Dla każdego podaj pogrubioną nazwę, jedno–dwa zdania dlaczego pasuje do **tej** konkretnej osoby i potrzeby (cytując fakty z opisu w katalogu), oraz znacznik [[hubmi-project:ID]] z identyfikatorem przepisanym z katalogu. Ten przypadek obejmuje też pytania o szczegóły projektu poleconego wcześniej.
+1. DOPASOWANIE — w katalogu jest projekt spełniający **oba** kryteria powyżej (odbiorcy + problem). Wskaż od 1 do 3 projektów, od najlepiej dopasowanego. Dla każdego podaj pogrubioną nazwę, jedno–dwa zdania dlaczego pasuje do **tej** konkretnej osoby i potrzeby (cytując fakty z opisu w katalogu), oraz znacznik [[hubmi-project:ID]] z identyfikatorem przepisanym z katalogu. Ten przypadek obejmuje też:
+   - pytania o szczegóły wcześniej poleconego projektu (dla kogo jest, wiek, czy mogę skorzystać, jak działa),
+   - pytania o projekty / podobne przypadki już wskazane w tej rozmowie.
+   Gdy użytkownik pyta, czy może skorzystać (np. ma 20 lat, a projekt jest dla seniorów) — odpowiedz wprost na podstawie skrótu w katalogu i zostaw status match z tym samym znacznikiem projektu; nie wybieraj BRAK W BAZIE.
 
-2. DOPRECYZOWANIE — z rozmowy nie da się jeszcze ustalić, czego użytkownik potrzebuje (powitanie, ogólnik typu „potrzebuję pomocy”, brak informacji, kogo dotyczy sprawa albo jakiego wsparcia szuka), albo wiadomość nie dotyczy szukania rozwiązań społecznych. Zadaj jedno konkretne pytanie (kogo dotyczy, jaki wiek/rola, jakiego wsparcia brakuje), albo krótko wyjaśnij, w czym możesz pomóc. Nie wymieniaj wtedy projektów.
+2. DOPRECYZOWANIE — z rozmowy nie da się jeszcze ustalić, czego użytkownik potrzebuje (powitanie, ogólnik typu „potrzebuję pomocy”, brak informacji, kogo dotyczy sprawa albo jakiego wsparcia szuka), albo wiadomość nie dotyczy szukania rozwiązań społecznych. Zadaj jedno konkretne pytanie (kogo dotyczy, jaki wiek/rola, jakiego wsparcia brakuje), albo krótko wyjaśnij, w czym możesz pomóc. Nie wymieniaj wtedy projektów. Gdy użytkownik pyta tylko „jakie to projekty?” o wcześniej pokazane podobne przypadki — status clarify (karty są w aplikacji), nie no-match.
 
 3. BRAK W BAZIE — potrzeba jest wystarczająco jasna (wiadomo kogo i czego dotyczy), ale żaden projekt nie spełnia obu kryteriów. Nie naciągaj dopasowania kategorią ani słowem-kluczem. Napisz jednym zdaniem, że w bazie nie ma wystarczająco trafnego rozwiązania, i dołącz szkic nowego projektu zbudowany wyłącznie z tego, co powiedział użytkownik:
 [[hubmi-new-project]]
@@ -250,6 +284,7 @@ Ostatnią linią każdej odpowiedzi jest dokładnie jeden znacznik statusu:
 Znaczniki w podwójnych nawiasach są odczytywane przez aplikację i niewidoczne dla użytkownika — nie omawiaj ich w treści.
 
 ## KATALOG
+Poniżej skróty projektów (dla kogo / problem / rozwiązanie), **posortowane od najbardziej podobnych słowami kluczowymi do rozmowy**. Pełne opisy aplikacja pokazuje użytkownikowi po dopasowaniu — Ty bazujesz wyłącznie na tych skrótach i nazwach. Przeszukaj je pod kątem dosłownych trafień (choroba, lek, grupa, problem).
 {projects}"""
 
 NO_MATCH_REPLY = (
@@ -257,7 +292,29 @@ NO_MATCH_REPLY = (
     "pasujące do tej potrzeby. Możesz zgłosić ją jako propozycję nowego projektu; przygotowałem szkic do uzupełnienia."
 )
 
+FOLLOWUP_CLARIFY_REPLY = (
+    "Projekty z tej rozmowy są na kartach pod wcześniejszą odpowiedzią — możesz je "
+    "otworzyć i oznaczyć, że też Cię interesują (podbicie zainteresowania). "
+    "Napisz, którego rozwiązania dotyczy Twoje pytanie, albo czego dokładnie szukasz."
+)
+
+# Pytania w stylu „jakie to projekty?” — wtedy wolno podpowiedzieć o kartach.
+LIST_PROJECTS_RE = re.compile(
+    r"\b(jakie|które|ktore)\b.*\b(projekty|rozwiązania|rozwiazania|propozycje)\b"
+    r"|\b(pokaż|pokaz|wymień|wymien|wypisz)\b.*\b(projekty|je)\b",
+    re.IGNORECASE,
+)
+
 STATUS_RE = re.compile(r"\[\[hubmi-status:(match|clarify|no-match)\]\]", re.IGNORECASE)
+
+# Model opisuje szkic w prozie bez statusu / markerów — i tak otwieramy CTA zgłoszenia.
+SKETCH_HINT_RE = re.compile(
+    r"szkic\s+(nowego\s+)?projektu|"
+    r"propozycj[aeę]\s+nowego\s+projektu|"
+    r"zgłosi[ćc]\s+.+\s+jako\s+propozycj|"
+    r"nie\s+(znalazłem|mam).{0,40}(bazie|katalogu)",
+    re.IGNORECASE,
+)
 
 # Scraper w czacie wyłączony — odkomentuj, żeby przywrócić dociąganie katalogu przy „no-match”.
 # Dociąganie nowych danych ze źródła — najwyżej raz na ten okres.
@@ -289,9 +346,56 @@ def load_catalog(session: Session) -> list[tuple[ActualProject, str]]:
     )
 
 
+def catalog_brief(project: ActualProject) -> str:
+    """Skrót do promptu — zapisany `brief` albo heurystyka z pełnego opisu."""
+    stored = (project.brief or "").strip()
+    if stored:
+        return stored
+    return brief_from_description(project.name, project.description)
+
+
+def rank_catalog_for_turns(
+    catalog: list[tuple[ActualProject, str]], turns: list[dict[str, str]]
+) -> list[tuple[ActualProject, str]]:
+    """Sortuje katalog wg wspólnych słów kluczowych z wiadomości użytkownika.
+
+    Model lepiej widzi trafienia na początku listy; przy dużym katalogu ucinamy do
+    `CATALOG_PROMPT_MAX` (najpierw score > 0, potem uzupełnienie).
+    """
+    wanted = keywords(
+        " ".join(turn["text"] for turn in turns if turn.get("role") == "user")
+    )
+    if not wanted:
+        return catalog
+
+    scored: list[tuple[int, str, ActualProject, str]] = []
+    for project, category in catalog:
+        text = f"{project.name} {category} {catalog_brief(project)}"
+        score = len(wanted & keywords(text))
+        scored.append((score, project.name, project, category))
+    scored.sort(key=lambda row: (-row[0], row[1].casefold()))
+
+    if len(scored) <= CATALOG_PROMPT_MAX:
+        return [(project, category) for _score, _name, project, category in scored]
+
+    hits = [
+        (project, category)
+        for score, _name, project, category in scored
+        if score > 0
+    ][:CATALOG_PROMPT_MAX]
+    if len(hits) >= CATALOG_PROMPT_MAX:
+        return hits
+    rest = [
+        (project, category)
+        for score, _name, project, category in scored
+        if score == 0
+    ]
+    return hits + rest[: CATALOG_PROMPT_MAX - len(hits)]
+
+
 def build_system_prompt(catalog: list[tuple[ActualProject, str]]) -> str:
     projects = "\n\n".join(
-        f"### {project.name}\nID: {project.id}\nKategoria: {category}\n{project.description}"
+        f"### {project.name}\nID: {project.id}\nKategoria: {category}\n{catalog_brief(project)}"
         for project, category in catalog
     )
     return PROMPT.format(projects=projects or "(katalog jest pusty)")
@@ -322,7 +426,9 @@ def judge_reply(raw: str, catalog: list[tuple[ActualProject, str]]) -> Verdict:
 
     declared = status_match.group(1).lower() if status_match else None
     status: ChatStatus
-    if declared == "no-match" or (declared == "match" and not projects):
+    if draft is not None and not projects:
+        status = "no-match"
+    elif declared == "no-match" or (declared == "match" and not projects):
         status = "no-match"
     elif projects and declared != "clarify":
         status = "match"
@@ -337,6 +443,8 @@ def judge_reply(raw: str, catalog: list[tuple[ActualProject, str]]) -> Verdict:
         )
     if status != "match":
         projects = []
+    if status == "match":
+        draft = None
     return Verdict(status, text.strip(), raw, projects, draft)
 
 
@@ -363,10 +471,12 @@ async def ask_about_catalog(
     session: Session, turns: list[dict[str, str]]
 ) -> tuple[Verdict, list[tuple[ActualProject, str]]]:
     catalog = await asyncio.to_thread(load_catalog, session)
+    prompt_catalog = rank_catalog_for_turns(catalog, turns)
     raw = await ask_llm(
-        [{"role": "system", "content": build_system_prompt(catalog)}]
+        [{"role": "system", "content": build_system_prompt(prompt_catalog)}]
         + [{"role": turn["role"], "content": turn["text"]} for turn in turns]
     )
+    # Werdykt względem pełnego katalogu — ID spoza shortlisty i tak odrzucimy.
     return judge_reply(raw, catalog), catalog
 
 
@@ -397,11 +507,67 @@ async def continue_conversation(
     #         # zostaje pierwsza ocena
     #         logger.warning("Ponowne pytanie po odświeżeniu katalogu nieudane: %s", exc)
 
-    if verdict.status == "no-match":
-        verdict.reply = NO_MATCH_REPLY
-        verdict.raw = f"{NO_MATCH_REPLY}\n[[hubmi-status:no-match]]"
+    prior_match = any(
+        turn.get("role") == "assistant"
+        and "[[hubmi-status:match]]" in (turn.get("text") or "").lower()
+        for turn in turns[:-1]
+    )
+    # Model bywa gadatliwy o „szkicu” bez markerów — i tak otwórz CTA zgłoszenia.
+    if (
+        verdict.status != "match"
+        and verdict.draft is None
+        and SKETCH_HINT_RE.search(verdict.reply or "")
+    ):
+        verdict = Verdict(
+            "no-match",
+            verdict.reply,
+            verdict.raw,
+            [],
+            NewProjectDraft(name="", description=message),
+        )
+
+    if verdict.status == "no-match" and prior_match and verdict.draft is None:
+        # Dopytanie o wcześniej wskazane projekty — bez kasowania kontekstu na „brak w bazie”.
+        # Gdy jest draft, to świadomy intake nowego projektu (zostaw no-match + CTA).
+        model_text = (verdict.reply or "").strip()
+        useless = (
+            not model_text
+            or model_text == NO_MATCH_REPLY
+            or model_text.startswith("W naszej bazie nie mam")
+            or len(model_text) < 40
+        )
+        if LIST_PROJECTS_RE.search(message):
+            text = FOLLOWUP_CLARIFY_REPLY
+        elif useless:
+            text = (
+                "Chodzi o projekty wskazane wcześniej w tej rozmowie (karty pod odpowiedzią). "
+                "Doprecyzuj proszę, którego rozwiązania dotyczy pytanie — albo napisz, "
+                "czego dokładnie szukasz."
+            )
+        else:
+            text = model_text
+        if verdict.projects:
+            verdict = Verdict(
+                "match",
+                text,
+                f"{text}\n[[hubmi-status:match]]",
+                verdict.projects,
+                None,
+            )
+        else:
+            verdict = Verdict(
+                "clarify",
+                text,
+                f"{text}\n[[hubmi-status:clarify]]",
+                [],
+                None,
+            )
+    elif verdict.status == "no-match":
+        # Krótki stały komunikat + szkic w polu `new_project_draft` (karta CTA w FE).
         if verdict.draft is None:
             verdict.draft = NewProjectDraft(name="", description=message)
+        verdict.reply = NO_MATCH_REPLY
+        verdict.raw = f"{NO_MATCH_REPLY}\n[[hubmi-status:no-match]]"
     turns.append({"role": "assistant", "text": verdict.raw})
 
     if chat is None:
@@ -434,30 +600,90 @@ def record_need(session: Session, chat_id: uuid.UUID, verdict: Verdict) -> None:
         session.commit()
 
 
-def _related_idea(idea: ProposalOfNewProject) -> RelatedIdea:
+def _interest_counts(
+    session: Session, kind: str, ids: list[uuid.UUID]
+) -> dict[uuid.UUID, int]:
+    if not ids:
+        return {}
+    rows = session.exec(
+        select(InterestBoost.target_id, func.count())
+        .where(InterestBoost.target_kind == kind, col(InterestBoost.target_id).in_(ids))
+        .group_by(InterestBoost.target_id)
+    ).all()
+    return {target_id: count for target_id, count in rows}
+
+
+def _related_idea(idea: ProposalOfNewProject, interest_count: int = 0) -> RelatedIdea:
     return RelatedIdea(
         id=idea.id,
         name=idea.name,
         description=idea.description,
         stage=idea.stage or IdeaStage.CONCEPT,
+        interest_count=interest_count,
     )
+
+
+def _user_need_keywords(turns: list[dict[str, str]]) -> frozenset[str]:
+    text = " ".join(
+        turn.get("text") or ""
+        for turn in turns
+        if turn.get("role") == "user"
+    )
+    return keywords(text)
+
+
+def find_suggested_ideas(
+    session: Session,
+    turns: list[dict[str, str]],
+    *,
+    category_id: uuid.UUID | None = None,
+) -> list[RelatedIdea]:
+    """Zatwierdzone fiszki pasujące do rozmowy — do kart i podbicia w czacie.
+
+    LLM widzi tylko katalog ROPS; lokalne pomysły z Kreatora dobieramy tu
+    słowami kluczowymi (+ bonus za tę samą kategorię po matchu katalogu).
+    """
+    wanted = _user_need_keywords(turns)
+    approved = list(
+        session.exec(
+            select(ProposalOfNewProject)
+            .where(ProposalOfNewProject.status == StatusEnum.APPROVED)
+            .order_by(col(ProposalOfNewProject.created_at).desc())
+            .limit(SIMILAR_SCAN)
+        ).all()
+    )
+    if not approved:
+        return []
+
+    scored: list[tuple[int, ProposalOfNewProject]] = []
+    for idea in approved:
+        idea_kw = keywords(
+            f"{idea.name} {idea.description} {idea.essence or ''} {idea.audience or ''}"
+        )
+        shared = len(wanted & idea_kw) if wanted else 0
+        same_area = bool(category_id and idea.category_id == category_id)
+        if shared < IDEA_MIN_SHARED and not same_area:
+            continue
+        score = shared + (2 if same_area else 0)
+        scored.append((score, idea))
+
+    # Wyższy score, potem nowsze (ISO timestamp jako drugi klucz).
+    scored.sort(key=lambda row: (row[0], row[1].created_at), reverse=True)
+    top = [idea for _, idea in scored[:SIMILAR_IDEAS]]
+    counts = _interest_counts(session, "idea", [idea.id for idea in top])
+    return [_related_idea(idea, counts.get(idea.id, 0)) for idea in top]
 
 
 def find_similar(
     session: Session, chat_id: uuid.UUID, verdict: Verdict, area_name: str | None
 ) -> SimilarCases | None:
-    """Ile podobnych potrzeb zgłoszono ostatnio i jakie pomysły już nad nimi pracują.
+    """Ile podobnych potrzeb zgłoszono ostatnio (bez dublowania fiszek — te są w suggested_ideas).
 
-    Dopasowanie → ten sam obszar katalogu. Brak dopasowania → wspólne słowa kluczowe
-    ze szkicem potrzeby. Bieżąca rozmowa nie liczy się sama do siebie.
+    Cudzych opisów potrzeb nie zwracamy (prywatność).
     """
     since = (datetime.now() - timedelta(days=SIMILAR_DAYS)).isoformat()
-    approved = (
-        select(ProposalOfNewProject)
-        .where(ProposalOfNewProject.status == StatusEnum.APPROVED)
-        .order_by(col(ProposalOfNewProject.created_at).desc())
-    )
     other_needs = (NeedSignal.created_at >= since, NeedSignal.chat_id != chat_id)
+    count = 0
 
     if verdict.status == "match":
         category_id = verdict.projects[0].category_id
@@ -466,11 +692,6 @@ def find_similar(
             .select_from(NeedSignal)
             .where(NeedSignal.category_id == category_id, *other_needs)
         ).one()
-        ideas = session.exec(
-            approved.where(ProposalOfNewProject.category_id == category_id).limit(
-                SIMILAR_IDEAS
-            )
-        ).all()
     elif verdict.status == "no-match" and verdict.draft:
         area_name = None
         wanted = keywords(f"{verdict.draft.name} {verdict.draft.description}")
@@ -481,22 +702,16 @@ def find_similar(
             .limit(SIMILAR_SCAN)
         ).all()
         count = sum(1 for summary in unmet if is_similar(wanted, keywords(summary)))
-        ideas = [
-            idea
-            for idea in session.exec(approved.limit(SIMILAR_SCAN)).all()
-            if is_similar(
-                wanted, keywords(f"{idea.name} {idea.description} {idea.essence or ''}")
-            )
-        ][:SIMILAR_IDEAS]
     else:
         return None
 
-    if not count and not ideas:
+    if not count:
         return None
+
     return SimilarCases(
         area_name=area_name,
         needs_last_30_days=count,
-        related_ideas=[_related_idea(idea) for idea in ideas],
+        related_ideas=[],
     )
 
 
@@ -532,6 +747,16 @@ async def chat(payload: ChatRequest, session: SessionDep, _: ChatLimitDep):
 
     record_need(session, history.id, verdict)
     categories = {project.id: category for project, category in catalog}
+    project_counts = _interest_counts(
+        session, "project", [project.id for project in verdict.projects]
+    )
+    try:
+        turns = json.loads(history.all_conversation)
+    except (TypeError, ValueError):
+        turns = []
+    match_category_id = (
+        verdict.projects[0].category_id if verdict.projects else None
+    )
     return ChatReply(
         similar=find_similar(
             session,
@@ -548,14 +773,220 @@ async def chat(payload: ChatRequest, session: SessionDep, _: ChatLimitDep):
                 name=project.name,
                 description=project.description,
                 unit_name=categories.get(project.id),
+                interest_count=project_counts.get(project.id, 0),
             )
             for project in verdict.projects
         ],
+        suggested_ideas=find_suggested_ideas(
+            session, turns, category_id=match_category_id
+        ),
         new_project_draft=(
             NewProjectDraftPublic(
                 name=verdict.draft.name, description=verdict.draft.description
             )
-            if verdict.status == "no-match" and verdict.draft
+            if verdict.draft is not None and verdict.status != "match"
             else None
         ),
     )
+
+
+class InterestRequest(BaseModel):
+    chat_id: uuid.UUID | None = None
+    idea_id: uuid.UUID | None = None
+    project_id: uuid.UUID | None = None
+
+
+class InterestReply(BaseModel):
+    target_kind: Literal["idea", "project"]
+    target_id: uuid.UUID
+    interest_count: int
+    already_boosted: bool = False
+
+
+@router.post("/interest", response_model=InterestReply)
+async def boost_interest(
+    payload: InterestRequest,
+    session: SessionDep,
+    user: OptionalUserDep,
+):
+    """Podbicie zainteresowania fiszką albo projektem katalogu (priority z czatu)."""
+    if (payload.idea_id is None) == (payload.project_id is None):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Podaj dokładnie jedno: idea_id albo project_id",
+        )
+    if user is None and payload.chat_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Zaloguj się albo podaj chat_id, żeby podbić zainteresowanie",
+        )
+
+    if payload.idea_id is not None:
+        kind, target_id = "idea", payload.idea_id
+        idea = session.get(ProposalOfNewProject, target_id)
+        if idea is None or idea.status != StatusEnum.APPROVED:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Pomysł nie istnieje"
+            )
+    else:
+        kind, target_id = "project", payload.project_id
+        assert target_id is not None
+        if session.get(ActualProject, target_id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Projekt nie istnieje"
+            )
+
+    existing_q = select(InterestBoost).where(
+        InterestBoost.target_kind == kind, InterestBoost.target_id == target_id
+    )
+    if user is not None:
+        existing_q = existing_q.where(InterestBoost.user_id == user.id)
+    else:
+        existing_q = existing_q.where(InterestBoost.chat_id == payload.chat_id)
+    already = session.exec(existing_q).first()
+    if already is not None:
+        count = session.exec(
+            select(func.count()).where(
+                InterestBoost.target_kind == kind, InterestBoost.target_id == target_id
+            )
+        ).one()
+        return InterestReply(
+            target_kind=kind,  # type: ignore[arg-type]
+            target_id=target_id,
+            interest_count=count,
+            already_boosted=True,
+        )
+
+    session.add(
+        InterestBoost(
+            chat_id=payload.chat_id,
+            user_id=user.id if user else None,
+            target_kind=kind,
+            target_id=target_id,
+        )
+    )
+    # Podbicie projektu katalogu liczy się też jako sygnał potrzeby w trendach.
+    if kind == "project" and payload.chat_id is not None:
+        project = session.get(ActualProject, target_id)
+        if project is not None:
+            already_need = session.exec(
+                select(NeedSignal).where(
+                    NeedSignal.chat_id == payload.chat_id,
+                    NeedSignal.category_id == project.category_id,
+                )
+            ).first()
+            if already_need is None:
+                session.add(
+                    NeedSignal(
+                        chat_id=payload.chat_id,
+                        category_id=project.category_id,
+                        summary="",
+                    )
+                )
+    session.commit()
+    count = session.exec(
+        select(func.count()).where(
+            InterestBoost.target_kind == kind, InterestBoost.target_id == target_id
+        )
+    ).one()
+    return InterestReply(
+        target_kind=kind,  # type: ignore[arg-type]
+        target_id=target_id,
+        interest_count=count,
+        already_boosted=False,
+    )
+
+
+PERSONALIZE_MAX_TURNS = 16  # ostatnie wiadomości z rozmowy (obie strony)
+PERSONALIZE_TEMPERATURE = 0.65  # więcej wariacji niż w matchowaniu katalogu
+
+PERSONALIZE_SYSTEM = """Jesteś asystentem MaloHUB. Dostajesz jeden projekt z katalogu innowacji społecznych oraz fragment rozmowy z użytkownikiem.
+
+Przygotuj **rozbudowaną, ciekawą i praktyczną** notatkę „dla Ciebie” (po polsku) — nie streszczenie katalogu, tylko scenariusze zastosowania pod TĘ rozmowę. Cel: użytkownik ma wyjść z konkretnym planem i inspiracją, nie z ogólnikiem.
+
+## Forma (Markdown)
+Użyj nagłówków i list. Docelowa długość: ok. 280–450 słów (nie skracaj do 3–6 zdań). Struktura obowiązkowa:
+
+1. **Twoja sytuacja** — 2–3 zdania: streszczenie potrzeby z rozmowy własnymi słowami (bez cytowania całej historii).
+2. **Dlaczego właśnie ten projekt** — 3–5 punktów: konkretne elementy z opisu projektu zestawione z faktami z rozmowy (grupa, problem, kontekst lokalny jeśli padł).
+3. **Scenariusze u Ciebie** — 2–3 warianty wdrożenia (np. mały pilotaż / współpraca z partnerem / wersja dla innej grupy lub skali). Bądź kreatywny w łączeniu elementów projektu z sytuacją użytkownika, ale nie zmyślaj danych spoza opisu i rozmowy.
+4. **Pierwsze kroki** — numerowana lista 4–6 działań na najbliższe tygodnie (kogo zapytać w ogólności: OPS/ROPS/NGO/szkoła/sąsiedzi — bez zmyślonych nazwisk, telefonów, linków i kwot).
+5. **Na co uważać** — szczere ograniczenia: gdzie projekt nie pasuje, czego brakuje w opisie, jakie pytania warto jeszcze zamknąć.
+
+## Zasady
+- Opieraj się wyłącznie na opisie projektu i rozmowie. Nie wymyślaj kontaktów, kosztów, terminów naborów, dostępności w konkretnej gminie ani wyników ewaluacji, których nie ma w tekście.
+- Jeśli projekt słabo pasuje — napisz to wprost w sekcjach 2 i 5, a w scenariuszach zaproponuj uczciwe adaptacje albo wskaż, czego brakuje do lepszego dopasowania.
+- Bez znaczników [[hubmi-…]], bez powitania, bez „mam nadzieję”, bez marketingowego lania wody.
+- Pisz konkretnie i obrazowo (kto, gdzie, jak), unikaj pustych fraz typu „może pomóc w wielu obszarach”."""
+
+
+class PersonalizeRequest(BaseModel):
+    project_id: uuid.UUID
+    chat_id: uuid.UUID | None = None
+
+
+class PersonalizeReply(BaseModel):
+    advice: str
+
+
+def _conversation_snippet(turns: list[dict[str, str]], limit: int = PERSONALIZE_MAX_TURNS) -> str:
+    recent = turns[-limit:]
+    lines: list[str] = []
+    for turn in recent:
+        role = "Użytkownik" if turn.get("role") == "user" else "Asystent"
+        text = STATUS_RE.sub("", turn.get("text") or "")
+        text = re.sub(r"\[\[hubmi-[^\]]+\]\]", "", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        if text:
+            lines.append(f"{role}: {text[:800]}")
+    return "\n".join(lines) or "(brak wcześniejszej rozmowy)"
+
+
+@router.post("/personalize", response_model=PersonalizeReply)
+async def personalize_project(
+    payload: PersonalizeRequest, session: SessionDep, _: ChatLimitDep
+):
+    """Sugestia AI: jak ten projekt pasuje do sytuacji z rozmowy (modal czatu)."""
+    project = session.get(ActualProject, payload.project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Projekt nie istnieje"
+        )
+    category = session.get(CategoriesOfProjects, project.category_id)
+    category_name = category.name if category else ""
+    brief = catalog_brief(project)
+
+    turns: list[dict[str, str]] = []
+    if payload.chat_id is not None:
+        history = session.get(ChatHistory, payload.chat_id)
+        if history is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Rozmowa nie istnieje"
+            )
+        try:
+            turns = json.loads(history.all_conversation)
+        except (TypeError, ValueError):
+            turns = []
+
+    user_payload = (
+        f"## Projekt\nNazwa: {project.name}\nID: {project.id}\n"
+        f"Kategoria: {category_name}\nSkrót: {brief}\n\n"
+        f"Opis:\n{(project.description or '')[:3500]}\n\n"
+        f"## Rozmowa\n{_conversation_snippet(turns)}"
+    )
+    raw = await ask_llm(
+        [
+            {"role": "system", "content": PERSONALIZE_SYSTEM},
+            {"role": "user", "content": user_payload},
+        ],
+        temperature=PERSONALIZE_TEMPERATURE,
+    )
+    advice = STATUS_RE.sub("", raw or "")
+    advice = re.sub(r"\[\[hubmi-[^\]]+\]\]", "", advice)
+    advice = re.sub(r"\n{3,}", "\n\n", advice).strip()
+    if len(advice) < 20:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Model nie przygotował sugestii — spróbuj ponownie",
+        )
+    return PersonalizeReply(advice=advice)

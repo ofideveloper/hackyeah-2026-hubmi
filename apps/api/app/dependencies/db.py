@@ -71,7 +71,7 @@ def _rebuild_legacy_uuid_tables() -> None:
 def _add_missing_columns() -> None:
     """`create_all` nie dodaje kolumn do istniejących tabel — dopisz nowe, opcjonalne."""
     added = {
-        "actualproject": ("source_url", "video_url", "folder_url"),
+        "actualproject": ("source_url", "video_url", "folder_url", "brief"),
         "proposalofnewproject": ("essence", "audience", "stage", "canvas", "admin_note"),
         "user": ("sector", "organization", "mentor_bio"),
     }

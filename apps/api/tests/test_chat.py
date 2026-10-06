@@ -134,20 +134,63 @@ def test_match_returns_project_cards_from_the_database(client, llm, catalog, db)
             "name": "Teleopieka domowa",
             "description": "Opaska z przyciskiem SOS.",
             "unit_name": "Dla seniorów",
+            "interest_count": 0,
         }
     ]
     [signal] = db.exec(select(m.NeedSignal)).all()
     assert signal.category_id == catalog[0].category_id
 
 
-def test_system_prompt_carries_the_catalog(client, llm, catalog):
+def test_system_prompt_carries_brief_catalog(client, llm, catalog, make_project, make_category):
+    long = make_project(
+        make_category("Dla rodzin"),
+        name="BaWita-test",
+        description=(
+            "1. Na czym polega rozwiązanie?\n"
+            "Drewniana tablica rehabilitacyjna z siedmioma elementami.\n"
+            "2. Jakich problemów dotyczy innowacja?\n"
+            "Zespoły otępienne u osób starszych.\n"
+            "3. Grupa docelowa\n"
+            "Osoby z otępieniem we wczesnym stadium.\n"
+            "5. Czy to działa?\n"
+            "Test potwierdził skuteczność w poprawie pamięci proceduralnej."
+        ),
+    )
+
     ask(client, "Potrzebuję pomocy")
 
     system, question = llm.calls[0]
     assert system["role"] == "system"
-    for project in catalog:
+    assert "skróty projektów" in system["content"]
+    for project in [*catalog, long]:
         assert f"### {project.name}\nID: {project.id}" in system["content"]
+        assert project.brief in system["content"]
+    assert "pamięci proceduralnej" not in system["content"]
     assert question == {"role": "user", "content": "Potrzebuję pomocy"}
+
+
+def test_system_prompt_ranks_keyword_hits_first(
+    client, llm, catalog, make_project, make_category
+):
+    cold = make_project(
+        make_category("Dla zdrowia i medycyny"),
+        name="Cold Box",
+        description=(
+            "1. Na czym polega rozwiązanie?\n"
+            "Pojemnik chłodzący do insuliny.\n"
+            "2. Jakich problemów dotyczy innowacja?\n"
+            "Przechowywanie leków wymagających chłodzenia.\n"
+            "3. Grupa docelowa\n"
+            "Osoby chorujące na cukrzycę.\n"
+        ),
+    )
+    ask(client, "Mam problemy z cukrzycą")
+
+    system = llm.calls[0][0]["content"]
+    cold_pos = system.index(f"### {cold.name}")
+    # Trafienie po „cukrzyca” musi być przed losowymi projektami z katalogu fixture.
+    other_pos = system.index(f"### {catalog[0].name}")
+    assert cold_pos < other_pos
 
 
 def test_conversation_continues_with_full_history(client, llm, catalog, db):
@@ -211,6 +254,49 @@ def test_no_match_offers_new_project_draft(client, llm, catalog, db, scraper, mo
     assert signal.category_id is None
 
 
+def test_prose_sketch_without_markers_still_opens_draft_cta(client, llm, catalog):
+    llm.reply(
+        "Oto szkic nowego projektu:\n\n"
+        "Nazwa: Mobilny punkt diabetologiczny\n"
+        "Opis wsparcia dla osób z cukrzycą w małych gminach.\n\n"
+        "Mam nadzieję, że ten szkic będzie pomocny!"
+    )
+
+    body = ask(client, "Szukam pomocy przy cukrzycy w małej gminie").json()
+
+    assert body["status"] == "no-match"
+    assert body["new_project_draft"] is not None
+    assert body["new_project_draft"]["description"]
+    assert body["reply"] == NO_MATCH_REPLY
+
+
+def test_draft_markers_force_no_match_even_without_status(client, llm, catalog):
+    llm.reply(f"Przygotowałem propozycję.\n{DRAFT_BLOCK}")
+
+    body = ask(client, "Potrzebujemy wypożyczalni wózków").json()
+
+    assert body["status"] == "no-match"
+    assert body["new_project_draft"] == {
+        "name": "Wypożyczalnia wózków",
+        "description": "Brakuje wypożyczalni wózków inwalidzkich w gminie.",
+    }
+
+
+def test_draft_after_prior_match_is_not_swallowed(client, llm, catalog):
+    llm.reply(
+        f"Polecam.\n{marker(catalog[0])}\n{MATCH}",
+        f"W takim razie nowa propozycja.\n{DRAFT_BLOCK}\n{NO_MATCH}",
+    )
+    first = ask(client, "Szukam wsparcia dla seniorów").json()
+    second = ask(
+        client, "To nie to — potrzebuję wypożyczalni wózków", chat_id=first["chat_id"]
+    ).json()
+
+    assert first["status"] == "match"
+    assert second["status"] == "no-match"
+    assert second["new_project_draft"]["name"] == "Wypożyczalnia wózków"
+
+
 # Scraper w czacie wyłączony — testy wracają razem z nim.
 # def test_no_match_asks_again_when_refresh_brought_new_projects(client, llm, catalog, scraper):
 #     scraper.added = 2
@@ -263,11 +349,141 @@ def test_similar_cases_count_other_recent_needs_and_approved_ideas(
     make_idea(user, "pending", category_id=area, name="Niezatwierdzony")
     llm.reply(f"Polecam.\n{marker(catalog[0])}\n{MATCH}")
 
-    similar = ask(client).json()["similar"]
+    body = ask(client).json()
+    similar = body["similar"]
 
     assert similar["area_name"] == "Dla seniorów"
     assert similar["needs_last_30_days"] == 2
-    assert [idea["name"] for idea in similar["related_ideas"]] == ["Klub sąsiedzki"]
+    assert similar["related_ideas"] == []
+    assert [idea["name"] for idea in body["suggested_ideas"]] == ["Klub sąsiedzki"]
+    assert body["suggested_projects"][0]["name"] == "Teleopieka domowa"
+
+
+def test_suggested_ideas_match_keywords_even_without_catalog_match(
+    client, llm, catalog, db, user, make_idea
+):
+    """Zatwierdzona fiszka ma wejść do kart nawet gdy LLM nie zrobi matchu katalogu."""
+    make_idea(
+        user,
+        "approved",
+        category_id=catalog[0].category_id,
+        name="Zajęcia dla osób starszych w Wieliczce",
+        description="Cotygodniowe spotkania ruchowe i warsztaty dla seniorów z Wieliczki.",
+        essence="aktywizacja seniorów lokalnie",
+        audience="osoby starsze z Wieliczki",
+    )
+    llm.reply(f"Doprecyzuj proszę.\n{CLARIFY}")
+
+    body = ask(
+        client, "Szukam zajęć dla osób starszych w Wieliczce"
+    ).json()
+
+    assert body["status"] == "clarify"
+    assert body["suggested_projects"] == []
+    names = [idea["name"] for idea in body["suggested_ideas"]]
+    assert "Zajęcia dla osób starszych w Wieliczce" in names
+
+
+def test_followup_asking_which_projects_points_to_cards(client, llm, catalog):
+    llm.reply(
+        f"Polecam.\n{marker(catalog[0])}\n{MATCH}",
+        f"Nie mamy.\n{NO_MATCH}",
+    )
+    first = ask(client, "Szukam wsparcia dla seniorów").json()
+    second = ask(
+        client, "Jakie to są projekty?", chat_id=first["chat_id"]
+    ).json()
+
+    assert first["status"] == "match"
+    assert second["status"] == "clarify"
+    assert "kartach" in second["reply"].lower()
+    assert second["new_project_draft"] is None
+
+
+def test_followup_about_eligibility_keeps_model_reply(client, llm, catalog):
+    llm.reply(
+        f"Polecam.\n{marker(catalog[0])}\n{MATCH}",
+        "Teleopieka jest skierowana do seniorów — przy 20 latach raczej nie jest "
+        "dla Ciebie. Szukasz czegoś dla młodych dorosłych?\n[[hubmi-status:no-match]]",
+    )
+    first = ask(client, "Szukam wsparcia dla seniorów").json()
+    second = ask(
+        client,
+        "nie wiem czy jako osoba w wieku 20 lat mogę skorzystać z tego programu",
+        chat_id=first["chat_id"],
+    ).json()
+
+    assert first["status"] == "match"
+    assert second["status"] == "clarify"
+    assert "20" in second["reply"] or "senior" in second["reply"].casefold()
+    assert "kartach pod wcześniejszą" not in second["reply"]
+    assert second["new_project_draft"] is None
+
+
+def test_personalize_uses_project_and_conversation(client, llm, catalog, db):
+    llm.reply(
+        f"Polecam.\n{marker(catalog[0])}\n{MATCH}",
+        "## Twoja sytuacja\nSzukasz wsparcia dla samotnego seniora.\n"
+        "## Dlaczego właśnie ten projekt\n- Teleopieka daje szybki kontakt SOS w domu.\n"
+        "## Scenariusze u Ciebie\n- Pilotaż w jednym mieszkaniu.\n"
+        "## Pierwsze kroki\n1. Porozmawiaj z OPS.\n"
+        "## Na co uważać\nSprawdź, kto monitoruje alerty.",
+    )
+    chat_id = ask(client, "Szukam wsparcia dla samotnego seniora w domu").json()["chat_id"]
+
+    response = client.post(
+        "/chat/personalize",
+        json={"project_id": str(catalog[0].id), "chat_id": chat_id},
+    )
+
+    assert response.status_code == 200
+    advice = response.json()["advice"]
+    assert "teleopieka" in advice.casefold() or "SOS" in advice
+    assert "Pierwsze kroki" in advice
+    system, user = llm.calls[1]
+    assert system["role"] == "system"
+    assert "Scenariusze u Ciebie" in system["content"]
+    assert "280–450" in system["content"]
+    assert "Teleopieka" in user["content"] or catalog[0].name in user["content"]
+    assert "samotnego seniora" in user["content"]
+
+
+def test_personalize_unknown_project(client, llm):
+    response = client.post(
+        "/chat/personalize",
+        json={"project_id": str(uuid.uuid4())},
+    )
+    assert response.status_code == 404
+    assert llm.calls == []
+
+
+def test_boost_interest_on_project_and_idea(
+    client, user_client, llm, catalog, db, user, make_idea
+):
+    area = catalog[0].category_id
+    idea = make_idea(user, "approved", category_id=area, name="Fiszka senior")
+    llm.reply(f"Polecam.\n{marker(catalog[0])}\n{MATCH}")
+    chat_id = ask(client).json()["chat_id"]
+
+    project_boost = client.post(
+        "/chat/interest",
+        json={"chat_id": chat_id, "project_id": str(catalog[1].id)},
+    )
+    assert project_boost.status_code == 200
+    assert project_boost.json()["interest_count"] == 1
+    assert project_boost.json()["already_boosted"] is False
+
+    again = client.post(
+        "/chat/interest",
+        json={"chat_id": chat_id, "project_id": str(catalog[1].id)},
+    )
+    assert again.json()["already_boosted"] is True
+
+    idea_boost = user_client.post(
+        "/chat/interest", json={"idea_id": str(idea.id)}
+    )
+    assert idea_boost.status_code == 200
+    assert idea_boost.json()["interest_count"] == 1
 
 
 def test_similar_unmet_needs_are_matched_by_keywords(client, llm, catalog, db):
